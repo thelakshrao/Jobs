@@ -29,7 +29,7 @@ const fadeUp = (delay = 0) => ({
 export default function Page() {
   return (
     <>
-    <Navbar/>
+      <Navbar />
       <div className="relative min-h-[85vh] md:min-h-screen w-full overflow-hidden font-sans">
         <div className="absolute inset-0 z-0">
           <Image
@@ -43,7 +43,6 @@ export default function Page() {
         </div>
 
         <main className="relative z-10 flex flex-col items-center justify-center min-h-[85vh] md:min-h-screen text-center px-6 pt-20 pb-10">
-
           <motion.div
             {...fadeUp(0.1)}
             className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 text-white/90 text-[10px] md:text-xs font-medium px-3 py-1 rounded-full mb-5"
@@ -66,7 +65,6 @@ export default function Page() {
             with companies that value who you truly are.
           </motion.p>
 
-          {/* Search card */}
           <motion.div
             {...fadeUp(0.46)}
             className="w-full max-w-md md:max-w-2xl bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-2xl p-5 mt-2"
@@ -115,22 +113,22 @@ export default function Page() {
       </div>
 
       <section id="about">
-         <About />
+        <About />
       </section>
 
       <section id="why-us">
-         <WhyJobsAbroad />
+        <WhyJobsAbroad />
       </section>
 
       <section id="premium">
-         <Premium />
+        <Premium />
       </section>
 
       <section id="contact">
-         <Contact />
+        <Contact />
       </section>
 
-      <Footer/>
+      <Footer />
     </>
   );
 }
