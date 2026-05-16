@@ -3,9 +3,10 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import heroBg from "@/images/hero.png";
-import logo2 from "@/images/logo2.png";
+import logo from "@/images/logo.png";
 import {
   IoMailOutline,
   IoLockClosedOutline,
@@ -13,6 +14,13 @@ import {
   IoEyeOutline,
 } from "react-icons/io5";
 import { FiArrowRight } from "react-icons/fi";
+// ADDED sendPasswordResetEmail HERE
+import {
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  sendPasswordResetEmail,
+} from "firebase/auth";
+import { auth, googleProvider } from "@/lib/firebase";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -48,10 +56,55 @@ const quotes = [
 ];
 
 const Login = () => {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      router.push("/dashboard");
+    } catch (err) {
+      setError("Invalid email or password. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogle = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      await signInWithPopup(auth, googleProvider);
+      router.push("/dashboard");
+    } catch (err) {
+      setError("Google sign-in failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setError("Please enter your email address first.");
+      return;
+    }
+    setLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setError("");
+      alert("Password reset email sent! Check your inbox.");
+    } catch (err) {
+      setError("Could not send reset email. Check the address and try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -77,7 +130,7 @@ const Login = () => {
           animate="visible"
         >
           <Image
-            src={logo2}
+            src={logo}
             alt="Jobs Abroad Logo"
             width={160}
             height={48}
@@ -165,7 +218,7 @@ const Login = () => {
             className="md:hidden mb-8 flex justify-center"
           >
             <Image
-              src={logo2}
+              src={logo}
               alt="Jobs Abroad"
               width={130}
               height={40}
@@ -181,6 +234,16 @@ const Login = () => {
             Login
           </motion.h1>
 
+          {error && (
+            <motion.p
+              custom={0}
+              variants={fadeUp}
+              className="text-red-400 text-sm mb-4 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2.5"
+            >
+              {error}
+            </motion.p>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-5">
             <motion.div custom={1} variants={fadeUp}>
               <label className="block text-white/80 text-sm font-medium mb-2">
@@ -191,6 +254,9 @@ const Login = () => {
                 <input
                   type="email"
                   placeholder="Enter your Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
                   className="flex-1 bg-transparent text-white placeholder-white/35 text-sm outline-none"
                 />
               </div>
@@ -208,6 +274,9 @@ const Login = () => {
                 <input
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
                   className="flex-1 bg-transparent text-white placeholder-white/35 text-sm outline-none"
                 />
                 <button
@@ -225,12 +294,13 @@ const Login = () => {
             </motion.div>
 
             <motion.div custom={3} variants={fadeUp}>
-              <Link
-                href="#"
+              <button
+                type="button"
+                onClick={handleForgotPassword}
                 className="text-white/45 text-xs hover:text-white/70 transition-colors"
               >
                 Forget password?
-              </Link>
+              </button>
             </motion.div>
 
             <motion.div
@@ -252,7 +322,9 @@ const Login = () => {
             >
               <button
                 type="button"
-                className="w-11 h-11 rounded-full bg-white/10 backdrop-blur-md border border-white/25 flex items-center justify-center hover:bg-white/20 hover:border-blue-400 transition-all"
+                onClick={handleGoogle}
+                disabled={loading}
+                className="w-11 h-11 rounded-full bg-white/10 backdrop-blur-md border border-white/25 flex items-center justify-center hover:bg-white/20 hover:border-blue-400 transition-all disabled:opacity-50"
               >
                 <svg viewBox="0 0 24 24" width="20" height="20">
                   <path
@@ -292,13 +364,16 @@ const Login = () => {
             <motion.div custom={7} variants={fadeUp}>
               <button
                 type="submit"
-                className="group w-full bg-red-500 hover:bg-red-600 text-white font-bold text-sm py-4 rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 shadow-lg shadow-red-500/30 hover:shadow-red-500/50 hover:scale-[1.02] active:scale-[0.98]"
+                disabled={loading}
+                className="group w-full bg-red-500 hover:bg-red-600 text-white font-bold text-sm py-4 rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 shadow-lg shadow-red-500/30 hover:shadow-red-500/50 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:scale-100"
               >
-                Login
-                <FiArrowRight
-                  size={18}
-                  className="group-hover:translate-x-1 transition-transform"
-                />
+                {loading ? "Please wait..." : "Login"}
+                {!loading && (
+                  <FiArrowRight
+                    size={18}
+                    className="group-hover:translate-x-1 transition-transform"
+                  />
+                )}
               </button>
             </motion.div>
           </form>

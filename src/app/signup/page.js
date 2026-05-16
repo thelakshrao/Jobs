@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import heroBg from "@/images/hero.png";
 import logo2 from "@/images/logo2.png";
@@ -15,6 +16,13 @@ import {
   IoCallOutline,
 } from "react-icons/io5";
 import { FiArrowRight } from "react-icons/fi";
+import {
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  updateProfile,
+} from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, googleProvider, db } from "@/lib/firebase";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -53,11 +61,76 @@ const inputClass =
   "flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/25 rounded-2xl px-4 py-3 focus-within:border-blue-400 focus-within:bg-white/15 transition-all";
 
 const Signup = () => {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const result = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password,
+      );
+      await updateProfile(result.user, { displayName: fullName });
+      await setDoc(doc(db, "users", result.user.uid), {
+        name: fullName,
+        email: email,
+        phone: phone,
+        createdAt: new Date().toISOString(),
+      });
+      router.push("/dashboard");
+    } catch (err) {
+      if (err.code === "auth/email-already-in-use") {
+        setError("This email is already registered. Try logging in.");
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogle = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      await setDoc(
+        doc(db, "users", user.uid),
+        {
+          name: user.displayName || "",
+          email: user.email || "",
+          phone: user.phoneNumber || "",
+          createdAt: new Date().toISOString(),
+        },
+        { merge: true },
+      );
+      router.push("/dashboard");
+    } catch (err) {
+      setError("Google sign-in failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -194,6 +267,16 @@ const Signup = () => {
             Create your account to get started
           </motion.p>
 
+          {error && (
+            <motion.p
+              custom={0}
+              variants={fadeUp}
+              className="text-red-400 text-sm mb-4 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2.5"
+            >
+              {error}
+            </motion.p>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <motion.div custom={2} variants={fadeUp}>
               <label className="block text-white/80 text-xs font-medium mb-1.5">
@@ -204,6 +287,9 @@ const Signup = () => {
                 <input
                   type="text"
                   placeholder="Enter your full name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
                   className="flex-1 bg-transparent text-white placeholder-white/35 text-sm outline-none"
                 />
               </div>
@@ -218,6 +304,9 @@ const Signup = () => {
                 <input
                   type="email"
                   placeholder="Enter your Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
                   className="flex-1 bg-transparent text-white placeholder-white/35 text-sm outline-none"
                 />
               </div>
@@ -232,6 +321,8 @@ const Signup = () => {
                 <input
                   type="tel"
                   placeholder="Enter your phone number"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                   className="flex-1 bg-transparent text-white placeholder-white/35 text-sm outline-none"
                 />
               </div>
@@ -249,6 +340,9 @@ const Signup = () => {
                 <input
                   type={showPassword ? "text" : "password"}
                   placeholder="Create a password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
                   className="flex-1 bg-transparent text-white placeholder-white/35 text-sm outline-none"
                 />
                 <button
@@ -277,6 +371,9 @@ const Signup = () => {
                 <input
                   type={showConfirm ? "text" : "password"}
                   placeholder="Confirm your password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
                   className="flex-1 bg-transparent text-white placeholder-white/35 text-sm outline-none"
                 />
                 <button
@@ -312,7 +409,9 @@ const Signup = () => {
             >
               <button
                 type="button"
-                className="w-11 h-11 rounded-full bg-white/10 backdrop-blur-md border border-white/25 flex items-center justify-center hover:bg-white/20 hover:border-blue-400 transition-all"
+                onClick={handleGoogle}
+                disabled={loading}
+                className="w-11 h-11 rounded-full bg-white/10 backdrop-blur-md border border-white/25 flex items-center justify-center hover:bg-white/20 hover:border-blue-400 transition-all disabled:opacity-50"
               >
                 <svg viewBox="0 0 24 24" width="20" height="20">
                   <path
@@ -352,13 +451,16 @@ const Signup = () => {
             <motion.div custom={10} variants={fadeUp}>
               <button
                 type="submit"
-                className="group w-full bg-red-500 hover:bg-red-600 text-white font-bold text-sm py-4 rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 shadow-lg shadow-red-500/30 hover:shadow-red-500/50 hover:scale-[1.02] active:scale-[0.98]"
+                disabled={loading}
+                className="group w-full bg-red-500 hover:bg-red-600 text-white font-bold text-sm py-4 rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 shadow-lg shadow-red-500/30 hover:shadow-red-500/50 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:scale-100"
               >
-                Create Account
-                <FiArrowRight
-                  size={18}
-                  className="group-hover:translate-x-1 transition-transform"
-                />
+                {loading ? "Please wait..." : "Create Account"}
+                {!loading && (
+                  <FiArrowRight
+                    size={18}
+                    className="group-hover:translate-x-1 transition-transform"
+                  />
+                )}
               </button>
             </motion.div>
           </form>
