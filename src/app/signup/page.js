@@ -84,29 +84,45 @@ const Signup = () => {
       return;
     }
     setLoading(true);
+
+    let userCredential;
+    // Step 1: Create the Firebase Auth user
     try {
-      const result = await createUserWithEmailAndPassword(
+      userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
         password,
       );
-      await updateProfile(result.user, { displayName: fullName });
-      await setDoc(doc(db, "users", result.user.uid), {
+    } catch (err) {
+      if (err.code === "auth/email-already-in-use") {
+        setError("This email is already registered. Try logging in.");
+      } else if (err.code === "auth/invalid-email") {
+        setError("Please enter a valid email address.");
+      } else if (err.code === "auth/weak-password") {
+        setError("Password must be at least 6 characters.");
+      } else {
+        setError("Could not create account. Please try again.");
+      }
+      setLoading(false);
+      return;
+    }
+
+    // Step 2: Update profile & save to Firestore (non-blocking for navigation)
+    try {
+      await updateProfile(userCredential.user, { displayName: fullName });
+      await setDoc(doc(db, "users", userCredential.user.uid), {
         name: fullName,
         email: email,
         phone: phone,
         createdAt: new Date().toISOString(),
       });
-      router.push("/dashboard");
     } catch (err) {
-      if (err.code === "auth/email-already-in-use") {
-        setError("This email is already registered. Try logging in.");
-      } else {
-        setError("Something went wrong. Please try again.");
-      }
-    } finally {
-      setLoading(false);
+      // Profile/Firestore update failed, but the account exists — still navigate
+      console.error("Profile/Firestore update failed:", err);
     }
+
+    setLoading(false);
+    router.push("/dashboard");
   };
 
   const handleGoogle = async () => {

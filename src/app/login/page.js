@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import heroBg from "@/images/hero.png";
-import logo from "@/images/logo.png";
+import logo2 from "@/images/logo2.png";
 import {
   IoMailOutline,
   IoLockClosedOutline,
@@ -14,7 +14,6 @@ import {
   IoEyeOutline,
 } from "react-icons/io5";
 import { FiArrowRight } from "react-icons/fi";
-// ADDED sendPasswordResetEmail HERE
 import {
   signInWithEmailAndPassword,
   signInWithPopup,
@@ -130,7 +129,7 @@ const Login = () => {
           animate="visible"
         >
           <Image
-            src={logo}
+            src={logo2}
             alt="Jobs Abroad Logo"
             width={160}
             height={48}
@@ -218,7 +217,7 @@ const Login = () => {
             className="md:hidden mb-8 flex justify-center"
           >
             <Image
-              src={logo}
+              src={logo2}
               alt="Jobs Abroad"
               width={130}
               height={40}
@@ -299,7 +298,7 @@ const Login = () => {
                 onClick={handleForgotPassword}
                 className="text-white/45 text-xs hover:text-white/70 transition-colors"
               >
-                Forget password?
+                Forgot password?
               </button>
             </motion.div>
 
