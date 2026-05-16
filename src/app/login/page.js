@@ -60,11 +60,13 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setSuccess("");
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
@@ -78,6 +80,7 @@ const Login = () => {
 
   const handleGoogle = async () => {
     setError("");
+    setSuccess("");
     setLoading(true);
     try {
       await signInWithPopup(auth, googleProvider);
@@ -92,13 +95,15 @@ const Login = () => {
   const handleForgotPassword = async () => {
     if (!email) {
       setError("Please enter your email address first.");
+      setSuccess("");
       return;
     }
     setLoading(true);
+    setError("");
+    setSuccess("");
     try {
       await sendPasswordResetEmail(auth, email);
-      setError("");
-      alert("Password reset email sent! Check your inbox.");
+      setSuccess("Password reset email sent! Check your inbox (or spam folder).");
     } catch (err) {
       setError("Could not send reset email. Check the address and try again.");
     } finally {
@@ -233,13 +238,25 @@ const Login = () => {
             Login
           </motion.h1>
 
+          {/* Error message */}
           {error && (
             <motion.p
-              custom={0}
-              variants={fadeUp}
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
               className="text-red-400 text-sm mb-4 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2.5"
             >
               {error}
+            </motion.p>
+          )}
+
+          {/* Success message */}
+          {success && (
+            <motion.p
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-green-400 text-sm mb-4 bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-2.5"
+            >
+              {success}
             </motion.p>
           )}
 
