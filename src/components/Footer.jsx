@@ -1,7 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import logo from "@/images/logo.png";
+import logo2 from "@/images/logo2.png";
 import { FaLinkedinIn, FaXTwitter, FaInstagram } from "react-icons/fa6";
 
 const Footer = () => {
@@ -15,10 +15,10 @@ const Footer = () => {
           <div className="col-span-2 sm:col-span-2 lg:col-span-1 space-y-4">
             <Link href="/">
               <Image
-                src={logo}
+                src={logo2}
                 alt="Jobs Abroad"
                 height={36}
-                className="h-8 sm:h-10 w-auto brightness-0 invert"
+                className="h-8 sm:h-20 w-auto"
               />
             </Link>
             <p className="text-sm leading-relaxed text-white/80 max-w-xs">
