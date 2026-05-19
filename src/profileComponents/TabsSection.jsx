@@ -15,18 +15,21 @@ export default function TabsSection({
   activeTab,
   setActiveTab,
 }) {
-  const TABS     = isGraduate ? GRADUATE_TABS : SCHOOL_TABS;
-  const safeTab  = TABS.includes(activeTab) ? activeTab : "About";
-  const skills   = about.skills || [];
+  const TABS    = isGraduate ? GRADUATE_TABS : SCHOOL_TABS;
+  const safeTab = TABS.includes(activeTab) ? activeTab : "About";
+  const skills  = about.skills || [];
 
   return (
     <SectionCard>
-      <div className="flex border-b" style={{ borderColor: "#f1f5f9" }}>
+      <div
+        className="flex border-b overflow-x-auto"
+        style={{ borderColor: "#f1f5f9", scrollbarWidth: "none" }}
+      >
         {TABS.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className="px-5 py-3 text-sm font-semibold transition-all"
+            className="px-4 sm:px-5 py-3 text-sm font-semibold transition-all whitespace-nowrap shrink-0"
             style={{
               color: safeTab === tab ? BLUE : "#64748b",
               borderBottom: safeTab === tab ? `2px solid ${BLUE}` : "2px solid transparent",
@@ -38,7 +41,7 @@ export default function TabsSection({
         ))}
       </div>
 
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         {safeTab === "About"      && <AboutTab      about={about} />}
         {safeTab === "Experience" && <ExperienceTab experiences={experiences} />}
         {safeTab === "Education"  && <EducationTab  educations={educations} />}

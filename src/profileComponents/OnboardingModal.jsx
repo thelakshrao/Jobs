@@ -11,28 +11,29 @@ export default function OnboardingModal({ onSelect }) {
   const cards = [
     {
       id: "school",
-      icon: <IoSchoolOutline size={32} color={BLUE} />,
+      icon: <IoSchoolOutline size={28} color={BLUE} />,
       title: "10th / 12th Pass",
       desc: "I have completed school education (Matriculation or Intermediate)",
     },
     {
       id: "graduate",
-      icon: <IoBriefcaseOutline size={32} color={BLUE} />,
+      icon: <IoBriefcaseOutline size={28} color={BLUE} />,
       title: "Graduate / Postgraduate",
       desc: "I have completed or am pursuing a bachelor's or master's degree",
     },
   ];
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{
         backgroundColor: "rgba(15,23,42,0.45)",
         backdropFilter: "blur(4px)",
       }}
     >
       <div
-        className="bg-white rounded-3xl p-10 flex flex-col items-center gap-8"
-        style={{ width: "520px", boxShadow: "0 24px 60px rgba(0,0,0,0.15)" }}
+        className="bg-white rounded-3xl p-6 sm:p-10 flex flex-col items-center gap-6 sm:gap-8 w-full"
+        style={{ maxWidth: "520px", boxShadow: "0 24px 60px rgba(0,0,0,0.15)" }}
       >
         <div className="flex flex-col items-center gap-2 text-center">
           <div
@@ -41,19 +42,20 @@ export default function OnboardingModal({ onSelect }) {
           >
             <IoPersonOutline size={24} color={BLUE} />
           </div>
-          <h2 className="text-xl font-bold text-gray-900">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900">
             What's your education level?
           </h2>
           <p className="text-sm text-gray-400">
             This helps us personalise your profile experience
           </p>
         </div>
-        <div className="flex gap-4 w-full">
+
+        <div className="flex flex-col sm:flex-row gap-4 w-full">
           {cards.map((c) => (
             <button
               key={c.id}
               onClick={() => onSelect(c.id)}
-              className="flex-1 flex flex-col items-center gap-3 p-6 rounded-2xl text-center transition-all"
+              className="flex-1 flex flex-col items-center gap-3 p-5 sm:p-6 rounded-2xl text-center transition-all"
               style={{
                 border:
                   hov === c.id ? `2px solid ${BLUE}` : "2px solid #f1f5f9",
@@ -63,7 +65,7 @@ export default function OnboardingModal({ onSelect }) {
               onMouseLeave={() => setHov(null)}
             >
               <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center"
                 style={{ backgroundColor: BLUE_BG }}
               >
                 {c.icon}

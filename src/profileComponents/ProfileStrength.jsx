@@ -5,13 +5,14 @@ export default function ProfileStrength({ completedItems = [] }) {
   const strengthPercent = Math.round(
     (completedItems.length / STRENGTH_ITEMS.length) * 100,
   );
+
   return (
     <div
-      className="rounded-2xl p-6 shrink-0"
+      className="rounded-2xl p-5 sm:p-6 shrink-0 w-full"
       style={{
         border: "1.5px solid #f1f5f9",
         boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
-        width: "300px",
+        maxWidth: "300px",
       }}
     >
       <h3 className="text-base font-bold text-gray-900 mb-5">
@@ -48,9 +49,10 @@ export default function ProfileStrength({ completedItems = [] }) {
             <span className="text-sm font-medium text-gray-400">Good</span>
           </div>
         </div>
+
         <div className="w-full flex flex-col gap-2">
           <p className="text-xs font-medium text-gray-400 mb-1">
-            Complete to improve your profile
+            Complete all fields to increase profile strength
           </p>
           {STRENGTH_ITEMS.map(({ label, key }) => (
             <div key={key} className="flex items-center justify-between gap-2">
@@ -64,6 +66,7 @@ export default function ProfileStrength({ completedItems = [] }) {
           ))}
         </div>
       </div>
+
       <button
         className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all"
         style={{ backgroundColor: BLUE_BG, color: BLUE }}
