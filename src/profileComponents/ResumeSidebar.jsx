@@ -14,7 +14,7 @@ import {
 import { BLUE, BLUE_BG } from "./shared";
 
 const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-const RESUME_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_RESUME_PRESET;
+const RESUME_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
 async function uploadResumeToCloudinary(file) {
   const fd = new FormData();
