@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
@@ -9,21 +8,19 @@ import {
   IoCheckmarkOutline,
   IoCloseOutline,
 } from "react-icons/io5";
-
 import {
   DEFAULT_PROFILE,
   DEFAULT_ABOUT,
   BtnPrimary,
   BtnGhost,
-  STRENGTH_ITEMS,
 } from "@/profileComponents/shared";
 import OnboardingModal from "@/profileComponents/OnboardingModal";
 import ProfileCard from "@/profileComponents/ProfileCard";
+import ProfileEdit from "@/profileComponents/Profileedit";
 import ProfileStrength from "@/profileComponents/ProfileStrength";
 import TabsSection from "@/profileComponents/TabsSection";
 import ResumeSidebar from "@/profileComponents/ResumeSidebar";
-
-const COMPLETED_ITEMS = ["resume", "skills", "portfolio", "email"];
+import { computeCompletedItems } from "@/lib/Computecompleteditems";
 
 export default function ProfilePage() {
   const [user, setUser] = useState(null);
@@ -34,29 +31,26 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("About");
   const [showOnboarding, setShowOnboarding] = useState(false);
-
   const [about, setAbout] = useState(DEFAULT_ABOUT);
   const [aboutForm, setAboutForm] = useState(DEFAULT_ABOUT);
-
   const [experiences, setExperiences] = useState([]);
   const [educations, setEducations] = useState([]);
-
   const [editSection, setEditSection] = useState(null);
   const [expForm, setExpForm] = useState({});
   const [eduForm, setEduForm] = useState({});
-
   const [skillInput, setSkillInput] = useState("");
-
   const [uid, setUid] = useState(null);
+  const [resumeURL, setResumeURL] = useState("");
 
   const isGraduate = about.educationLevel === "graduate";
 
-  const strengthPercent = Math.round(
-    (COMPLETED_ITEMS.length / STRENGTH_ITEMS.length) * 100,
-  );
-  const missingItems = STRENGTH_ITEMS.filter(
-    (item) => !COMPLETED_ITEMS.includes(item.key),
-  );
+  const completedItems = computeCompletedItems({
+    profile,
+    about,
+    experiences,
+    educations,
+    resumeURL,
+  });
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (fu) => {
@@ -74,6 +68,7 @@ export default function ProfilePage() {
         setAboutForm(a);
         setExperiences(data.experiences || []);
         setEducations(data.educations || []);
+        setResumeURL(data.resumeURL || data.resume?.url || data.resume || "");
         if (!a.onboardingDone) setShowOnboarding(true);
       } else {
         const init = {
@@ -91,7 +86,6 @@ export default function ProfilePage() {
     return () => unsub();
   }, []);
 
-  // always uses uid state — never stale
   const saveToDb = async (uid, data) => {
     if (!uid) return;
     await setDoc(doc(db, "users", uid), data, { merge: true });
@@ -193,6 +187,7 @@ export default function ProfilePage() {
               Manage your profile and increase your chances of getting hired
             </p>
           </div>
+
           {!editing ? (
             <BtnPrimary onClick={() => setEditing(true)}>
               <IoPencilOutline size={15} /> Edit Profile
@@ -210,97 +205,44 @@ export default function ProfilePage() {
           )}
         </div>
 
-        {!editing && (
-          <div
-            className="lg:hidden mb-4 px-4 py-3 rounded-2xl flex items-center gap-3"
-            style={{
-              backgroundColor: "#eff6ff",
-              border: "1.5px solid #dbeafe",
-            }}
-          >
-            <div
-              className="relative shrink-0"
-              style={{ width: 44, height: 44 }}
-            >
-              <svg
-                width="44"
-                height="44"
-                style={{ transform: "rotate(-90deg)" }}
-              >
-                <circle
-                  cx="22"
-                  cy="22"
-                  r="18"
-                  fill="none"
-                  stroke="#dbeafe"
-                  strokeWidth="4"
-                />
-                <circle
-                  cx="22"
-                  cy="22"
-                  r="18"
-                  fill="none"
-                  stroke="#60a5fa"
-                  strokeWidth="4"
-                  strokeLinecap="round"
-                  strokeDasharray={`${2 * Math.PI * 18}`}
-                  strokeDashoffset={`${2 * Math.PI * 18 * (1 - strengthPercent / 100)}`}
-                />
-              </svg>
-              <span
-                className="absolute inset-0 flex items-center justify-center text-xs font-extrabold"
-                style={{ color: "#0f172a" }}
-              >
-                {strengthPercent}%
-              </span>
-            </div>
-
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold" style={{ color: "#0f172a" }}>
-                Profile Strength · {strengthPercent}%
-              </p>
-              {missingItems.length > 0 ? (
-                <p className="text-xs mt-0.5" style={{ color: "#3b82f6" }}>
-                  Complete all fields to increase profile strength
-                </p>
-              ) : (
-                <p className="text-xs mt-0.5" style={{ color: "#16a34a" }}>
-                  🎉 Profile complete!
-                </p>
-              )}
-            </div>
-          </div>
-        )}
-
         <div className="flex flex-col lg:flex-row gap-4 items-start">
           <div className="w-full lg:flex-1 min-w-0 flex flex-col gap-4">
-            <ProfileCard
-              profile={profile}
-              form={form}
-              setForm={setForm}
-              editing={editing}
-              about={about}
-              aboutForm={aboutForm}
-              setAboutForm={setAboutForm}
-              experiences={experiences}
-              setExperiences={setExperiences}
-              educations={educations}
-              setEducations={setEducations}
-              isGraduate={isGraduate}
-              editSection={editSection}
-              setEditSection={setEditSection}
-              expForm={expForm}
-              setExpForm={setExpForm}
-              eduForm={eduForm}
-              setEduForm={setEduForm}
-              skills={about.skills || []}
-              onAddSkill={handleAddSkill}
-              onDeleteSkill={handleDeleteSkill}
-              skillInput={skillInput}
-              setSkillInput={setSkillInput}
-              saveExpToFirebase={saveExpToFirebase}
-              saveEduToFirebase={saveEduToFirebase}
-            />
+
+            {!editing && (
+              <ProfileStrength
+                completedItems={completedItems}
+                isGraduate={isGraduate}
+                mobileOnly={true}
+                onImprove={() => setEditing(true)}
+              />
+            )}
+
+            {!editing ? (
+              <ProfileCard profile={profile} />
+            ) : (
+              <ProfileEdit
+                form={form}
+                setForm={setForm}
+                aboutForm={aboutForm}
+                setAboutForm={setAboutForm}
+                experiences={experiences}
+                educations={educations}
+                isGraduate={isGraduate}
+                editSection={editSection}
+                setEditSection={setEditSection}
+                expForm={expForm}
+                setExpForm={setExpForm}
+                eduForm={eduForm}
+                setEduForm={setEduForm}
+                skills={about.skills || []}
+                onAddSkill={handleAddSkill}
+                onDeleteSkill={handleDeleteSkill}
+                skillInput={skillInput}
+                setSkillInput={setSkillInput}
+                saveExpToFirebase={saveExpToFirebase}
+                saveEduToFirebase={saveEduToFirebase}
+              />
+            )}
 
             {!editing && (
               <TabsSection
@@ -315,15 +257,19 @@ export default function ProfilePage() {
 
             {!editing && (
               <div className="lg:hidden">
-                <ResumeSidebar />
+                <ResumeSidebar onUpload={(url) => setResumeURL(url)} />
               </div>
             )}
           </div>
 
           {!editing && (
             <div className="hidden lg:flex shrink-0 flex-col gap-4">
-              <ProfileStrength completedItems={COMPLETED_ITEMS} />
-              <ResumeSidebar />
+              <ProfileStrength
+                completedItems={completedItems}
+                isGraduate={isGraduate}
+                onImprove={() => setEditing(true)}
+              />
+              <ResumeSidebar onUpload={(url) => setResumeURL(url)} />
             </div>
           )}
         </div>
