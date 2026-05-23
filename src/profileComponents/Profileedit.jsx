@@ -525,12 +525,12 @@ export default function ProfileEdit({
       )}
 
       <div
-        className="rounded-2xl overflow-hidden"
+        className="rounded-2xl overflow-hidden mb-10"
         style={{
           border: "1.5px solid #f1f5f9",
           boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
         }}
-      >
+       >
         <div className="px-4 pt-5 pb-5 flex flex-col gap-3">
           <div className="flex items-start gap-4">
             <div className="relative shrink-0">
@@ -1080,7 +1080,7 @@ export default function ProfileEdit({
             </>
           )}
 
-          <SectionLabel title="Skills (what are you good at?)" />
+          <SectionLabel title="Skills (what are you good at? Atleast three!)" />
           <p
             className="text-[11px] font-semibold -mt-1"
             style={{ color: "#94a3b8" }}

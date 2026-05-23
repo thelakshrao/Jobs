@@ -15,11 +15,13 @@ import {
   BtnGhost,
 } from "@/profileComponents/shared";
 import OnboardingModal from "@/profileComponents/OnboardingModal";
+import SimpleProfile from "@/profileComponents/Simpleprofile";
 import ProfileCard from "@/profileComponents/ProfileCard";
 import ProfileEdit from "@/profileComponents/Profileedit";
 import ProfileStrength from "@/profileComponents/ProfileStrength";
 import TabsSection from "@/profileComponents/TabsSection";
 import ResumeSidebar from "@/profileComponents/ResumeSidebar";
+import SimpleProfileEdit from "@/profileComponents/Simpleprofileedit";
 import { computeCompletedItems } from "@/lib/Computecompleteditems";
 
 export default function ProfilePage() {
@@ -31,6 +33,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("About");
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showSimpleProfile, setShowSimpleProfile] = useState(false);
   const [about, setAbout] = useState(DEFAULT_ABOUT);
   const [aboutForm, setAboutForm] = useState(DEFAULT_ABOUT);
   const [experiences, setExperiences] = useState([]);
@@ -42,6 +45,7 @@ export default function ProfilePage() {
   const [uid, setUid] = useState(null);
   const [resumeURL, setResumeURL] = useState("");
 
+  const isSimple = profile.profileType === "simple";
   const isGraduate = about.educationLevel === "graduate";
 
   const completedItems = computeCompletedItems({
@@ -92,11 +96,22 @@ export default function ProfilePage() {
   };
 
   const handleOnboardingSelect = async (level) => {
+    if (level === "simple") {
+      setShowOnboarding(false);
+      setShowSimpleProfile(true);
+      return;
+    }
     const updated = { ...about, educationLevel: level, onboardingDone: true };
     setAbout(updated);
     setAboutForm(updated);
     setShowOnboarding(false);
     await saveToDb(uid, { about: updated });
+  };
+
+  const handleSimpleProfileComplete = (data) => {
+    setProfile((p) => ({ ...p, ...data }));
+    setForm((p) => ({ ...p, ...data }));
+    setShowSimpleProfile(false);
   };
 
   const handleSave = async () => {
@@ -167,6 +182,10 @@ export default function ProfilePage() {
 
   if (loading) return null;
 
+  if (showSimpleProfile) {
+    return <SimpleProfile onComplete={handleSimpleProfileComplete} />;
+  }
+
   return (
     <>
       {showOnboarding && <OnboardingModal onSelect={handleOnboardingSelect} />}
@@ -188,91 +207,121 @@ export default function ProfilePage() {
             </p>
           </div>
 
-          {!editing ? (
+          {!isSimple &&
+            (!editing ? (
+              <BtnPrimary onClick={() => setEditing(true)}>
+                <IoPencilOutline size={15} /> Edit Profile
+              </BtnPrimary>
+            ) : (
+              <div className="flex gap-2 flex-wrap">
+                <BtnPrimary onClick={handleSave} disabled={saving}>
+                  <IoCheckmarkOutline size={15} />
+                  {saving ? "Saving…" : "Save All"}
+                </BtnPrimary>
+                <BtnGhost onClick={handleCancel}>
+                  <IoCloseOutline size={15} /> Cancel
+                </BtnGhost>
+              </div>
+            ))}
+
+          {isSimple && !editing && (
             <BtnPrimary onClick={() => setEditing(true)}>
               <IoPencilOutline size={15} /> Edit Profile
             </BtnPrimary>
-          ) : (
-            <div className="flex gap-2 flex-wrap">
-              <BtnPrimary onClick={handleSave} disabled={saving}>
-                <IoCheckmarkOutline size={15} />
-                {saving ? "Saving…" : "Save All"}
-              </BtnPrimary>
-              <BtnGhost onClick={handleCancel}>
-                <IoCloseOutline size={15} /> Cancel
-              </BtnGhost>
-            </div>
           )}
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-4 items-start">
-          <div className="w-full lg:flex-1 min-w-0 flex flex-col gap-4">
+        {isSimple ? (
+          <div className="w-full">
+            <SimpleProfileEdit
+              profile={profile}
+              simpleEmployers={profile.simpleEmployers || []}
+              uid={uid}
+              editing={editing}
+              onUpdate={(data) => {
+                setProfile((p) => ({ ...p, ...data }));
+                setForm((p) => ({ ...p, ...data }));
+              }}
+              onSave={(data, updatedEmployers) => {
+                setProfile((p) => ({
+                  ...p,
+                  ...data,
+                  simpleEmployers: updatedEmployers,
+                }));
+                setEditing(false);
+              }}
+              onCancel={() => setEditing(false)}
+            />
+          </div>
+        ) : (
+          <div className="flex flex-col lg:flex-row gap-4 items-start">
+            <div className="w-full lg:flex-1 min-w-0 flex flex-col gap-4">
+              {!editing && (
+                <ProfileStrength
+                  completedItems={completedItems}
+                  isGraduate={isGraduate}
+                  mobileOnly={true}
+                  onImprove={() => setEditing(true)}
+                />
+              )}
+
+              {!editing ? (
+                <ProfileCard profile={profile} />
+              ) : (
+                <ProfileEdit
+                  form={form}
+                  setForm={setForm}
+                  aboutForm={aboutForm}
+                  setAboutForm={setAboutForm}
+                  experiences={experiences}
+                  educations={educations}
+                  isGraduate={isGraduate}
+                  editSection={editSection}
+                  setEditSection={setEditSection}
+                  expForm={expForm}
+                  setExpForm={setExpForm}
+                  eduForm={eduForm}
+                  setEduForm={setEduForm}
+                  skills={about.skills || []}
+                  onAddSkill={handleAddSkill}
+                  onDeleteSkill={handleDeleteSkill}
+                  skillInput={skillInput}
+                  setSkillInput={setSkillInput}
+                  saveExpToFirebase={saveExpToFirebase}
+                  saveEduToFirebase={saveEduToFirebase}
+                />
+              )}
+
+              {!editing && (
+                <TabsSection
+                  about={about}
+                  experiences={experiences}
+                  educations={educations}
+                  isGraduate={isGraduate}
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                />
+              )}
+
+              {!editing && (
+                <div className="lg:hidden">
+                  <ResumeSidebar onUpload={(url) => setResumeURL(url)} />
+                </div>
+              )}
+            </div>
 
             {!editing && (
-              <ProfileStrength
-                completedItems={completedItems}
-                isGraduate={isGraduate}
-                mobileOnly={true}
-                onImprove={() => setEditing(true)}
-              />
-            )}
-
-            {!editing ? (
-              <ProfileCard profile={profile} />
-            ) : (
-              <ProfileEdit
-                form={form}
-                setForm={setForm}
-                aboutForm={aboutForm}
-                setAboutForm={setAboutForm}
-                experiences={experiences}
-                educations={educations}
-                isGraduate={isGraduate}
-                editSection={editSection}
-                setEditSection={setEditSection}
-                expForm={expForm}
-                setExpForm={setExpForm}
-                eduForm={eduForm}
-                setEduForm={setEduForm}
-                skills={about.skills || []}
-                onAddSkill={handleAddSkill}
-                onDeleteSkill={handleDeleteSkill}
-                skillInput={skillInput}
-                setSkillInput={setSkillInput}
-                saveExpToFirebase={saveExpToFirebase}
-                saveEduToFirebase={saveEduToFirebase}
-              />
-            )}
-
-            {!editing && (
-              <TabsSection
-                about={about}
-                experiences={experiences}
-                educations={educations}
-                isGraduate={isGraduate}
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-              />
-            )}
-
-            {!editing && (
-              <div className="lg:hidden">
+              <div className="hidden lg:flex shrink-0 flex-col gap-4">
+                <ProfileStrength
+                  completedItems={completedItems}
+                  isGraduate={isGraduate}
+                  onImprove={() => setEditing(true)}
+                />
                 <ResumeSidebar onUpload={(url) => setResumeURL(url)} />
               </div>
             )}
           </div>
-
-          {!editing && (
-            <div className="hidden lg:flex shrink-0 flex-col gap-4">
-              <ProfileStrength
-                completedItems={completedItems}
-                isGraduate={isGraduate}
-                onImprove={() => setEditing(true)}
-              />
-              <ResumeSidebar onUpload={(url) => setResumeURL(url)} />
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </>
   );
