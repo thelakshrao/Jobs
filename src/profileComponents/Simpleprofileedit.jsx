@@ -61,7 +61,6 @@ const SALARY_OPTIONS = [
   "Open to discuss",
 ];
 
-// ── Shared small components ────────────────────────────────────────────────
 
 function QLabel({ children }) {
   return (
@@ -214,7 +213,6 @@ function EmployerForm({ value, onChange, onSave, onCancel }) {
   );
 }
 
-// ── VIEW card — all Q&A visible, light blue accents only ──────────────────
 
 function QARow({ question, answer, icon }) {
   if (!answer) return null;
@@ -269,12 +267,10 @@ function SimpleProfileViewCard({
         boxShadow: "0 4px 24px rgba(96,165,250,0.1)",
       }}
     >
-      {/* ── Hero: photo + name + contact ── */}
       <div
         className="flex flex-col sm:flex-row gap-0"
         style={{ backgroundColor: BLUE_BG }}
       >
-        {/* Photo */}
         <div className="flex items-center justify-center p-6 sm:p-8 shrink-0">
           <div className="relative">
             {profile.photoURL ? (
@@ -350,7 +346,6 @@ function SimpleProfileViewCard({
           </div>
         </div>
 
-        {/* Name + role + contact */}
         <div className="flex flex-col justify-center px-6 py-6 flex-1 min-w-0">
           <h1
             className="text-2xl sm:text-3xl font-black leading-tight mb-1"
@@ -404,7 +399,6 @@ function SimpleProfileViewCard({
         </div>
       </div>
 
-      {/* ── All Q&A answers ── */}
       <div
         className="px-6 py-2"
         style={{ backgroundColor: "#fff", borderTop: "1.5px solid #dbeafe" }}
@@ -444,7 +438,6 @@ function SimpleProfileViewCard({
         </div>
       </div>
 
-      {/* ── Past Employers ── */}
       <div
         className="px-6 pb-6"
         style={{ backgroundColor: "#fff", borderTop: "1.5px solid #dbeafe" }}
@@ -523,7 +516,6 @@ function SimpleProfileViewCard({
   );
 }
 
-// ── EDIT form ─────────────────────────────────────────────────────────────
 
 function SimpleProfileEditForm({ profile, employers, onSave, onCancel }) {
   const [photoURL, setPhotoURL] = useState(profile.photoURL || "");
@@ -589,7 +581,6 @@ function SimpleProfileEditForm({ profile, employers, onSave, onCancel }) {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Photo */}
       <div
         className="rounded-3xl p-5"
         style={{ backgroundColor: "#f8fafc", border: "1.5px solid #e2e8f0" }}
@@ -670,7 +661,6 @@ function SimpleProfileEditForm({ profile, employers, onSave, onCancel }) {
         </div>
       </div>
 
-      {/* Basic info */}
       <div
         className="rounded-3xl p-5 flex flex-col gap-4"
         style={{ backgroundColor: "#f8fafc", border: "1.5px solid #e2e8f0" }}
@@ -702,7 +692,6 @@ function SimpleProfileEditForm({ profile, employers, onSave, onCancel }) {
         />
       </div>
 
-      {/* Education */}
       <div
         className="rounded-3xl p-5"
         style={{ backgroundColor: "#f8fafc", border: "1.5px solid #e2e8f0" }}
@@ -715,7 +704,6 @@ function SimpleProfileEditForm({ profile, employers, onSave, onCancel }) {
         />
       </div>
 
-      {/* Experience */}
       <div
         className="rounded-3xl p-5"
         style={{ backgroundColor: "#f8fafc", border: "1.5px solid #e2e8f0" }}
@@ -728,7 +716,6 @@ function SimpleProfileEditForm({ profile, employers, onSave, onCancel }) {
         />
       </div>
 
-      {/* Salary */}
       <div
         className="rounded-3xl p-5"
         style={{ backgroundColor: "#f8fafc", border: "1.5px solid #e2e8f0" }}
@@ -741,7 +728,6 @@ function SimpleProfileEditForm({ profile, employers, onSave, onCancel }) {
         />
       </div>
 
-      {/* Past employers */}
       <div
         className="rounded-3xl p-5 flex flex-col gap-3"
         style={{ backgroundColor: "#f8fafc", border: "1.5px solid #e2e8f0" }}
@@ -830,7 +816,6 @@ function SimpleProfileEditForm({ profile, employers, onSave, onCancel }) {
         </div>
       </div>
 
-      {/* Bio */}
       <div
         className="rounded-3xl p-5"
         style={{ backgroundColor: "#f8fafc", border: "1.5px solid #e2e8f0" }}
@@ -852,7 +837,6 @@ function SimpleProfileEditForm({ profile, employers, onSave, onCancel }) {
         />
       </div>
 
-      {/* Buttons */}
       <div className="flex gap-3 pb-4">
         <button
           onClick={handleSave}
@@ -875,7 +859,6 @@ function SimpleProfileEditForm({ profile, employers, onSave, onCancel }) {
   );
 }
 
-// ── Main export ───────────────────────────────────────────────────────────
 
 export default function SimpleProfileEdit({
   profile,
