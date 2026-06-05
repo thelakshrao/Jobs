@@ -251,7 +251,7 @@ export default function DashNavbar() {
         </div>
         <div className="flex justify-end px-4 pb-2">
           <Link
-            href="/dashboard/post-job"
+            href="/employer"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white"
             style={{ backgroundColor: "#e61212" }}
           >

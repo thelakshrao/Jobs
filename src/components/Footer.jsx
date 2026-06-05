@@ -18,7 +18,7 @@ const Footer = () => {
                 src={logo2}
                 alt="Jobs Abroad"
                 height={36}
-                className="h-8 sm:h-20 w-auto"
+                className="h-15 sm:h-20 w-auto"
               />
             </Link>
             <p className="text-sm leading-relaxed text-white/80 max-w-xs">

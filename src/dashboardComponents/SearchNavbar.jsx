@@ -219,7 +219,7 @@ export default function SearchNavbar() {
             }}
           />
           <Link
-            href="/dashboard/post-job"
+            href="/employer"
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all"
             style={{ color: "#0f172a", whiteSpace: "nowrap" }}
             onMouseEnter={(e) => {
