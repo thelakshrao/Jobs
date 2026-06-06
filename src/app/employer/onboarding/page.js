@@ -1,7 +1,6 @@
-'use client';
-import dynamic from 'next/dynamic';
+"use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
@@ -185,7 +184,7 @@ function PhoneInput({ value, onChange, dialCode, onDialChange }) {
   );
 }
 
-export default function EmployerOnboarding() {
+function EmployerOnboardingInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isSwitchMode = searchParams.get("mode") === "switch";
@@ -547,5 +546,19 @@ export default function EmployerOnboarding() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function EmployerOnboarding() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-white">
+          <div className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <EmployerOnboardingInner />
+    </Suspense>
   );
 }
