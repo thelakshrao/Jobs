@@ -61,7 +61,7 @@ function CloseIcon() {
   );
 }
 
-export default function Navbar() {
+export default function EmpNavbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const router = useRouter();
 
@@ -75,7 +75,33 @@ export default function Navbar() {
   const handleProfileClick = async () => {
     const user = auth.currentUser;
     if (!user) {
-      router.push("/login");
+      router.push("/employer/onboarding");
+      return;
+    }
+    const empLoggedOut = sessionStorage.getItem("empLoggedOut");
+    if (empLoggedOut === "true") {
+      router.push("/employer/onboarding?mode=switch");
+      return;
+    }
+    try {
+      const empDoc = await getDoc(doc(db, "employers", user.uid));
+      router.push(
+        empDoc.exists() ? "/employer/dashboard" : "/employer/onboarding",
+      );
+    } catch (error) {
+      console.error("Firestore error:", error.message);
+    }
+  };
+
+  const handleDashboardClick = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      router.push("/employer/onboarding");
+      return;
+    }
+    const empLoggedOut = sessionStorage.getItem("empLoggedOut");
+    if (empLoggedOut === "true") {
+      router.push("/employer/onboarding?mode=switch");
       return;
     }
     try {
@@ -107,12 +133,12 @@ export default function Navbar() {
             </a>
           </li>
           <li>
-            <a
-              href="/employer/dashboard"
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[13.5px] font-medium text-white hover:bg-white/10 transition-all duration-150"
+            <button
+              onClick={handleDashboardClick}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[13.5px] font-medium text-white hover:bg-white/10 transition-all duration-150 bg-transparent border-none cursor-pointer"
             >
               Dashboard
-            </a>
+            </button>
           </li>
           <li>
             <button className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[13.5px] font-medium text-white bg-transparent border-none cursor-pointer hover:bg-white/10 transition-all duration-150">
@@ -170,13 +196,15 @@ export default function Navbar() {
         </div>
 
         <nav className="flex flex-col gap-1 px-3 py-4 flex-1 overflow-y-auto">
-          <a
-            href="/employer/dashboard"
-            onClick={() => setMobileOpen(false)}
-            className="flex items-center gap-2.5 px-3.5 py-3 rounded-xl text-sm font-medium text-white no-underline hover:bg-white/10 transition-colors"
+          <button
+            onClick={() => {
+              setMobileOpen(false);
+              handleDashboardClick();
+            }}
+            className="flex items-center gap-2.5 px-3.5 py-3 rounded-xl text-sm font-medium text-white bg-transparent border-none cursor-pointer hover:bg-white/10 transition-colors text-left"
           >
             Dashboard
-          </a>
+          </button>
           <button className="flex items-center gap-2.5 px-3.5 py-3 rounded-xl text-sm font-medium text-white bg-transparent border-none cursor-pointer hover:bg-white/10 transition-colors">
             Help? <ChevronIcon />
           </button>
@@ -204,6 +232,7 @@ export default function Navbar() {
               My Account
             </span>
           </div>
+
           <a
             href="#"
             onClick={() => setMobileOpen(false)}

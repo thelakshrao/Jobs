@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
+import EmpNavbar from "@/employerComponets/EmpNavbar";
 
 const COUNTRIES = [
   { code: "AF", dial: "+93", flag: "🇦🇫", name: "Afghanistan" },
@@ -93,7 +94,7 @@ const COUNTRIES = [
   { code: "ZW", dial: "+263", flag: "🇿🇼", name: "Zimbabwe" },
 ];
 
-function PhoneInput({ value, onChange, dialCode, onDialChange, prefilled }) {
+function PhoneInput({ value, onChange, dialCode, onDialChange }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const ref = useRef(null);
@@ -184,7 +185,10 @@ function PhoneInput({ value, onChange, dialCode, onDialChange, prefilled }) {
 }
 
 export default function EmployerOnboarding() {
-  const router = useRouter(); // ← added
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const isSwitchMode = searchParams.get("mode") === "switch";
+
   const [loading, setLoading] = useState(true);
   const [prefilled, setPrefilled] = useState(false);
   const [form, setForm] = useState({
@@ -204,7 +208,31 @@ export default function EmployerOnboarding() {
         setLoading(false);
         return;
       }
+
       try {
+        const empDoc = await getDoc(doc(db, "employers", currentUser.uid));
+
+        if (empDoc.exists() && !isSwitchMode) {
+          router.replace("/employer/dashboard");
+          return;
+        }
+
+        if (empDoc.exists() && isSwitchMode) {
+          const data = empDoc.data();
+          setForm((f) => ({
+            ...f,
+            company: data.company || "",
+            firstName: data.firstName || "",
+            lastName: data.lastName || "",
+            email: data.email || currentUser.email || "",
+            phone: data.phone || "",
+            dialCode: data.dialCode || "+91",
+          }));
+          setPrefilled(true);
+          setLoading(false);
+          return;
+        }
+
         const userDoc = await getDoc(doc(db, "users", currentUser.uid));
         if (userDoc.exists()) {
           const data = userDoc.data();
@@ -228,22 +256,20 @@ export default function EmployerOnboarding() {
           setPrefilled(false);
         }
       } catch (err) {
-        console.error("Error fetching applicant data from Firestore:", err);
+        console.error("Error fetching data from Firestore:", err);
       } finally {
         setLoading(false);
       }
     });
     return () => unsubscribe();
-  }, []);
+  }, [isSwitchMode]);
 
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const user = auth.currentUser;
     if (!user) return;
-
     try {
       await setDoc(doc(db, "employers", user.uid), {
         company: form.company,
@@ -257,7 +283,7 @@ export default function EmployerOnboarding() {
         createdAt: new Date().toISOString(),
         uid: user.uid,
       });
-
+      sessionStorage.removeItem("empLoggedOut");
       router.replace("/employer/dashboard");
     } catch (err) {
       console.error("Error saving employer data:", err);
@@ -273,246 +299,252 @@ export default function EmployerOnboarding() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center py-14 px-4 mt-20">
-      <div className="w-full max-w-lg">
-        <h1 className="text-3xl font-bold text-slate-900 mb-1">
-          Create an employer account
-        </h1>
+    <>
+      <EmpNavbar />
+      <div className="min-h-screen bg-white flex flex-col items-center py-14 px-4 mt-20">
+        <div className="w-full max-w-lg">
+          <h1 className="text-3xl font-bold text-slate-900 mb-1">
+            {isSwitchMode
+              ? "Switch employer account"
+              : "Create an employer account"}
+          </h1>
 
-        {prefilled && (
-          <div className="mt-3 mb-1 flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+          {prefilled && (
+            <div className="mt-3 mb-1 flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              {isSwitchMode
+                ? "Your existing employer details are shown below. Update and continue."
+                : "Your name, email & phone were imported from your applicant profile."}
+            </div>
+          )}
+
+          <a
+            href="/jobs"
+            className="inline-flex items-center gap-1.5 mt-4 mb-7 text-blue-400 text-sm font-semibold hover:underline group"
+          >
+            I'm looking for a job
             <svg
-              width="15"
-              height="15"
+              width="14"
+              height="14"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="2.5"
+              className="group-hover:translate-x-0.5 transition-transform"
             >
-              <polyline points="20 6 9 17 4 12" />
+              <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
-            Your name, email &amp; phone were imported from your applicant
-            profile.
-          </div>
-        )}
+          </a>
 
-        <a
-          href="/jobs"
-          className="inline-flex items-center gap-1.5 mt-4 mb-7 text-blue-600 text-sm font-semibold hover:underline group"
-        >
-          I'm looking for a job
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            className="group-hover:translate-x-0.5 transition-transform"
-          >
-            <path d="M5 12h14M12 5l7 7-7 7" />
-          </svg>
-        </a>
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-              Company name <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={form.company}
-              onChange={(e) => set("company")(e.target.value)}
-              required
-              className="w-full px-4 py-3 rounded-lg border border-slate-300 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all placeholder-slate-400"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-                First name <span className="text-red-500">*</span>
+                Company name <span className="text-red-500">*</span>
               </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={form.firstName}
-                  onChange={(e) => set("firstName")(e.target.value)}
-                  required
-                  readOnly={prefilled}
-                  className={`w-full px-4 py-3 rounded-lg border text-sm text-slate-800 outline-none transition-all
-                    ${prefilled ? "bg-slate-50 border-slate-200 text-slate-600 cursor-default" : "border-slate-300 focus:ring-2 focus:ring-blue-400 focus:border-blue-400"}`}
-                />
-                {prefilled && (
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500">
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                    >
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  </span>
-                )}
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-                Last name <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={form.lastName}
-                  onChange={(e) => set("lastName")(e.target.value)}
-                  required
-                  readOnly={prefilled}
-                  className={`w-full px-4 py-3 rounded-lg border text-sm text-slate-800 outline-none transition-all
-                    ${prefilled ? "bg-slate-50 border-slate-200 text-slate-600 cursor-default" : "border-slate-300 focus:ring-2 focus:ring-blue-400 focus:border-blue-400"}`}
-                />
-                {prefilled && (
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500">
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                    >
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-              Work email <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
               <input
-                type="email"
-                value={form.email}
-                onChange={(e) => set("email")(e.target.value)}
+                type="text"
+                value={form.company}
+                onChange={(e) => set("company")(e.target.value)}
                 required
-                readOnly={prefilled}
-                className={`w-full px-4 py-3 rounded-lg border text-sm text-slate-800 outline-none transition-all
-                  ${prefilled ? "bg-slate-50 border-slate-200 text-slate-600 cursor-default" : "border-slate-300 focus:ring-2 focus:ring-blue-400 focus:border-blue-400"}`}
+                className="w-full px-4 py-3 rounded-lg border border-slate-300 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all placeholder-slate-400"
               />
-              {prefilled && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500">
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-800 mb-1.5">
+                  First name <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={form.firstName}
+                    onChange={(e) => set("firstName")(e.target.value)}
+                    required
+                    readOnly={prefilled && !isSwitchMode}
+                    className={`w-full px-4 py-3 rounded-lg border text-sm text-slate-800 outline-none transition-all
+                      ${prefilled && !isSwitchMode ? "bg-slate-50 border-slate-200 text-slate-600 cursor-default" : "border-slate-300 focus:ring-2 focus:ring-blue-400 focus:border-blue-400"}`}
+                  />
+                  {prefilled && !isSwitchMode && (
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500">
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-800 mb-1.5">
+                  Last name <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={form.lastName}
+                    onChange={(e) => set("lastName")(e.target.value)}
+                    required
+                    readOnly={prefilled && !isSwitchMode}
+                    className={`w-full px-4 py-3 rounded-lg border text-sm text-slate-800 outline-none transition-all
+                      ${prefilled && !isSwitchMode ? "bg-slate-50 border-slate-200 text-slate-600 cursor-default" : "border-slate-300 focus:ring-2 focus:ring-blue-400 focus:border-blue-400"}`}
+                  />
+                  {prefilled && !isSwitchMode && (
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500">
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-800 mb-1.5">
+                Work email <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => set("email")(e.target.value)}
+                  required
+                  readOnly={prefilled && !isSwitchMode}
+                  className={`w-full px-4 py-3 rounded-lg border text-sm text-slate-800 outline-none transition-all
+                    ${prefilled && !isSwitchMode ? "bg-slate-50 border-slate-200 text-slate-600 cursor-default" : "border-slate-300 focus:ring-2 focus:ring-blue-400 focus:border-blue-400"}`}
+                />
+                {prefilled && !isSwitchMode && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500">
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                    >
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="relative">
+              <label className="block text-sm font-semibold text-slate-800 mb-1.5">
+                Phone number
+              </label>
+              <PhoneInput
+                value={form.phone}
+                onChange={set("phone")}
+                dialCode={form.dialCode}
+                onDialChange={set("dialCode")}
+              />
+              <p className="text-xs text-slate-400 mt-1.5">
+                For account management communication. Not visible to jobseekers.
+              </p>
+            </div>
+
+            <label className="flex items-start gap-3 cursor-pointer mt-1">
+              <div
+                onClick={() =>
+                  setForm((f) => ({ ...f, dataConsent: !f.dataConsent }))
+                }
+                className={`mt-0.5 w-5 h-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors cursor-pointer
+                  ${form.dataConsent ? "bg-blue-400 border-blue-400" : "border-slate-400 bg-white"}`}
+              >
+                {form.dataConsent && (
                   <svg
-                    width="14"
-                    height="14"
+                    width="11"
+                    height="11"
                     viewBox="0 0 24 24"
                     fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
+                    stroke="white"
+                    strokeWidth="3.5"
                   >
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="relative">
-            <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-              Phone number
+                )}
+              </div>
+              <span className="text-sm text-slate-600 leading-snug">
+                By clicking this box, you agree to receive relevant applicant
+                data from Jobs Abroad — including CVs, contact details, and
+                match alerts — directly to your registered email and phone
+                number.
+              </span>
             </label>
-            <PhoneInput
-              value={form.phone}
-              onChange={set("phone")}
-              dialCode={form.dialCode}
-              onDialChange={set("dialCode")}
-              prefilled={prefilled}
-            />
-            <p className="text-xs text-slate-400 mt-1.5">
-              For account management communication. Not visible to jobseekers.
-            </p>
-          </div>
 
-          <label className="flex items-start gap-3 cursor-pointer mt-1">
-            <div
-              onClick={() =>
-                setForm((f) => ({ ...f, dataConsent: !f.dataConsent }))
-              }
-              className={`mt-0.5 w-5 h-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors cursor-pointer
-                ${form.dataConsent ? "bg-blue-500 border-blue-500" : "border-slate-400 bg-white"}`}
+            <label className="flex items-start gap-3 cursor-pointer">
+              <div
+                onClick={() =>
+                  setForm((f) => ({ ...f, termsConsent: !f.termsConsent }))
+                }
+                className={`mt-0.5 w-5 h-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors cursor-pointer
+                  ${form.termsConsent ? "bg-blue-400 border-blue-400" : "border-slate-400 bg-white"}`}
+              >
+                {form.termsConsent && (
+                  <svg
+                    width="11"
+                    height="11"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="3.5"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                )}
+              </div>
+              <span className="text-sm text-slate-600 leading-snug">
+                I agree to the{" "}
+                <a href="#" className="text-blue-400 hover:underline">
+                  Terms of Service
+                </a>{" "}
+                and{" "}
+                <a href="#" className="text-blue-400 hover:underline">
+                  Privacy Policy
+                </a>
+              </span>
+            </label>
+
+            <button
+              type="submit"
+              disabled={!form.termsConsent}
+              className={`w-full py-3.5 rounded-lg text-white text-sm font-semibold transition-all mt-2
+                ${
+                  form.termsConsent
+                    ? "bg-blue-400 hover:bg-blue-300 active:bg-blue-400 shadow-sm hover:shadow-md"
+                    : "bg-blue-200 text-blue-300 cursor-not-allowed"
+                }`}
             >
-              {form.dataConsent && (
-                <svg
-                  width="11"
-                  height="11"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="white"
-                  strokeWidth="3.5"
-                >
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              )}
-            </div>
-            <span className="text-sm text-slate-600 leading-snug">
-              By clicking this box, you agree to receive relevant applicant data
-              from Jobs Abroad — including CVs, contact details, and match
-              alerts — directly to your registered email and phone number.
-            </span>
-          </label>
-
-          <label className="flex items-start gap-3 cursor-pointer">
-            <div
-              onClick={() =>
-                setForm((f) => ({ ...f, termsConsent: !f.termsConsent }))
-              }
-              className={`mt-0.5 w-5 h-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors cursor-pointer
-                ${form.termsConsent ? "bg-blue-500 border-blue-500" : "border-slate-400 bg-white"}`}
-            >
-              {form.termsConsent && (
-                <svg
-                  width="11"
-                  height="11"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="white"
-                  strokeWidth="3.5"
-                >
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              )}
-            </div>
-            <span className="text-sm text-slate-600 leading-snug">
-              I agree to the{" "}
-              <a href="#" className="text-blue-600 hover:underline">
-                Terms of Service
-              </a>{" "}
-              and{" "}
-              <a href="#" className="text-blue-600 hover:underline">
-                Privacy Policy
-              </a>
-            </span>
-          </label>
-
-          <button
-            type="submit"
-            disabled={!form.termsConsent}
-            className={`w-full py-3.5 rounded-lg text-white text-sm font-semibold transition-all mt-2
-              ${
-                form.termsConsent
-                  ? "bg-blue-500 hover:bg-blue-600 active:bg-blue-700 shadow-sm hover:shadow-md"
-                  : "bg-blue-200 text-blue-300 cursor-not-allowed"
-              }`}
-          >
-            Continue
-          </button>
-        </form>
+              Continue
+            </button>
+          </form>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
