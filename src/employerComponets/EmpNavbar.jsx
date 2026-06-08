@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { db, auth } from "@/lib/firebase";
@@ -116,78 +115,85 @@ export default function EmpNavbar() {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 h-15 flex items-center px-7 bg-black/70 backdrop-blur-md border-b border-white/10">
-        <a href="/employer" className="flex items-center shrink-0">
-          <img src={LogoEmp.src} alt="Logo" className="h-10 w-auto block" />
-        </a>
+      <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 md:px-15 pt-4 pb-0 pointer-events-none">
+        <div className="pointer-events-auto">
+          <a href="/employer" className="flex items-center">
+            <img
+              src={LogoEmp.src}
+              alt="Logo"
+              className="h-8 w-auto block invert"
+            />
+          </a>
+        </div>
 
-        <div className="flex-1" />
+        <nav className="pointer-events-auto hidden md:flex items-center gap-1 px-3 py-2 bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.10)] border border-black/6">
+          <a
+            href="/employer"
+            className="px-4 py-1.5 rounded-lg text-[13.5px] font-semibold text-white bg-[#1a1a1a] no-underline"
+          >
+            Home
+          </a>
+          <a
+            href="/employer/dashboard/create-job"
+            className="px-4 py-1.5 rounded-lg text-[13.5px] font-medium text-[#1a1a1a] hover:bg-black/6 transition-colors no-underline"
+          >
+            Post a Job
+          </a>
+          <button
+            onClick={handleDashboardClick}
+            className="px-4 py-1.5 rounded-lg text-[13.5px] font-medium text-[#1a1a1a] hover:bg-black/6 transition-colors bg-transparent border-none cursor-pointer"
+          >
+            Dashboard
+          </button>
+          <button className="inline-flex items-center gap-1 px-4 py-1.5 rounded-lg text-[13.5px] font-medium text-[#1a1a1a] hover:bg-black/6 transition-colors bg-transparent border-none cursor-pointer">
+            Help? 
+          </button>
+        </nav>
 
-        <ul className="hidden md:flex items-center gap-5 list-none">
-          <li>
-            <a
-              href="#"
-              className="inline-flex items-center gap-1.5 px-5 py-2 rounded-full text-[13.5px] font-semibold bg-white text-black hover:bg-white/90 transition-all duration-150"
-            >
-              + Post a Job
-            </a>
-          </li>
-          <li>
-            <button
-              onClick={handleDashboardClick}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[13.5px] font-medium text-white hover:bg-white/10 transition-all duration-150 bg-transparent border-none cursor-pointer"
-            >
-              Dashboard
-            </button>
-          </li>
-          <li>
-            <button className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[13.5px] font-medium text-white bg-transparent border-none cursor-pointer hover:bg-white/10 transition-all duration-150">
-              Help? <ChevronIcon />
-            </button>
-          </li>
-        </ul>
-
-        <div className="hidden md:block w-px h-5 mx-5 shrink-0 bg-white/20" />
+        <div className="pointer-events-auto hidden md:flex items-center gap-2">
+          <button
+            aria-label="Notifications"
+            className="relative inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/90 backdrop-blur-md border border-black/6 shadow-[0_2px_12px_rgba(0,0,0,0.08)] cursor-pointer text-[#444] hover:bg-white transition-colors"
+          >
+            <Bell size={16} />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 border-[1.5px] border-white" />
+          </button>
+          <button
+            title="Profile"
+            onClick={handleProfileClick}
+            className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/90 backdrop-blur-md border border-black/6 shadow-[0_2px_12px_rgba(0,0,0,0.08)] text-[#444] cursor-pointer hover:bg-white hover:scale-105 transition-all"
+          >
+            <User size={15} strokeWidth={2.5} />
+          </button>
+        </div>
 
         <button
-          aria-label="Notifications"
-          className="hidden md:inline-flex relative items-center justify-center w-9 h-9 rounded-full border-none bg-transparent cursor-pointer mr-3 text-white hover:bg-white/10 transition-colors"
-        >
-          <Bell size={18} />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 border-[1.5px] border-black" />
-        </button>
-
-        <button
-          title="Profile"
-          onClick={handleProfileClick}
-          className="hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-white text-black cursor-pointer shrink-0 hover:scale-105 transition-all"
-        >
-          <User size={16} strokeWidth={2.5} />
-        </button>
-
-        <button
-          className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-lg bg-transparent border-none cursor-pointer text-white hover:bg-white/10 transition-colors"
+          className="pointer-events-auto md:hidden inline-flex items-center justify-center w-9 h-9 rounded-xl bg-white/90 backdrop-blur-md border border-black/6 shadow-sm cursor-pointer text-[#1a1a1a] hover:bg-white transition-colors"
           onClick={() => setMobileOpen((o) => !o)}
           aria-label="Menu"
         >
           {mobileOpen ? <CloseIcon /> : <MenuIcon />}
         </button>
-      </nav>
+      </div>
 
       <div
-        className={`md:hidden fixed inset-0 z-40 bg-black/60 transition-opacity duration-300 ${mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+        className={`md:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
         onClick={() => setMobileOpen(false)}
       />
 
       <div
-        className={`md:hidden fixed top-0 left-0 bottom-0 z-50 w-72 flex flex-col bg-black/90 backdrop-blur-md border-r border-white/10 transition-transform duration-300 ease-in-out ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
+        className={`md:hidden fixed top-0 left-0 bottom-0 z-50 w-[60vw] max-w-xs flex flex-col bg-white shadow-2xl transition-transform duration-300 ease-in-out ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
-        <div className="flex items-center justify-between px-5 h-15 border-b border-white/10 shrink-0">
+        <div className="flex items-center justify-between px-5 h-16 border-b border-black/[0.07] shrink-0">
           <a href="/employer" className="flex items-center">
-            <img src={LogoEmp.src} alt="Logo" className="h-9 w-auto block" />
+            <img
+              src={LogoEmp.src}
+              alt="Logo"
+              className="h-7 w-auto block invert"
+            />
           </a>
           <button
-            className="inline-flex items-center justify-center w-9 h-9 rounded-lg text-white hover:bg-white/10 bg-transparent border-none cursor-pointer transition-colors"
+            className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-[#1a1a1a] hover:bg-black/6 bg-transparent border-none cursor-pointer transition-colors"
             onClick={() => setMobileOpen(false)}
             aria-label="Close menu"
           >
@@ -195,48 +201,60 @@ export default function EmpNavbar() {
           </button>
         </div>
 
-        <nav className="flex flex-col gap-1 px-3 py-4 flex-1 overflow-y-auto">
+        <nav className="flex flex-col px-3 py-5 flex-1 overflow-y-auto gap-0.5">
+          <a
+            href="/employer"
+            className="flex items-center px-4 py-3.5 rounded-xl text-[15px] font-semibold text-white bg-[#1a1a1a] no-underline"
+          >
+            Home
+          </a>
+          <a
+           href="/employer/dashboard/create-job"
+            onClick={() => setMobileOpen(false)}
+            className="flex items-center px-4 py-3.5 rounded-xl text-[15px] font-medium text-[#1a1a1a] hover:bg-black/5 transition-colors no-underline"
+          >
+            Post a Job
+          </a>
           <button
             onClick={() => {
               setMobileOpen(false);
               handleDashboardClick();
             }}
-            className="flex items-center gap-2.5 px-3.5 py-3 rounded-xl text-sm font-medium text-white bg-transparent border-none cursor-pointer hover:bg-white/10 transition-colors text-left"
+            className="flex items-center px-4 py-3.5 rounded-xl text-[15px] font-medium text-[#1a1a1a] hover:bg-black/5 transition-colors bg-transparent border-none cursor-pointer text-left w-full"
           >
             Dashboard
           </button>
-          <button className="flex items-center gap-2.5 px-3.5 py-3 rounded-xl text-sm font-medium text-white bg-transparent border-none cursor-pointer hover:bg-white/10 transition-colors">
-            Help? <ChevronIcon />
+          <button className="flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-medium text-[#1a1a1a] hover:bg-black/5 transition-colors bg-transparent border-none cursor-pointer w-full text-left">
+            Help? 
           </button>
         </nav>
 
-        <div className="px-4 pb-6 pt-3 border-t border-white/10 shrink-0 flex flex-col gap-4">
-          <div className="flex items-center gap-3">
+        <div className="px-4 pb-8 pt-4 border-t border-black/[0.07] shrink-0 flex flex-col gap-3">
+          <div className="flex items-center gap-3 mb-1">
             <button
               aria-label="Notifications"
-              className="relative inline-flex items-center justify-center w-9 h-9 rounded-full text-white border border-white/20 bg-transparent cursor-pointer hover:bg-white/10 transition-colors"
+              className="relative inline-flex items-center justify-center w-10 h-10 rounded-full text-[#444] border border-black/10 bg-transparent cursor-pointer hover:bg-black/5 transition-colors"
             >
-              <Bell size={18} />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 border-[1.5px] border-black" />
+              <Bell size={17} />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 border-[1.5px] border-white" />
             </button>
             <button
               onClick={() => {
                 setMobileOpen(false);
                 handleProfileClick();
               }}
-              className="flex items-center justify-center w-9 h-9 rounded-full bg-white text-black cursor-pointer hover:scale-105 transition-transform"
+              className="flex items-center justify-center w-10 h-10 rounded-full bg-[#1a1a1a] text-white cursor-pointer hover:scale-105 transition-transform border-none"
             >
               <User size={16} strokeWidth={2.5} />
             </button>
-            <span className="text-sm font-medium text-white/70 ml-1">
+            <span className="text-[14px] font-medium text-[#555]">
               My Account
             </span>
           </div>
-
           <a
-            href="#"
+            href="/employer/dashboard/create-job"
             onClick={() => setMobileOpen(false)}
-            className="flex items-center justify-center px-3 py-3 rounded-full bg-white text-black text-sm font-semibold no-underline hover:bg-white/90 transition-colors"
+            className="flex items-center justify-center px-3 py-3.5 rounded-xl bg-[#1a1a1a] text-white text-[14px] font-semibold no-underline hover:bg-[#333] transition-colors"
           >
             + Post a Job
           </a>

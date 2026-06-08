@@ -22,13 +22,23 @@ import {
 
 const navItems = [
   { href: "/employer/dashboard", icon: Briefcase, label: "Posted Jobs" },
-  { href: "/employer/dashboard/create-job", icon: PlusCircle, label: "Create New Job" },
+  {
+    href: "/employer/dashboard/create-job",
+    icon: PlusCircle,
+    label: "Create New Job",
+  },
   { href: "/employer/dashboard/applicants", icon: Users, label: "Applicants" },
-  { href: "/employer/dashboard/shortlisted", icon: BookmarkCheck, label: "Shortlisted" },
-  { href: "/employer/dashboard/messages", icon: MessageSquare, label: "Messages" },
+  {
+    href: "/employer/dashboard/shortlisted",
+    icon: BookmarkCheck,
+    label: "Shortlisted",
+  },
+  {
+    href: "/employer/dashboard/messages",
+    icon: MessageSquare,
+    label: "Messages",
+  },
 ];
-
-const BORDER = "1.5px solid #cbd5e1";
 
 export default function EmployerSidebar() {
   const pathname = usePathname();
@@ -64,7 +74,9 @@ export default function EmployerSidebar() {
     setSaving(true);
     try {
       const user = auth.currentUser;
-      await updateDoc(doc(db, "employers", user.uid), { company: newCompany.trim() });
+      await updateDoc(doc(db, "employers", user.uid), {
+        company: newCompany.trim(),
+      });
       setEmployerData((prev) => ({ ...prev, company: newCompany.trim() }));
       setEditingCompany(false);
     } catch (err) {
@@ -87,25 +99,33 @@ export default function EmployerSidebar() {
   const isActive = (href) =>
     href === "/employer/dashboard"
       ? pathname === "/employer/dashboard"
-      : pathname.startsWith(href);
+      : pathname === href ||
+        pathname.startsWith(href + "/") ||
+        pathname.startsWith(href + "?");
 
   const ProfileCard = () => (
-    <div className="px-4 py-4" style={{ borderBottom: BORDER }}>
+    <div className="px-4 py-4 border-b border-white/10">
       <div className="flex items-center gap-3 mb-3">
-        <div className="w-9 h-9 rounded-full bg-slate-900 flex items-center justify-center shrink-0">
+        <div className="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center shrink-0">
           <User size={16} strokeWidth={2.5} className="text-white" />
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-slate-900 truncate">
-            {employerData ? `${employerData.firstName} ${employerData.lastName}` : "Loading..."}
+          <p className="text-sm font-semibold text-white truncate">
+            {employerData
+              ? `${employerData.firstName} ${employerData.lastName}`
+              : "Loading..."}
           </p>
-          <p className="text-xs text-slate-400 truncate">{employerData?.email || ""}</p>
+          <p className="text-xs text-white/40 truncate">
+            {employerData?.email || ""}
+          </p>
         </div>
       </div>
-      <div className="bg-slate-50 rounded-xl px-3 py-2.5">
+      <div className="bg-white/8 rounded-xl px-3 py-2.5 border border-white/10">
         <div className="flex items-center gap-2 mb-1">
-          <Building2 size={13} className="text-slate-400 shrink-0" />
-          <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">Company</span>
+          <Building2 size={13} className="text-white/40 shrink-0" />
+          <span className="text-[11px] font-medium text-white/40 uppercase tracking-wide">
+            Company
+          </span>
         </div>
         {editingCompany ? (
           <div className="flex items-center gap-2 mt-1">
@@ -113,31 +133,34 @@ export default function EmployerSidebar() {
               value={newCompany}
               onChange={(e) => setNewCompany(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSaveCompany()}
-              className="flex-1 text-sm font-semibold text-slate-900 bg-white border border-blue-300 rounded-lg px-2 py-1 outline-none focus:ring-2 focus:ring-blue-200"
+              className="flex-1 text-sm font-semibold text-white bg-white/10 border border-white/30 rounded-lg px-2 py-1 outline-none focus:ring-2 focus:ring-white/20 placeholder:text-white/30"
               autoFocus
             />
             <button
               onClick={handleSaveCompany}
               disabled={saving}
-              className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors shrink-0"
+              className="flex items-center justify-center w-7 h-7 rounded-lg bg-white/20 text-white hover:bg-white/30 transition-colors shrink-0"
             >
               <Check size={13} />
             </button>
             <button
-              onClick={() => { setEditingCompany(false); setNewCompany(employerData?.company || ""); }}
-              className="flex items-center justify-center w-7 h-7 rounded-lg bg-slate-200 text-slate-600 hover:bg-slate-300 transition-colors shrink-0"
+              onClick={() => {
+                setEditingCompany(false);
+                setNewCompany(employerData?.company || "");
+              }}
+              className="flex items-center justify-center w-7 h-7 rounded-lg bg-white/10 text-white/60 hover:bg-white/20 transition-colors shrink-0"
             >
               <X size={13} />
             </button>
           </div>
         ) : (
           <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-semibold text-slate-900 truncate">
+            <span className="text-sm font-semibold text-white truncate">
               {employerData?.company || "—"}
             </span>
             <button
               onClick={() => setEditingCompany(true)}
-              className="flex items-center justify-center w-6 h-6 rounded-lg text-slate-400 hover:text-blue-500 hover:bg-blue-50 transition-colors shrink-0"
+              className="flex items-center justify-center w-6 h-6 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors shrink-0"
             >
               <Pencil size={12} />
             </button>
@@ -149,14 +172,8 @@ export default function EmployerSidebar() {
 
   return (
     <>
-      <aside
-        className="hidden md:flex fixed left-0 top-0 bottom-0 w-64 flex-col bg-white z-40"
-        style={{ borderRight: BORDER }}
-      >
-        <div
-          className="flex items-center px-6 h-14 shrink-0"
-          style={{ borderBottom: BORDER }}
-        >
+      <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-64 flex-col bg-[#0f0f0f] z-40 border-r border-white/10">
+        <div className="flex items-center px-6 h-14 shrink-0 border-b border-white/10">
           <a href="/employer">
             <img src={LogoEmp.src} alt="Logo" className="h-9 w-auto block" />
           </a>
@@ -164,13 +181,17 @@ export default function EmployerSidebar() {
 
         <ProfileCard />
 
-        <nav className="flex flex-col gap-1 px-3 py-4 flex-1 overflow-y-auto">
+        <nav className="flex flex-col gap-2 px-3 py-4 flex-1 overflow-y-auto">
           {navItems.map(({ href, icon: Icon, label }) => (
             <Link
               key={href}
               href={href}
               className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 no-underline
-                ${isActive(href) ? "bg-blue-50 text-blue-500" : "text-slate-800 hover:bg-slate-50 hover:text-slate-900"}`}
+                ${
+                  isActive(href)
+                    ? "bg-white text-[#0f0f0f]"
+                    : "text-white/60 hover:bg-white/10 hover:text-white"
+                }`}
             >
               <Icon size={18} className="shrink-0" />
               {label}
@@ -178,10 +199,10 @@ export default function EmployerSidebar() {
           ))}
         </nav>
 
-        <div className="px-3 pb-5 pt-3 shrink-0" style={{ borderTop: BORDER }}>
+        <div className="px-3 pb-5 pt-3 shrink-0 border-t border-white/10">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors"
+            className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
           >
             <LogOut size={18} className="shrink-0" />
             Logout
@@ -189,13 +210,10 @@ export default function EmployerSidebar() {
         </div>
       </aside>
 
-      <div
-        className="md:hidden fixed top-0 left-0 right-0 z-50 h-14 flex items-center px-4 bg-white"
-        style={{ borderBottom: BORDER }}
-      >
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 h-14 flex items-center px-4 bg-[#0f0f0f] border-b border-white/10">
         <button
           onClick={() => setMobileOpen(true)}
-          className="flex items-center justify-center w-9 h-9 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors mr-3"
+          className="flex items-center justify-center w-9 h-9 rounded-xl text-white/60 hover:bg-white/10 hover:text-white transition-colors mr-3"
           aria-label="Open menu"
         >
           <Menu size={22} />
@@ -207,34 +225,30 @@ export default function EmployerSidebar() {
         <button
           onClick={handleProfileClick}
           aria-label="Profile"
-          className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-900 text-white hover:scale-105 transition-transform"
+          className="flex items-center justify-center w-8 h-8 rounded-full bg-white text-[#0f0f0f] hover:scale-105 transition-transform"
         >
           <User size={15} strokeWidth={2.5} />
         </button>
       </div>
 
       <div
-        className={`md:hidden fixed inset-0 z-60 bg-black/50 transition-opacity duration-300
+        className={`md:hidden fixed inset-0 z-60 bg-black/60 transition-opacity duration-300
           ${mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
         onClick={() => setMobileOpen(false)}
       />
 
       <div
-        className={`md:hidden fixed top-0 left-0 bottom-0 z-70 w-72 flex flex-col bg-white
+        className={`md:hidden fixed top-0 left-0 bottom-0 z-70 w-72 flex flex-col bg-[#0f0f0f] border-r border-white/10
           transition-transform duration-300 ease-in-out
           ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
-        style={{ borderRight: BORDER }}
       >
-        <div
-          className="flex items-center justify-between px-5 h-14 shrink-0"
-          style={{ borderBottom: BORDER }}
-        >
+        <div className="flex items-center justify-between px-5 h-14 shrink-0 border-b border-white/10">
           <a href="/employer">
             <img src={LogoEmp.src} alt="Logo" className="h-8 w-auto block" />
           </a>
           <button
             onClick={() => setMobileOpen(false)}
-            className="flex items-center justify-center w-9 h-9 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors"
+            className="flex items-center justify-center w-9 h-9 rounded-xl text-white/60 hover:bg-white/10 hover:text-white transition-colors"
             aria-label="Close menu"
           >
             <X size={20} />
@@ -243,14 +257,18 @@ export default function EmployerSidebar() {
 
         <ProfileCard />
 
-        <nav className="flex flex-col gap-1 px-3 py-4 flex-1 overflow-y-auto">
+        <nav className="flex flex-col gap-2 px-3 py-4 flex-1 overflow-y-auto">
           {navItems.map(({ href, icon: Icon, label }) => (
             <Link
               key={href}
               href={href}
               onClick={() => setMobileOpen(false)}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-150 no-underline
-                ${isActive(href) ? "bg-blue-50 text-blue-500" : "text-slate-800 hover:bg-slate-50 hover:text-slate-900"}`}
+                ${
+                  isActive(href)
+                    ? "bg-white text-[#0f0f0f]"
+                    : "text-white/60 hover:bg-white/10 hover:text-white"
+                }`}
             >
               <Icon size={18} className="shrink-0" />
               {label}
@@ -258,10 +276,10 @@ export default function EmployerSidebar() {
           ))}
         </nav>
 
-        <div className="px-3 pb-6 pt-3 shrink-0" style={{ borderTop: BORDER }}>
+        <div className="px-3 pb-6 pt-3 shrink-0 border-t border-white/10">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors"
+            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
           >
             <LogOut size={18} className="shrink-0" />
             Logout

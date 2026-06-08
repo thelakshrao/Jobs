@@ -5,6 +5,7 @@ import { auth, db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import DashboardNavbar from "@/employerComponets/DashboardNavbar";
 import EmployerSidebar from "@/employerComponets/EmployerSidebar";
+import PostedJobs from "@/employerComponets/PostedJobs";
 
 export default function EmployerDashboard() {
   const router = useRouter();
@@ -37,12 +38,10 @@ export default function EmployerDashboard() {
 
   return (
     <>
-      <DashboardNavbar />
       <EmployerSidebar />
-      <main className="min-h-screen bg-white pt-14">
-        <p className="text-slate-400 text-sm text-center mt-20">
-          Dashboard coming soon…
-        </p>
+      <DashboardNavbar />
+      <main className="md:ml-64 pt-14 pb-16 md:pb-0 min-h-screen bg-slate-50">
+        <PostedJobs />
       </main>
     </>
   );
