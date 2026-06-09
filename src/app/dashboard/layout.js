@@ -3,10 +3,12 @@ import SearchNavbar from "@/dashboardComponents/SearchNavbar";
 
 export default function DashboardLayout({ children }) {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen" style={{ backgroundColor: "#f8fafc" }}>
       <DashNavbar />
       <SearchNavbar />
-      {children}
+      <main className="md:ml-21 pt-28 md:pt-14 min-h-screen">
+        {children}
+      </main>
     </div>
   );
 }

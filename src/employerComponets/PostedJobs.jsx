@@ -27,6 +27,14 @@ import {
   TrendingUp,
   Eye,
   Filter,
+  Globe,
+  Building2,
+  DollarSign,
+  Zap,
+  Hash,
+  Languages,
+  CalendarCheck,
+  CalendarX,
 } from "lucide-react";
 
 const STATUS_OPTIONS = ["Draft", "Open", "Paused", "Closed"];
@@ -192,6 +200,18 @@ export default function PostedJobs() {
   const totalApplicants = jobs.reduce((s, j) => s + (j.applicants || 0), 0);
   const draftCount = countByStatus("Draft");
 
+  const formatSalary = (job) => {
+    const sym = job.currencies?.[0] || "₹";
+    if (job.payStructure === "Negotiable") return "Negotiable";
+    if (job.payStructure === "Salary Range" && job.salaryMin && job.salaryMax)
+      return `${sym} ${Number(job.salaryMin).toLocaleString()} – ${Number(job.salaryMax).toLocaleString()}`;
+    if (job.payStructure === "Fixed" && job.fixedSalary)
+      return `${sym} ${Number(job.fixedSalary).toLocaleString()} / yr`;
+    if (job.payStructure === "Hourly" && job.hourlyRate)
+      return `${sym} ${job.hourlyRate} / hr`;
+    return "—";
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64 bg-[#e8eaed]">
@@ -228,21 +248,9 @@ export default function PostedJobs() {
       {jobs.length > 0 && (
         <div className="grid grid-cols-3 gap-4 mb-7">
           {[
-            {
-              label: "Active Jobs",
-              value: openCount,
-              icon: Briefcase,
-            },
-            {
-              label: "Total Applicants",
-              value: totalApplicants,
-              icon: Users,
-            },
-            {
-              label: "Drafts",
-              value: draftCount,
-              icon: FileEdit,
-            },
+            { label: "Active Jobs", value: openCount, icon: Briefcase },
+            { label: "Total Applicants", value: totalApplicants, icon: Users },
+            { label: "Drafts", value: draftCount, icon: FileEdit },
           ].map(({ label, value, icon: Icon }) => (
             <div
               key={label}
@@ -443,133 +451,353 @@ export default function PostedJobs() {
           </Link>
         </div>
       ) : (
-        <>
-          <div className="flex gap-4 lg:h-[calc(100vh-320px)] lg:min-h-96">
-            <div className="w-full lg:w-90 shrink-0 flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                  Jobs
-                </span>
-                <span className="text-xs font-bold text-slate-400">
-                  {filtered.length} shown
-                </span>
-              </div>
-              {filtered.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center text-center px-6 py-16">
-                  <div>
-                    <p className="text-sm font-bold text-slate-700 mb-1">
-                      No jobs found
-                    </p>
-                    <p className="text-xs text-slate-400 font-medium">
-                      Try clearing your filters
-                    </p>
-                  </div>
+        <div className="flex gap-4 lg:h-[calc(100vh-320px)] lg:min-h-96">
+          <div className="w-full lg:w-90 shrink-0 flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                Jobs
+              </span>
+              <span className="text-xs font-bold text-slate-400">
+                {filtered.length} shown
+              </span>
+            </div>
+            {filtered.length === 0 ? (
+              <div className="flex-1 flex items-center justify-center text-center px-6 py-16">
+                <div>
+                  <p className="text-sm font-bold text-slate-700 mb-1">
+                    No jobs found
+                  </p>
+                  <p className="text-xs text-slate-400 font-medium">
+                    Try clearing your filters
+                  </p>
                 </div>
-              ) : (
-                <div className="lg:flex-1 lg:overflow-y-auto divide-y divide-slate-100">
-                  {filtered.map((job) => {
-                    const cfg =
-                      STATUS_CONFIG[job.status] || STATUS_CONFIG.Draft;
-                    const isSelected = selectedJob?.id === job.id;
-                    return (
-                      <div
-                        key={job.id}
-                        onClick={() => setSelectedJob(job)}
-                        className={`px-4 py-4 cursor-pointer transition-all group border-l-2 ${
-                          isSelected
-                            ? "bg-slate-100 border-l-slate-900"
-                            : "hover:bg-slate-50 border-l-transparent"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div
-                              className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                                isSelected
-                                  ? "bg-slate-200"
-                                  : "bg-slate-100 group-hover:bg-slate-200"
-                              }`}
-                            >
-                              <Briefcase size={15} className="text-slate-500" />
-                            </div>
-                            <div className="min-w-0">
-                              <h3 className="text-sm font-bold truncate leading-tight text-slate-900">
-                                {job.title || (
-                                  <span className="italic font-normal text-slate-400">
-                                    Untitled
-                                  </span>
-                                )}
-                              </h3>
-                              {job.location && (
-                                <span className="text-[11px] text-slate-400 font-medium flex items-center gap-0.5 mt-0.5">
-                                  <MapPin size={9} />
-                                  {job.location}
+              </div>
+            ) : (
+              <div className="lg:flex-1 lg:overflow-y-auto divide-y divide-slate-100">
+                {filtered.map((job) => {
+                  const cfg = STATUS_CONFIG[job.status] || STATUS_CONFIG.Draft;
+                  const isSelected = selectedJob?.id === job.id;
+                  return (
+                    <div
+                      key={job.id}
+                      onClick={() => setSelectedJob(job)}
+                      className={`px-4 py-4 cursor-pointer transition-all group border-l-2 ${
+                        isSelected
+                          ? "bg-slate-100 border-l-slate-900"
+                          : "hover:bg-slate-50 border-l-transparent"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div
+                            className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                              isSelected
+                                ? "bg-slate-200"
+                                : "bg-slate-100 group-hover:bg-slate-200"
+                            }`}
+                          >
+                            <Briefcase size={15} className="text-slate-500" />
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="text-sm font-bold truncate leading-tight text-slate-900">
+                              {job.title || (
+                                <span className="italic font-normal text-slate-400">
+                                  Untitled
                                 </span>
                               )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            {job.starred && (
-                              <Star
-                                size={11}
-                                className="fill-yellow-400 text-yellow-400"
-                              />
+                            </h3>
+                            {job.location && (
+                              <span className="text-[11px] text-slate-400 font-medium flex items-center gap-0.5 mt-0.5">
+                                <MapPin size={9} />
+                                {job.location}
+                              </span>
                             )}
-                            <span
-                              className={`flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full ${cfg.pill}`}
-                            >
-                              <span
-                                className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`}
-                              />
-                              {job.status}
-                            </span>
                           </div>
                         </div>
-                        <div className="lg:hidden flex items-center gap-2 mt-3 pt-3 border-t border-slate-100">
-                          {job.status === "Draft" ? (
-                            <Link
-                              href={`/employer/dashboard/create-job?draftId=${job.id}`}
-                              onClick={(e) => e.stopPropagation()}
-                              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-white bg-slate-900 hover:bg-black transition-colors no-underline shadow-sm"
-                            >
-                              <FileEdit size={13} /> Continue Editing
-                            </Link>
-                          ) : (
-                            <Link
-                              href={`/employer/dashboard/create-job?draftId=${job.id}`}
-                              onClick={(e) => e.stopPropagation()}
-                              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-slate-700 border border-slate-200 hover:bg-slate-50 transition-colors no-underline"
-                            >
-                              <Pencil size={13} /> Edit Job
-                            </Link>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {job.starred && (
+                            <Star
+                              size={11}
+                              className="fill-yellow-400 text-yellow-400"
+                            />
                           )}
+                          <span
+                            className={`flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full ${cfg.pill}`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`}
+                            />
+                            {job.status}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="lg:hidden flex items-center gap-2 mt-3 pt-3 border-t border-slate-100">
+                        {job.status === "Draft" ? (
+                          <Link
+                            href={`/employer/dashboard/create-job?draftId=${job.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-white bg-slate-900 hover:bg-black transition-colors no-underline shadow-sm"
+                          >
+                            <FileEdit size={13} /> Continue Editing
+                          </Link>
+                        ) : (
+                          <Link
+                            href={`/employer/dashboard/create-job?draftId=${job.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-slate-700 border border-slate-200 hover:bg-slate-50 transition-colors no-underline"
+                          >
+                            <Pencil size={13} /> Edit Job
+                          </Link>
+                        )}
+                        <div className="relative">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (statusDropdown === job.id) {
+                                setStatusDropdown(null);
+                                return;
+                              }
+                              const rect =
+                                e.currentTarget.getBoundingClientRect();
+                              setDropdownStyle({
+                                position: "fixed",
+                                bottom: window.innerHeight - rect.top + 8,
+                                left: rect.left,
+                                right: "auto",
+                                top: "auto",
+                              });
+                              setStatusDropdown(job.id);
+                            }}
+                            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold border transition-all ${cfg.pill}`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`}
+                            />
+                            {job.status}
+                            <ChevronDown
+                              size={10}
+                              className={
+                                statusDropdown === job.id
+                                  ? "rotate-180 transition-transform"
+                                  : "transition-transform"
+                              }
+                            />
+                          </button>
+                          {statusDropdown === job.id && (
+                            <div
+                              className="z-999 bg-white rounded-xl shadow-2xl border border-slate-200 p-1.5 min-w-36"
+                              style={dropdownStyle}
+                            >
+                              {STATUS_OPTIONS.filter(
+                                (s) => s !== job.status,
+                              ).map((s) => {
+                                const sc = STATUS_CONFIG[s];
+                                return (
+                                  <button
+                                    key={s}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleStatusChange(job.id, s);
+                                    }}
+                                    className={`w-full text-left flex items-center gap-2.5 px-3 py-2.5 text-sm font-bold rounded-lg transition-colors mb-0.5 ${sc.pill} hover:opacity-80`}
+                                  >
+                                    <span
+                                      className={`w-2 h-2 rounded-full ${sc.dot}`}
+                                    />
+                                    {s}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteConfirm(job.id);
+                          }}
+                          className="ml-auto w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-colors border border-slate-200"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                      <div className="hidden lg:flex items-center gap-3 text-[11px] text-slate-400 font-medium ml-12 mt-1">
+                        {job.type && (
+                          <span className="flex items-center gap-0.5">
+                            <Clock size={9} />
+                            {job.type}
+                          </span>
+                        )}
+                        {job.applicants > 0 && (
+                          <span className="flex items-center gap-0.5">
+                            <Users size={9} />
+                            {job.applicants} applicants
+                          </span>
+                        )}
+                        {job.createdAt && (
+                          <span>
+                            {new Date(job.createdAt).toLocaleDateString(
+                              "en-IN",
+                              { day: "numeric", month: "short" },
+                            )}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className="hidden lg:flex flex-1 flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            {!selectedJob ? (
+              <div className="flex-1 flex items-center justify-center text-center px-6">
+                <div>
+                  <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <Eye size={20} className="text-slate-400" />
+                  </div>
+                  <p className="text-sm font-bold text-slate-600">
+                    Select a job to view details
+                  </p>
+                </div>
+              </div>
+            ) : (
+              (() => {
+                const job = selectedJob;
+                const cfg = STATUS_CONFIG[job.status] || STATUS_CONFIG.Draft;
+                const location = job.location || "—";
+                const salary = formatSalary(job);
+
+                const infoFields = [
+                  { label: "Location", value: location, icon: MapPin },
+                  {
+                    label: "Job Type",
+                    value: job.type || job.jobType || "—",
+                    icon: Clock,
+                  },
+                  {
+                    label: "Work Type",
+                    value: job.workType || "—",
+                    icon: Building2,
+                  },
+                  {
+                    label: "Applicants",
+                    value: job.applicants || 0,
+                    icon: Users,
+                  },
+                  {
+                    label: "Vacancies",
+                    value: job.vacancies || "—",
+                    icon: Hash,
+                  },
+                  {
+                    label: "Experience",
+                    value: job.experienceLevel || "—",
+                    icon: Briefcase,
+                  },
+                  {
+                    label: "Department",
+                    value: job.department || "—",
+                    icon: Building2,
+                  },
+                  {
+                    label: "Industry",
+                    value: job.industry || "—",
+                    icon: TrendingUp,
+                  },
+                  { label: "Urgency", value: job.urgency || "—", icon: Zap },
+                  {
+                    label: "Target Country",
+                    value: job.targetCountry || "—",
+                    icon: Globe,
+                  },
+                  {
+                    label: "Language",
+                    value: job.language || "—",
+                    icon: Languages,
+                  },
+                  { label: "Compensation", value: salary, icon: DollarSign },
+                  {
+                    label: "Posted",
+                    value: job.createdAt
+                      ? new Date(job.createdAt).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "—",
+                    icon: TrendingUp,
+                  },
+                  ...(job.applicationDeadline
+                    ? [
+                        {
+                          label: "Deadline",
+                          value: new Date(
+                            job.applicationDeadline,
+                          ).toLocaleDateString("en-IN", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          }),
+                          icon: CalendarX,
+                        },
+                      ]
+                    : []),
+                  ...(job.jobStartDate
+                    ? [
+                        {
+                          label: "Start Date",
+                          value: new Date(job.jobStartDate).toLocaleDateString(
+                            "en-IN",
+                            { day: "numeric", month: "short", year: "numeric" },
+                          ),
+                          icon: CalendarCheck,
+                        },
+                      ]
+                    : []),
+                ];
+
+                return (
+                  <>
+                    <div className="px-6 py-5 border-b border-slate-100">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center shrink-0">
+                            <Briefcase size={22} className="text-slate-500" />
+                          </div>
+                          <div>
+                            <h2 className="text-xl font-extrabold text-slate-900 leading-tight">
+                              {job.title || (
+                                <span className="italic font-normal text-slate-400">
+                                  Untitled Draft
+                                </span>
+                              )}
+                            </h2>
+                            <p className="text-sm text-slate-500 font-medium mt-0.5">
+                              {[job.type || job.jobType, location]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
                           <div className="relative">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (statusDropdown === job.id) {
-                                  setStatusDropdown(null);
-                                  return;
-                                }
-                                const rect =
-                                  e.currentTarget.getBoundingClientRect();
-                                setDropdownStyle({
-                                  position: "fixed",
-                                  bottom: window.innerHeight - rect.top + 8,
-                                  left: rect.left,
-                                  right: "auto",
-                                  top: "auto",
-                                });
-                                setStatusDropdown(job.id);
+                                setStatusDropdown(
+                                  statusDropdown === job.id ? null : job.id,
+                                );
                               }}
-                              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold border transition-all ${cfg.pill}`}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${cfg.pill}`}
                             >
                               <span
                                 className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`}
                               />
                               {job.status}
                               <ChevronDown
-                                size={10}
+                                size={11}
                                 className={
                                   statusDropdown === job.id
                                     ? "rotate-180 transition-transform"
@@ -578,10 +806,7 @@ export default function PostedJobs() {
                               />
                             </button>
                             {statusDropdown === job.id && (
-                              <div
-                                className="z-999 bg-white rounded-xl shadow-2xl border border-slate-200 p-1.5 min-w-36"
-                                style={dropdownStyle}
-                              >
+                              <div className="absolute right-0 top-10 z-50 bg-white rounded-xl shadow-xl border border-slate-200 p-1.5 min-w-32">
                                 {STATUS_OPTIONS.filter(
                                   (s) => s !== job.status,
                                 ).map((s) => {
@@ -589,14 +814,13 @@ export default function PostedJobs() {
                                   return (
                                     <button
                                       key={s}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleStatusChange(job.id, s);
-                                      }}
-                                      className={`w-full text-left flex items-center gap-2.5 px-3 py-2.5 text-sm font-bold rounded-lg transition-colors mb-0.5 ${sc.pill} hover:opacity-80`}
+                                      onClick={() =>
+                                        handleStatusChange(job.id, s)
+                                      }
+                                      className={`w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-lg transition-colors mb-0.5 ${sc.pill} hover:opacity-80`}
                                     >
                                       <span
-                                        className={`w-2 h-2 rounded-full ${sc.dot}`}
+                                        className={`w-1.5 h-1.5 rounded-full ${sc.dot}`}
                                       />
                                       {s}
                                     </button>
@@ -605,275 +829,97 @@ export default function PostedJobs() {
                               </div>
                             )}
                           </div>
+                          {job.status === "Draft" ? (
+                            <Link
+                              href={`/employer/dashboard/create-job?draftId=${job.id}`}
+                              className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-slate-900 hover:bg-black transition-colors no-underline shadow-sm"
+                            >
+                              <FileEdit size={13} /> Continue
+                            </Link>
+                          ) : (
+                            <Link
+                              href={`/employer/dashboard/create-job?draftId=${job.id}`}
+                              className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 border border-slate-200 transition-colors no-underline"
+                            >
+                              <Pencil size={13} /> Edit
+                            </Link>
+                          )}
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeleteConfirm(job.id);
-                            }}
-                            className="ml-auto w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-colors border border-slate-200"
+                            onClick={() => setDeleteConfirm(job.id)}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-colors border border-slate-200"
                           >
                             <Trash2 size={13} />
                           </button>
                         </div>
-                        <div className="hidden lg:flex items-center gap-3 text-[11px] text-slate-400 font-medium ml-12 mt-1">
-                          {job.type && (
-                            <span className="flex items-center gap-0.5">
-                              <Clock size={9} />
-                              {job.type}
-                            </span>
-                          )}
-                          {job.applicants > 0 && (
-                            <span className="flex items-center gap-0.5">
-                              <Users size={9} />
-                              {job.applicants} applicants
-                            </span>
-                          )}
-                          {job.createdAt && (
-                            <span>
-                              {new Date(job.createdAt).toLocaleDateString(
-                                "en-IN",
-                                { day: "numeric", month: "short" },
-                              )}
-                            </span>
-                          )}
-                        </div>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            <div className="hidden lg:flex flex-1 flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              {!selectedJob ? (
-                <div className="flex-1 flex items-center justify-center text-center px-6">
-                  <div>
-                    <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                      <Eye size={20} className="text-slate-400" />
                     </div>
-                    <p className="text-sm font-bold text-slate-600">
-                      Select a job to view details
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                (() => {
-                  const job = selectedJob;
-                  const cfg = STATUS_CONFIG[job.status] || STATUS_CONFIG.Draft;
-                  const location = job.location || "—";
-                  return (
-                    <>
-                      <div className="px-6 py-5 border-b border-slate-100">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center shrink-0">
-                              <Briefcase size={22} className="text-slate-500" />
+
+                    <div className="flex-1 overflow-y-auto p-6">
+                      <div className="grid grid-cols-2 gap-3 mb-6">
+                        {infoFields.map(({ label, value, icon: Icon }) => (
+                          <div
+                            key={label}
+                            className="bg-slate-50 rounded-xl px-4 py-3 border border-slate-100"
+                          >
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <Icon size={11} className="text-slate-400" />
+                              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">
+                                {label}
+                              </span>
                             </div>
-                            <div>
-                              <h2 className="text-xl font-extrabold text-slate-900 leading-tight">
-                                {job.title || (
-                                  <span className="italic font-normal text-slate-400">
-                                    Untitled Draft
-                                  </span>
-                                )}
-                              </h2>
-                              <p className="text-sm text-slate-500 font-medium mt-0.5">
-                                {[job.type, location]
-                                  .filter(Boolean)
-                                  .join(" · ")}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <div className="relative">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setStatusDropdown(
-                                    statusDropdown === job.id ? null : job.id,
-                                  );
-                                }}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${cfg.pill}`}
-                              >
-                                <span
-                                  className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`}
-                                />
-                                {job.status}
-                                <ChevronDown
-                                  size={11}
-                                  className={
-                                    statusDropdown === job.id
-                                      ? "rotate-180 transition-transform"
-                                      : "transition-transform"
-                                  }
-                                />
-                              </button>
-                              {statusDropdown === job.id && (
-                                <div className="absolute right-0 top-10 z-50 bg-white rounded-xl shadow-xl border border-slate-200 p-1.5 min-w-32">
-                                  {STATUS_OPTIONS.filter(
-                                    (s) => s !== job.status,
-                                  ).map((s) => {
-                                    const sc = STATUS_CONFIG[s];
-                                    return (
-                                      <button
-                                        key={s}
-                                        onClick={() =>
-                                          handleStatusChange(job.id, s)
-                                        }
-                                        className={`w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-lg transition-colors mb-0.5 ${sc.pill} hover:opacity-80`}
-                                      >
-                                        <span
-                                          className={`w-1.5 h-1.5 rounded-full ${sc.dot}`}
-                                        />
-                                        {s}
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                            </div>
-                            {job.status === "Draft" ? (
-                              <Link
-                                href={`/employer/dashboard/create-job?draftId=${job.id}`}
-                                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-slate-900 hover:bg-black transition-colors no-underline shadow-sm"
-                              >
-                                <FileEdit size={13} /> Continue
-                              </Link>
-                            ) : (
-                              <Link
-                                href={`/employer/dashboard/create-job?draftId=${job.id}`}
-                                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 border border-slate-200 transition-colors no-underline"
-                              >
-                                <Pencil size={13} /> Edit
-                              </Link>
-                            )}
-                            <button
-                              onClick={() => setDeleteConfirm(job.id)}
-                              className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-colors border border-slate-200"
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex-1 overflow-y-auto p-6">
-                        <div className="grid grid-cols-2 gap-4 mb-6">
-                          {[
-                            {
-                              label: "Location",
-                              value: location,
-                              icon: MapPin,
-                            },
-                            {
-                              label: "Job Type",
-                              value: job.type || "—",
-                              icon: Clock,
-                            },
-                            {
-                              label: "Applicants",
-                              value: job.applicants || 0,
-                              icon: Users,
-                            },
-                            {
-                              label: "Posted",
-                              value: job.createdAt
-                                ? new Date(job.createdAt).toLocaleDateString(
-                                    "en-IN",
-                                    {
-                                      day: "numeric",
-                                      month: "short",
-                                      year: "numeric",
-                                    },
-                                  )
-                                : "—",
-                              icon: TrendingUp,
-                            },
-                            ...(job.applicationDeadline
-                              ? [
-                                  {
-                                    label: "Deadline",
-                                    value: new Date(
-                                      job.applicationDeadline,
-                                    ).toLocaleDateString("en-IN", {
-                                      day: "numeric",
-                                      month: "short",
-                                      year: "numeric",
-                                    }),
-                                    icon: Clock,
-                                  },
-                                ]
-                              : []),
-                            ...(job.experienceLevel
-                              ? [
-                                  {
-                                    label: "Experience",
-                                    value: job.experienceLevel,
-                                    icon: Briefcase,
-                                  },
-                                ]
-                              : []),
-                          ].map(({ label, value, icon: Icon }) => (
-                            <div
-                              key={label}
-                              className="bg-slate-50 rounded-xl px-4 py-3 border border-slate-100"
-                            >
-                              <div className="flex items-center gap-1.5 mb-1">
-                                <Icon size={11} className="text-slate-400" />
-                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">
-                                  {label}
-                                </span>
-                              </div>
-                              <p className="text-sm font-bold text-slate-800">
-                                {value}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                        {job.description && (
-                          <div className="mb-5">
-                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
-                              Description
-                            </h4>
-                            <p className="text-sm text-slate-700 leading-relaxed font-medium whitespace-pre-line">
-                              {job.description}
+                            <p className="text-sm font-bold text-slate-800">
+                              {value}
                             </p>
                           </div>
-                        )}
-                        {job.requirements && (
-                          <div className="mb-5">
-                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
-                              Requirements
-                            </h4>
-                            <p className="text-sm text-slate-700 leading-relaxed font-medium whitespace-pre-line">
-                              {job.requirements}
-                            </p>
-                          </div>
-                        )}
-                        {job.perks?.length > 0 && (
-                          <div>
-                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
-                              Perks & Benefits
-                            </h4>
-                            <div className="flex flex-wrap gap-2">
-                              {job.perks.map((p) => (
-                                <span
-                                  key={p}
-                                  className="text-xs font-semibold px-3 py-1 bg-slate-100 text-slate-700 rounded-full border border-slate-200"
-                                >
-                                  {p}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                        ))}
                       </div>
-                    </>
-                  );
-                })()
-              )}
-            </div>
+
+                      {job.perks?.length > 0 && (
+                        <div className="mb-6">
+                          <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
+                            Perks & Benefits
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {job.perks.map((p) => (
+                              <span
+                                key={p}
+                                className="text-xs font-semibold px-3 py-1 bg-slate-100 text-slate-700 rounded-full border border-slate-200"
+                              >
+                                {p}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {job.description && (
+                        <div className="mb-5">
+                          <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
+                            Description
+                          </h4>
+                          <p className="text-sm text-slate-700 leading-relaxed font-medium whitespace-pre-line">
+                            {job.description}
+                          </p>
+                        </div>
+                      )}
+
+                      {job.requirements && (
+                        <div className="mb-5">
+                          <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
+                            Requirements
+                          </h4>
+                          <p className="text-sm text-slate-700 leading-relaxed font-medium whitespace-pre-line">
+                            {job.requirements}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                );
+              })()
+            )}
           </div>
-        </>
+        </div>
       )}
 
       {deleteConfirm && (

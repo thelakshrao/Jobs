@@ -173,7 +173,7 @@ export default function ProfileSlugPage() {
   if (loading) return null;
 
   return (
-    <div className="min-h-screen bg-white px-4 sm:px-6 lg:pl-27 lg:pr-6 pt-18 lg:pt-22 pb-20 lg:pb-10">
+    <div className="min-h-screen bg-white px-4 sm:px-6 lg:pl-6 lg:pr-6 pt-4 pb-20 lg:pb-10">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div>
           <h1

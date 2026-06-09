@@ -116,7 +116,7 @@ function PhoneInput({ value, onChange, dialCode, onDialChange }) {
 
   return (
     <div
-      className="flex gap-0 rounded-lg border border-slate-300 overflow-visible focus-within:ring-2 focus-within:ring-blue-400 focus-within:border-blue-400"
+      className="flex gap-0 rounded-lg border border-slate-300 overflow-visible focus-within:ring-2 focus-within:ring-slate-400 focus-within:border-slate-400"
       ref={ref}
     >
       <button
@@ -148,7 +148,7 @@ function PhoneInput({ value, onChange, dialCode, onDialChange }) {
               placeholder="Search country…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full px-3 py-2 text-sm rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-blue-400/30"
+              className="w-full px-3 py-2 text-sm rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-slate-300"
             />
           </div>
           <div className="max-h-52 overflow-y-auto">
@@ -161,8 +161,8 @@ function PhoneInput({ value, onChange, dialCode, onDialChange }) {
                   setOpen(false);
                   setSearch("");
                 }}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-blue-50 transition-colors text-left
-                  ${c.dial === dialCode ? "bg-blue-50 font-semibold text-blue-700" : "text-slate-700"}`}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-slate-50 transition-colors text-left
+                  ${c.dial === dialCode ? "bg-slate-100 font-semibold text-slate-900" : "text-slate-700"}`}
               >
                 <span className="text-base">{c.flag}</span>
                 <span className="flex-1">{c.name}</span>
@@ -292,8 +292,8 @@ function EmployerOnboardingInner() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-[#e8eaed]">
+        <div className="w-6 h-6 border-2 border-slate-700 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -301,8 +301,11 @@ function EmployerOnboardingInner() {
   return (
     <>
       <EmpNavbar />
-      <div className="min-h-screen bg-white flex flex-col items-center py-14 px-4 mt-20">
-        <div className="w-full max-w-lg">
+      <div
+        className="min-h-screen bg-[#e8eaed] flex flex-col items-center py-14 px-4 mt-20"
+        style={{ fontFamily: "'Inter', 'DM Sans', system-ui, sans-serif" }}
+      >
+        <div className="w-full max-w-lg bg-white rounded-2xl border border-slate-200 shadow-sm px-8 py-10">
           <h1 className="text-3xl font-bold text-slate-900 mb-1">
             {isSwitchMode
               ? "Switch employer account"
@@ -310,7 +313,7 @@ function EmployerOnboardingInner() {
           </h1>
 
           {prefilled && (
-            <div className="mt-3 mb-1 flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+            <div className="mt-3 mb-1 flex items-center gap-2 text-sm text-slate-700 bg-slate-100 border border-slate-200 rounded-lg px-3 py-2">
               <svg
                 width="15"
                 height="15"
@@ -329,7 +332,7 @@ function EmployerOnboardingInner() {
 
           <a
             href="/jobs"
-            className="inline-flex items-center gap-1.5 mt-4 mb-7 text-blue-400 text-sm font-semibold hover:underline group"
+            className="inline-flex items-center gap-1.5 mt-4 mb-7 text-slate-700 text-sm font-semibold hover:underline group"
           >
             I'm looking for a job
             <svg
@@ -355,7 +358,7 @@ function EmployerOnboardingInner() {
                 value={form.company}
                 onChange={(e) => set("company")(e.target.value)}
                 required
-                className="w-full px-4 py-3 rounded-lg border border-slate-300 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all placeholder-slate-400"
+                className="w-full px-4 py-3 rounded-lg border border-slate-300 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-400 focus:border-slate-400 transition-all placeholder-slate-400"
               />
             </div>
 
@@ -372,10 +375,14 @@ function EmployerOnboardingInner() {
                     required
                     readOnly={prefilled && !isSwitchMode}
                     className={`w-full px-4 py-3 rounded-lg border text-sm text-slate-800 outline-none transition-all
-                      ${prefilled && !isSwitchMode ? "bg-slate-50 border-slate-200 text-slate-600 cursor-default" : "border-slate-300 focus:ring-2 focus:ring-blue-400 focus:border-blue-400"}`}
+                      ${
+                        prefilled && !isSwitchMode
+                          ? "bg-slate-50 border-slate-200 text-slate-600 cursor-default"
+                          : "border-slate-300 focus:ring-2 focus:ring-slate-400 focus:border-slate-400"
+                      }`}
                   />
                   {prefilled && !isSwitchMode && (
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500">
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
                       <svg
                         width="14"
                         height="14"
@@ -402,10 +409,14 @@ function EmployerOnboardingInner() {
                     required
                     readOnly={prefilled && !isSwitchMode}
                     className={`w-full px-4 py-3 rounded-lg border text-sm text-slate-800 outline-none transition-all
-                      ${prefilled && !isSwitchMode ? "bg-slate-50 border-slate-200 text-slate-600 cursor-default" : "border-slate-300 focus:ring-2 focus:ring-blue-400 focus:border-blue-400"}`}
+                      ${
+                        prefilled && !isSwitchMode
+                          ? "bg-slate-50 border-slate-200 text-slate-600 cursor-default"
+                          : "border-slate-300 focus:ring-2 focus:ring-slate-400 focus:border-slate-400"
+                      }`}
                   />
                   {prefilled && !isSwitchMode && (
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500">
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
                       <svg
                         width="14"
                         height="14"
@@ -434,10 +445,14 @@ function EmployerOnboardingInner() {
                   required
                   readOnly={prefilled && !isSwitchMode}
                   className={`w-full px-4 py-3 rounded-lg border text-sm text-slate-800 outline-none transition-all
-                    ${prefilled && !isSwitchMode ? "bg-slate-50 border-slate-200 text-slate-600 cursor-default" : "border-slate-300 focus:ring-2 focus:ring-blue-400 focus:border-blue-400"}`}
+                    ${
+                      prefilled && !isSwitchMode
+                        ? "bg-slate-50 border-slate-200 text-slate-600 cursor-default"
+                        : "border-slate-300 focus:ring-2 focus:ring-slate-400 focus:border-slate-400"
+                    }`}
                 />
                 {prefilled && !isSwitchMode && (
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
                     <svg
                       width="14"
                       height="14"
@@ -474,7 +489,11 @@ function EmployerOnboardingInner() {
                   setForm((f) => ({ ...f, dataConsent: !f.dataConsent }))
                 }
                 className={`mt-0.5 w-5 h-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors cursor-pointer
-                  ${form.dataConsent ? "bg-blue-400 border-blue-400" : "border-slate-400 bg-white"}`}
+                  ${
+                    form.dataConsent
+                      ? "bg-slate-900 border-slate-900"
+                      : "border-slate-400 bg-white"
+                  }`}
               >
                 {form.dataConsent && (
                   <svg
@@ -503,7 +522,11 @@ function EmployerOnboardingInner() {
                   setForm((f) => ({ ...f, termsConsent: !f.termsConsent }))
                 }
                 className={`mt-0.5 w-5 h-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors cursor-pointer
-                  ${form.termsConsent ? "bg-blue-400 border-blue-400" : "border-slate-400 bg-white"}`}
+                  ${
+                    form.termsConsent
+                      ? "bg-slate-900 border-slate-900"
+                      : "border-slate-400 bg-white"
+                  }`}
               >
                 {form.termsConsent && (
                   <svg
@@ -520,11 +543,17 @@ function EmployerOnboardingInner() {
               </div>
               <span className="text-sm text-slate-600 leading-snug">
                 I agree to the{" "}
-                <a href="#" className="text-blue-400 hover:underline">
+                <a
+                  href="#"
+                  className="text-slate-900 font-semibold hover:underline"
+                >
                   Terms of Service
                 </a>{" "}
                 and{" "}
-                <a href="#" className="text-blue-400 hover:underline">
+                <a
+                  href="#"
+                  className="text-slate-900 font-semibold hover:underline"
+                >
                   Privacy Policy
                 </a>
               </span>
@@ -533,11 +562,11 @@ function EmployerOnboardingInner() {
             <button
               type="submit"
               disabled={!form.termsConsent}
-              className={`w-full py-3.5 rounded-lg text-white text-sm font-semibold transition-all mt-2
+              className={`w-full py-3.5 rounded-lg text-sm font-semibold transition-all mt-2
                 ${
                   form.termsConsent
-                    ? "bg-blue-400 hover:bg-blue-300 active:bg-blue-400 shadow-sm hover:shadow-md"
-                    : "bg-blue-200 text-blue-300 cursor-not-allowed"
+                    ? "bg-slate-900 hover:bg-black text-white shadow-sm hover:shadow-md"
+                    : "bg-slate-200 text-slate-400 cursor-not-allowed"
                 }`}
             >
               Continue
@@ -553,8 +582,8 @@ export default function EmployerOnboarding() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-white">
-          <div className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+        <div className="min-h-screen flex items-center justify-center bg-[#e8eaed]">
+          <div className="w-6 h-6 border-2 border-slate-700 border-t-transparent rounded-full animate-spin" />
         </div>
       }
     >
