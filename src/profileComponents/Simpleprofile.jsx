@@ -53,6 +53,52 @@ const SALARY_OPTIONS = [
   "Open to discuss",
 ];
 
+const COUNTRY_CODES = [
+  { code: "+91", country: "India", flag: "🇮🇳" },
+  { code: "+971", country: "UAE", flag: "🇦🇪" },
+  { code: "+966", country: "Saudi Arabia", flag: "🇸🇦" },
+  { code: "+974", country: "Qatar", flag: "🇶🇦" },
+  { code: "+965", country: "Kuwait", flag: "🇰🇼" },
+  { code: "+968", country: "Oman", flag: "🇴🇲" },
+  { code: "+973", country: "Bahrain", flag: "🇧🇭" },
+  { code: "+1", country: "USA / Canada", flag: "🇺🇸" },
+  { code: "+44", country: "UK", flag: "🇬🇧" },
+  { code: "+61", country: "Australia", flag: "🇦🇺" },
+  { code: "+64", country: "New Zealand", flag: "🇳🇿" },
+  { code: "+49", country: "Germany", flag: "🇩🇪" },
+  { code: "+33", country: "France", flag: "🇫🇷" },
+  { code: "+39", country: "Italy", flag: "🇮🇹" },
+  { code: "+34", country: "Spain", flag: "🇪🇸" },
+  { code: "+31", country: "Netherlands", flag: "🇳🇱" },
+  { code: "+41", country: "Switzerland", flag: "🇨🇭" },
+  { code: "+46", country: "Sweden", flag: "🇸🇪" },
+  { code: "+47", country: "Norway", flag: "🇳🇴" },
+  { code: "+45", country: "Denmark", flag: "🇩🇰" },
+  { code: "+353", country: "Ireland", flag: "🇮🇪" },
+  { code: "+65", country: "Singapore", flag: "🇸🇬" },
+  { code: "+60", country: "Malaysia", flag: "🇲🇾" },
+  { code: "+62", country: "Indonesia", flag: "🇮🇩" },
+  { code: "+63", country: "Philippines", flag: "🇵🇭" },
+  { code: "+66", country: "Thailand", flag: "🇹🇭" },
+  { code: "+84", country: "Vietnam", flag: "🇻🇳" },
+  { code: "+92", country: "Pakistan", flag: "🇵🇰" },
+  { code: "+880", country: "Bangladesh", flag: "🇧🇩" },
+  { code: "+94", country: "Sri Lanka", flag: "🇱🇰" },
+  { code: "+977", country: "Nepal", flag: "🇳🇵" },
+  { code: "+27", country: "South Africa", flag: "🇿🇦" },
+  { code: "+234", country: "Nigeria", flag: "🇳🇬" },
+  { code: "+254", country: "Kenya", flag: "🇰🇪" },
+  { code: "+20", country: "Egypt", flag: "🇪🇬" },
+  { code: "+86", country: "China", flag: "🇨🇳" },
+  { code: "+81", country: "Japan", flag: "🇯🇵" },
+  { code: "+82", country: "South Korea", flag: "🇰🇷" },
+  { code: "+852", country: "Hong Kong", flag: "🇭🇰" },
+  { code: "+90", country: "Turkey", flag: "🇹🇷" },
+  { code: "+7", country: "Russia", flag: "🇷🇺" },
+  { code: "+55", country: "Brazil", flag: "🇧🇷" },
+  { code: "+52", country: "Mexico", flag: "🇲🇽" },
+];
+
 const STEPS = [
   "Your Photo",
   "Your Name",
@@ -85,6 +131,69 @@ function TextInput({ placeholder, value, onChange, type = "text" }) {
   );
 }
 
+function PhoneInput({
+  countryCode,
+  onCountryCodeChange,
+  value,
+  onChange,
+  fullWidth,
+}) {
+  return (
+    <div
+      className="flex items-stretch w-full overflow-hidden"
+      style={{
+        border: "1.5px solid #e2e8f0",
+        borderRadius: fullWidth ? 16 : 12,
+        backgroundColor: fullWidth ? "#f8fafc" : "white",
+      }}
+      onFocus={(e) => (e.currentTarget.style.borderColor = BLUE)}
+      onBlur={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
+    >
+      <div className="relative flex items-center shrink-0">
+        <select
+          value={countryCode}
+          onChange={(e) => onCountryCodeChange(e.target.value)}
+          className="h-full appearance-none outline-none text-sm font-semibold pl-3 pr-7"
+          style={{
+            border: "none",
+            borderRight: "1.5px solid #e2e8f0",
+            color: "#0f172a",
+            backgroundColor: "transparent",
+            cursor: "pointer",
+          }}
+        >
+          {COUNTRY_CODES.map((c) => (
+            <option key={c.code + c.country} value={c.code}>
+              {c.flag} {c.code} {c.country}
+            </option>
+          ))}
+        </select>
+        <IoChevronDownOutline
+          size={12}
+          style={{
+            position: "absolute",
+            right: 8,
+            color: "#94a3b8",
+            pointerEvents: "none",
+          }}
+        />
+      </div>
+      <input
+        type="tel"
+        value={value}
+        onChange={onChange}
+        placeholder="Enter your mobile number"
+        className={`flex-1 min-w-0 outline-none text-sm ${fullWidth ? "px-4 py-3" : "px-3 py-2.5"}`}
+        style={{
+          border: "none",
+          color: "#0f172a",
+          backgroundColor: "transparent",
+        }}
+      />
+    </div>
+  );
+}
+
 export default function SimpleProfile({ onComplete }) {
   const [step, setStep] = useState(0);
   const [photoURL, setPhotoURL] = useState("");
@@ -92,13 +201,14 @@ export default function SimpleProfile({ onComplete }) {
   const [name, setName] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [location, setLocation] = useState("");
+  const [countryCode, setCountryCode] = useState("+91");
   const [phone, setPhone] = useState("");
   const [education, setEducation] = useState("");
   const [expYears, setExpYears] = useState("");
   const [salary, setSalary] = useState("");
   const [bio, setBio] = useState("");
   const [employers, setEmployers] = useState([
-    { company: "", role: "", years: "", phone: "" },
+    { company: "", role: "", years: "", phone: "", phoneCountryCode: "+91" },
   ]);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef(null);
@@ -106,7 +216,7 @@ export default function SimpleProfile({ onComplete }) {
   const addEmployer = () =>
     setEmployers([
       ...employers,
-      { company: "", role: "", years: "", phone: "" },
+      { company: "", role: "", years: "", phone: "", phoneCountryCode: "+91" },
     ]);
   const removeEmployer = (i) =>
     setEmployers(employers.filter((_, idx) => idx !== i));
@@ -132,7 +242,7 @@ export default function SimpleProfile({ onComplete }) {
       name,
       title: jobTitle,
       location,
-      phone,
+      phone: phone ? `${countryCode} ${phone}` : "",
       photoURL,
       bio,
       profileType: "simple",
@@ -143,7 +253,12 @@ export default function SimpleProfile({ onComplete }) {
         expectedSalary: salary,
         onboardingDone: true,
       },
-      simpleEmployers: employers.filter((e) => e.company || e.role),
+      simpleEmployers: employers
+        .filter((e) => e.company || e.role)
+        .map((e) => ({
+          ...e,
+          phone: e.phone ? `${e.phoneCountryCode || "+91"} ${e.phone}` : "",
+        })),
     };
     await setDoc(doc(db, "users", user.uid), data, { merge: true });
     setSaving(false);
@@ -307,7 +422,7 @@ export default function SimpleProfile({ onComplete }) {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Ramesh Kumar"
+                  placeholder="Enter your full name"
                   className="rounded-2xl px-4 py-3 text-sm outline-none w-full"
                   style={{
                     border: "1.5px solid #e2e8f0",
@@ -335,7 +450,7 @@ export default function SimpleProfile({ onComplete }) {
                   type="text"
                   value={jobTitle}
                   onChange={(e) => setJobTitle(e.target.value)}
-                  placeholder="e.g. Driver, Cook, Security Guard, Helper…"
+                  placeholder="Enter the job title you're looking for"
                   className="rounded-2xl px-4 py-3 text-sm outline-none w-full"
                   style={{
                     border: "1.5px solid #e2e8f0",
@@ -363,7 +478,7 @@ export default function SimpleProfile({ onComplete }) {
                   type="text"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  placeholder="e.g. Andheri, Mumbai"
+                  placeholder="Enter your city or area"
                   className="rounded-2xl px-4 py-3 text-sm outline-none w-full"
                   style={{
                     border: "1.5px solid #e2e8f0",
@@ -387,19 +502,12 @@ export default function SimpleProfile({ onComplete }) {
                 <p className="text-sm" style={{ color: "#64748b" }}>
                   Employers will contact you on this number
                 </p>
-                <input
-                  type="tel"
+                <PhoneInput
+                  countryCode={countryCode}
+                  onCountryCodeChange={setCountryCode}
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+91 9876543210"
-                  className="rounded-2xl px-4 py-3 text-sm outline-none w-full"
-                  style={{
-                    border: "1.5px solid #e2e8f0",
-                    color: "#0f172a",
-                    backgroundColor: "#f8fafc",
-                  }}
-                  onFocus={(e) => (e.target.style.borderColor = BLUE)}
-                  onBlur={(e) => (e.target.style.borderColor = "#e2e8f0")}
+                  fullWidth
                 />
               </div>
             )}
@@ -549,29 +657,31 @@ export default function SimpleProfile({ onComplete }) {
                       onChange={(e) =>
                         updateEmployer(i, "company", e.target.value)
                       }
-                      placeholder="Company / Employer name"
+                      placeholder="Enter company / employer name"
                     />
                     <TextInput
                       value={emp.role}
                       onChange={(e) =>
                         updateEmployer(i, "role", e.target.value)
                       }
-                      placeholder="Your role there (e.g. Driver, Cook)"
+                      placeholder="Enter your role there"
                     />
                     <TextInput
                       value={emp.years}
                       onChange={(e) =>
                         updateEmployer(i, "years", e.target.value)
                       }
-                      placeholder="How long? (e.g. 2 years, 6 months)"
+                      placeholder="Enter how long you worked there"
                     />
-                    <TextInput
+                    <PhoneInput
+                      countryCode={emp.phoneCountryCode || "+91"}
+                      onCountryCodeChange={(val) =>
+                        updateEmployer(i, "phoneCountryCode", val)
+                      }
                       value={emp.phone || ""}
                       onChange={(e) =>
                         updateEmployer(i, "phone", e.target.value)
                       }
-                      placeholder="Employer phone number (optional)"
-                      type="tel"
                     />
                   </div>
                 ))}
@@ -603,7 +713,7 @@ export default function SimpleProfile({ onComplete }) {
                 <textarea
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
-                  placeholder="e.g. I am a hard-working driver with 5 years of experience in Mumbai. I am punctual and know the city roads well."
+                  placeholder="Write a short note about your skills and experience"
                   rows={4}
                   className="rounded-2xl px-4 py-3 text-sm outline-none resize-none"
                   style={{

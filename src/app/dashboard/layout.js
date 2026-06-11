@@ -6,7 +6,8 @@ export default function DashboardLayout({ children }) {
     <div className="min-h-screen" style={{ backgroundColor: "#f8fafc" }}>
       <DashNavbar />
       <SearchNavbar />
-      <main className="md:ml-21 pt-28 md:pt-14 min-h-screen">
+    
+      <main className="md:ml-21 pt-14 md:pt-17 min-h-screen">
         {children}
       </main>
     </div>

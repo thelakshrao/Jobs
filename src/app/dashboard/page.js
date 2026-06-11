@@ -22,23 +22,35 @@ import {
 } from "lucide-react";
 import ProfileStrength from "@/profileComponents/ProfileStrength";
 
+function timeAgo(dateStr) {
+  if (!dateStr) return null;
+  const diff = (new Date() - new Date(dateStr)) / (1000 * 60 * 60 * 24);
+  if (diff < 1) return "Today";
+  if (diff < 2) return "1 day ago";
+  if (diff < 7) return `${Math.floor(diff)} days ago`;
+  if (diff < 30) return `${Math.floor(diff / 7)}w ago`;
+  return new Date(dateStr).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+  });
+}
+
+function formatSalary(job) {
+  const sym = job.currencies?.[0] || "₹";
+  if (job.payStructure === "Negotiable") return "Negotiable";
+  if (job.payStructure === "Salary Range" && job.salaryMin && job.salaryMax)
+    return `${sym}${Number(job.salaryMin).toLocaleString()} – ${sym}${Number(job.salaryMax).toLocaleString()}`;
+  if (job.payStructure === "Fixed" && job.fixedSalary)
+    return `${sym}${Number(job.fixedSalary).toLocaleString()} / yr`;
+  if (job.payStructure === "Hourly" && job.hourlyRate)
+    return `${sym}${job.hourlyRate} / hr`;
+  return null;
+}
+
 function JobCardHorizontal({ job, isSaved, onSaveToggle, onClick }) {
   const location = [job.location, job.targetCountry].filter(Boolean).join(", ");
-
-  function timeAgo(dateStr) {
-    if (!dateStr) return null;
-    const diff = (new Date() - new Date(dateStr)) / (1000 * 60 * 60 * 24);
-    if (diff < 1) return "Today";
-    if (diff < 2) return "1 day ago";
-    if (diff < 7) return `${Math.floor(diff)} days ago`;
-    if (diff < 30) return `${Math.floor(diff / 7)}w ago`;
-    return new Date(dateStr).toLocaleDateString("en-IN", {
-      day: "numeric",
-      month: "short",
-    });
-  }
-
   const posted = timeAgo(job.publishedAt || job.createdAt);
+  const salary = formatSalary(job);
 
   const handleSave = async (e) => {
     e.stopPropagation();
@@ -63,9 +75,9 @@ function JobCardHorizontal({ job, isSaved, onSaveToggle, onClick }) {
       onClick={onClick}
       className="rounded-2xl border border-slate-200 p-5 cursor-pointer hover:border-blue-300 hover:shadow-md transition-all flex flex-col justify-between gap-3"
       style={{
-        minWidth: 240,
-        width: 240,
-        minHeight: 170,
+        minWidth: 280,
+        width: 280,
+        minHeight: 190,
         flexShrink: 0,
         backgroundColor: "#f8fafc",
       }}
@@ -87,14 +99,22 @@ function JobCardHorizontal({ job, isSaved, onSaveToggle, onClick }) {
             {job.title}
           </h3>
           <p
-            className="text-[13px] mt-0.5"
+            className="text-[13px] truncate"
             style={{ fontWeight: 700, color: "#334155" }}
           >
             {job.companyName || "Company"}
           </p>
+          {salary && (
+            <p
+              className="text-[13px] mt-1"
+              style={{ fontWeight: 800, color: "#60A5FA" }}
+            >
+              {salary}
+            </p>
+          )}
           {location && (
             <p
-              className="text-xs mt-0.5 flex items-center gap-1"
+              className="text-xs truncate flex items-center gap-1 mt-0.5"
               style={{ fontWeight: 600, color: "#64748b" }}
             >
               <MapPin size={10} className="shrink-0 text-slate-400" />
@@ -113,7 +133,6 @@ function JobCardHorizontal({ job, isSaved, onSaveToggle, onClick }) {
           )}
         </button>
       </div>
-
       <div className="flex flex-col gap-2">
         {job.perks?.length > 0 && (
           <div className="flex flex-wrap gap-1">
@@ -153,7 +172,7 @@ export default function DashboardHome() {
   const [userName, setUserName] = useState("");
   const [completedItems, setCompletedItems] = useState({});
   const [isGraduate, setIsGraduate] = useState(true);
-  const [isSimple, setIsSimple] = useState(false); 
+  const [isSimple, setIsSimple] = useState(false);
   const [loading, setLoading] = useState(true);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -164,12 +183,11 @@ export default function DashboardHome() {
     setCanScrollLeft(el.scrollLeft > 4);
     setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
   };
-
-  const scroll = (dir) => {
-    const el = scrollRef.current;
-    if (!el) return;
-    el.scrollBy({ left: dir === "left" ? -260 : 260, behavior: "smooth" });
-  };
+  const scroll = (dir) =>
+    scrollRef.current?.scrollBy({
+      left: dir === "left" ? -260 : 260,
+      behavior: "smooth",
+    });
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -183,12 +201,11 @@ export default function DashboardHome() {
   }, [jobs]);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+    const unsub = auth.onAuthStateChanged(async (user) => {
       if (!user) {
         setLoading(false);
         return;
       }
-
       try {
         const [jobsSnap, savedSnap, userSnap] = await Promise.all([
           getDocs(query(collection(db, "jobs"), where("status", "==", "Open"))),
@@ -200,98 +217,70 @@ export default function DashboardHome() {
           ),
           getDoc(doc(db, "users", user.uid)),
         ]);
-
         setJobs(jobsSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
         setSavedJobs(savedSnap.docs.map((d) => d.data().jobId));
 
         if (userSnap.exists()) {
           const data = userSnap.data();
           const about = data.about || {};
-
-          const firstName =
-            data.firstName || about.firstName || data.name?.split(" ")[0] || "";
-          setUserName(firstName);
-
+          setUserName(
+            data.firstName || about.firstName || data.name?.split(" ")[0] || "",
+          );
           const profileType = data.profileType || "";
           const eduLevel = about.educationLevel || data.educationLevel || "";
           const simple = profileType === "simple" || eduLevel === "simple";
           setIsSimple(simple);
           setIsGraduate(!simple && eduLevel !== "");
-
           if (!simple) {
-            const basicInfo = !!(
-              (data.firstName || about.firstName || data.name) &&
-              (data.phone || data.phoneNumber || about.phone)
-            );
-            const aboutDone = !!(
-              about.description ||
-              about.currentRole ||
-              about.bio ||
-              data.bio
-            );
-            const skillsDone = !!(
-              (Array.isArray(data.skills) && data.skills.length > 0) ||
-              (Array.isArray(data.skillsData) && data.skillsData.length > 0) ||
-              (Array.isArray(about.skills) && about.skills.length > 0) ||
-              (typeof data.skills === "string" &&
-                data.skills.trim().length > 0) ||
-              (typeof about.skills === "string" &&
-                about.skills.trim().length > 0)
-            );
-            const expDone = !!(
-              (Array.isArray(data.experience) && data.experience.length > 0) ||
-              (Array.isArray(data.experienceData) &&
-                data.experienceData.length > 0) ||
-              (Array.isArray(about.experience) &&
-                about.experience.length > 0) ||
-              about.currentRole
-            );
-            const eduDone = !!(
-              (Array.isArray(data.education) && data.education.length > 0) ||
-              (Array.isArray(data.educationData) &&
-                data.educationData.length > 0) ||
-              about.educationLevel ||
-              about.institution ||
-              about.degree
-            );
-            const linksDone = !!(
-              data.linkedin ||
-              data.github ||
-              data.portfolio ||
-              data.twitter ||
-              about.linkedin ||
-              about.github ||
-              about.portfolio ||
-              (Array.isArray(data.links) && data.links.length > 0)
-            );
-            const resumeDone = !!(
-              data.resumeUrl ||
-              data.resume ||
-              about.resume ||
-              about.resumeUrl
-            );
-
             setCompletedItems({
-              basicInfo,
-              about: aboutDone,
-              skills: skillsDone,
-              experience: expDone,
-              education: eduDone,
-              links: linksDone,
-              resume: resumeDone,
+              basicInfo: !!(
+                (data.firstName || about.firstName || data.name) &&
+                (data.phone || data.phoneNumber || about.phone)
+              ),
+              about: !!(
+                about.description ||
+                about.currentRole ||
+                about.bio ||
+                data.bio
+              ),
+              skills:
+                !!(Array.isArray(about.skills) && about.skills.length > 0) ||
+                !!(Array.isArray(data.skills) && data.skills.length > 0),
+              experience:
+                !!(
+                  Array.isArray(data.experience) && data.experience.length > 0
+                ) ||
+                !!(
+                  Array.isArray(about.experience) && about.experience.length > 0
+                ) ||
+                !!about.currentRole,
+              education:
+                !!(
+                  Array.isArray(data.education) && data.education.length > 0
+                ) ||
+                !!about.educationLevel ||
+                !!about.institution,
+              links: !!(
+                data.linkedin ||
+                data.github ||
+                data.portfolio ||
+                about.linkedin ||
+                about.github
+              ),
+              resume: !!(data.resumeUrl || data.resume || about.resume),
             });
           }
         }
       } catch (err) {
-        console.error("Dashboard fetch error:", err);
+        console.error(err);
       } finally {
         setLoading(false);
       }
     });
-    return () => unsubscribe();
+    return () => unsub();
   }, []);
 
-  if (loading) {
+  if (loading)
     return (
       <div className="flex items-center justify-center h-screen">
         <div
@@ -300,33 +289,39 @@ export default function DashboardHome() {
         />
       </div>
     );
-  }
 
   return (
     <div
-      className="min-h-screen pt-4 pb-20 md:pb-6 px-4 sm:px-6"
+      className="min-h-screen pb-20 md:pb-6 px-4 sm:px-6"
       style={{
         backgroundColor: "#f8fafc",
-        fontFamily: "'Inter', 'DM Sans', system-ui, sans-serif",
+        fontFamily: "'Inter','DM Sans',system-ui,sans-serif",
+        paddingTop: "12px",
       }}
     >
       {userName && (
-        <p className="text-lg font-bold text-slate-900 mb-5">
+        <p className="text-xl font-bold text-slate-900 mb-3 md:mb-6 md:mt-2">
           Welcome back, {userName}
         </p>
+      )}
+
+      {!isSimple && (
+        <div className="xl:hidden mb-3">
+          <ProfileStrength
+            completedItems={completedItems}
+            isGraduate={isGraduate}
+            mobileOnly={true}
+            onImprove={() => router.push("/dashboard/profile")}
+          />
+        </div>
       )}
 
       <div className="flex gap-5 items-start">
         <div className="flex-1 min-w-0">
           {jobs.length === 0 ? (
             <div className="bg-white rounded-2xl border border-slate-100 flex flex-col items-center justify-center py-16 px-6 text-center shadow-sm">
-              <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3"
-                style={{ backgroundColor: "#eff6ff" }}
-              >
-                <span style={{ fontSize: 24 }}>💼</span>
-              </div>
-              <p className="text-base font-bold text-slate-700 mb-1">
+              <span style={{ fontSize: 32 }}>💼</span>
+              <p className="text-base font-bold text-slate-700 mt-3 mb-1">
                 No jobs available right now
               </p>
               <p className="text-sm text-slate-400">Check back soon!</p>
@@ -337,7 +332,10 @@ export default function DashboardHome() {
               style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}
             >
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-bold text-slate-500 uppercase tracking-wide">
+                <h2
+                  className="text-sm font-bold uppercase tracking-wide"
+                  style={{ color: "#60a5fa" }}
+                >
                   Jobs for you
                 </h2>
                 <div className="flex items-center gap-2">
@@ -346,14 +344,14 @@ export default function DashboardHome() {
                       <button
                         onClick={() => scroll("left")}
                         disabled={!canScrollLeft}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center border border-slate-200 transition-all disabled:opacity-25 hover:bg-slate-50"
+                        className="w-7 h-7 rounded-lg flex items-center justify-center border border-slate-200 disabled:opacity-25 hover:bg-slate-50"
                       >
                         <ChevronLeft size={14} className="text-slate-500" />
                       </button>
                       <button
                         onClick={() => scroll("right")}
                         disabled={!canScrollRight}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center border border-slate-200 transition-all disabled:opacity-25 hover:bg-slate-50"
+                        className="w-7 h-7 rounded-lg flex items-center justify-center border border-slate-200 disabled:opacity-25 hover:bg-slate-50"
                       >
                         <ChevronRight size={14} className="text-slate-500" />
                       </button>
@@ -367,7 +365,6 @@ export default function DashboardHome() {
                   </button>
                 </div>
               </div>
-
               <div
                 ref={scrollRef}
                 className="flex gap-3 overflow-x-auto pb-1"
@@ -379,10 +376,8 @@ export default function DashboardHome() {
                     job={job}
                     isSaved={savedJobs.includes(job.id)}
                     onSaveToggle={(id) =>
-                      setSavedJobs((prev) =>
-                        prev.includes(id)
-                          ? prev.filter((j) => j !== id)
-                          : [...prev, id],
+                      setSavedJobs((p) =>
+                        p.includes(id) ? p.filter((j) => j !== id) : [...p, id],
                       )
                     }
                     onClick={() =>
@@ -402,10 +397,6 @@ export default function DashboardHome() {
               isGraduate={isGraduate}
               onImprove={() => router.push("/dashboard/profile")}
             />
-          </div>
-        )}
-        {isSimple && (
-          <div className="hidden xl:block shrink-0" style={{ width: "280px" }}>
           </div>
         )}
       </div>

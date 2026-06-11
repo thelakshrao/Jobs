@@ -60,31 +60,26 @@ export default function ProfileSlugPage() {
 
   useEffect(() => {
     if (!slug) return;
-
     const unsub = onAuthStateChanged(auth, async (fu) => {
       const slugSnap = await getDoc(doc(db, "slugs", slug));
       if (!slugSnap.exists()) {
         setLoading(false);
         return;
       }
-
       const profileUid = slugSnap.data().uid;
       const profileSnap = await getDoc(doc(db, "users", profileUid));
       if (!profileSnap.exists()) {
         setLoading(false);
         return;
       }
-
       const data = profileSnap.data();
       const p = { ...DEFAULT_PROFILE, ...data };
       const a = { ...DEFAULT_ABOUT, ...(data.about || {}) };
-
       setProfile(p);
       setAbout(a);
       setExperiences(data.experiences || []);
       setEducations(data.educations || []);
       setResumeURL(data.resumeURL || data.resume?.url || "");
-
       if (fu && fu.uid === profileUid) {
         setUser(fu);
         setUid(fu.uid);
@@ -92,10 +87,8 @@ export default function ProfileSlugPage() {
         setAboutForm(a);
         setIsOwner(true);
       }
-
       setLoading(false);
     });
-
     return () => unsub();
   }, [slug]);
 
@@ -173,8 +166,14 @@ export default function ProfileSlugPage() {
   if (loading) return null;
 
   return (
-    <div className="min-h-screen bg-white px-4 sm:px-6 lg:pl-6 lg:pr-6 pt-4 pb-20 lg:pb-10">
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+    <div
+      className="min-h-screen px-4 sm:px-6 lg:pl-6 lg:pr-6 pb-20 lg:pb-10"
+      style={{
+        paddingTop: "12px",
+        backgroundColor: "#f8fafc",
+      }}
+    >
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div>
           <h1
             className="text-xl sm:text-2xl font-extrabold"
@@ -209,7 +208,6 @@ export default function ProfileSlugPage() {
               </BtnGhost>
             </div>
           ))}
-
         {isOwner && isSimple && !editing && (
           <BtnPrimary onClick={() => setEditing(true)}>
             <IoPencilOutline size={15} /> Edit Profile
@@ -241,14 +239,16 @@ export default function ProfileSlugPage() {
         </div>
       ) : (
         <div className="flex flex-col lg:flex-row gap-4 items-start">
-          <div className="w-full lg:flex-1 min-w-0 flex flex-col gap-4">
+          <div className="w-full lg:flex-1 min-w-0 flex flex-col gap-3">
             {isOwner && !editing && (
-              <ProfileStrength
-                completedItems={completedItems}
-                isGraduate={isGraduate}
-                mobileOnly={true}
-                onImprove={() => setEditing(true)}
-              />
+              <div className="lg:hidden">
+                <ProfileStrength
+                  completedItems={completedItems}
+                  isGraduate={isGraduate}
+                  mobileOnly={true}
+                  onImprove={() => setEditing(true)}
+                />
+              </div>
             )}
 
             {!editing ? (

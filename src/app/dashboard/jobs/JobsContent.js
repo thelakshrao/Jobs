@@ -5,7 +5,7 @@ import { db, auth } from "@/lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import JobCard from "@/dashboardComponents/jobs/JobCard";
 import JobDetail from "@/dashboardComponents/jobs/JobDetail";
-import { Briefcase } from "lucide-react";
+import { Briefcase, X } from "lucide-react";
 
 export default function JobsPage() {
   const searchParams = useSearchParams();
@@ -16,12 +16,14 @@ export default function JobsPage() {
   const [selectedJob, setSelectedJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [savedJobs, setSavedJobs] = useState([]);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const q = query(collection(db, "jobs"), where("status", "==", "Open"));
-        const snap = await getDocs(q);
+        const snap = await getDocs(
+          query(collection(db, "jobs"), where("status", "==", "Open")),
+        );
         const loaded = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
         setJobs(loaded);
         setFiltered(loaded);
@@ -41,20 +43,21 @@ export default function JobsPage() {
   }, [preselectedId]);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+    const unsub = auth.onAuthStateChanged(async (user) => {
       if (!user) return;
       try {
-        const q = query(
-          collection(db, "savedJobs"),
-          where("applicantUid", "==", user.uid),
+        const snap = await getDocs(
+          query(
+            collection(db, "savedJobs"),
+            where("applicantUid", "==", user.uid),
+          ),
         );
-        const snap = await getDocs(q);
         setSavedJobs(snap.docs.map((d) => d.data().jobId));
       } catch (err) {
         console.error(err);
       }
     });
-    return () => unsubscribe();
+    return () => unsub();
   }, []);
 
   useEffect(() => {
@@ -78,7 +81,25 @@ export default function JobsPage() {
     return () => window.removeEventListener("jobSearch", handler);
   }, [jobs]);
 
-  if (loading) {
+  useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth >= 1024) setMobileDrawerOpen(false);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const handleCardClick = (job) => {
+    setSelectedJob(job);
+    if (window.innerWidth < 1024) setMobileDrawerOpen(true);
+  };
+
+  const saveToggle = (id) =>
+    setSavedJobs((prev) =>
+      prev.includes(id) ? prev.filter((j) => j !== id) : [...prev, id],
+    );
+
+  if (loading)
     return (
       <div className="flex items-center justify-center h-64">
         <div
@@ -87,14 +108,13 @@ export default function JobsPage() {
         />
       </div>
     );
-  }
 
   return (
     <div
       className="min-h-screen pt-4 pb-20 md:pb-6 px-4 sm:px-6"
       style={{
         backgroundColor: "#f8fafc",
-        fontFamily: "'Inter', 'DM Sans', system-ui, sans-serif",
+        fontFamily: "'Inter','DM Sans',system-ui,sans-serif",
       }}
     >
       <div className="mb-4">
@@ -128,14 +148,8 @@ export default function JobsPage() {
                 job={job}
                 isSelected={selectedJob?.id === job.id}
                 isSaved={savedJobs.includes(job.id)}
-                onClick={() => setSelectedJob(job)}
-                onSaveToggle={(id) =>
-                  setSavedJobs((prev) =>
-                    prev.includes(id)
-                      ? prev.filter((j) => j !== id)
-                      : [...prev, id],
-                  )
-                }
+                onClick={() => handleCardClick(job)}
+                onSaveToggle={saveToggle}
               />
             ))}
           </div>
@@ -146,17 +160,48 @@ export default function JobsPage() {
                 key={selectedJob.id}
                 job={selectedJob}
                 isSaved={savedJobs.includes(selectedJob.id)}
-                onSaveToggle={(id) =>
-                  setSavedJobs((prev) =>
-                    prev.includes(id)
-                      ? prev.filter((j) => j !== id)
-                      : [...prev, id],
-                  )
-                }
+                onSaveToggle={saveToggle}
               />
             )}
           </div>
         </div>
+      )}
+
+      {mobileDrawerOpen && selectedJob && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+            onClick={() => setMobileDrawerOpen(false)}
+          />
+          <div
+            className="fixed inset-x-0 bottom-0 z-50 lg:hidden flex flex-col rounded-t-3xl overflow-hidden"
+            style={{
+              backgroundColor: "#fff",
+              maxHeight: "92vh",
+              boxShadow: "0 -8px 40px rgba(0,0,0,0.18)",
+            }}
+          >
+            <div className="flex items-center justify-between px-5 pt-4 pb-2 shrink-0">
+              <div className="w-10 h-1 rounded-full bg-slate-200 mx-auto absolute left-1/2 -translate-x-1/2 top-3" />
+              <div /> 
+              <button
+                onClick={() => setMobileDrawerOpen(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100"
+              >
+                <X size={16} className="text-slate-500" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto flex-1 px-0">
+              <JobDetail
+                key={selectedJob.id}
+                job={selectedJob}
+                isSaved={savedJobs.includes(selectedJob.id)}
+                onSaveToggle={saveToggle}
+              />
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

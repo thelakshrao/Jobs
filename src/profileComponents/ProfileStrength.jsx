@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 import {
   IoCheckmarkCircle,
@@ -34,11 +33,64 @@ export const STRENGTH_ITEMS = [
   { key: "resume", label: "Resume uploaded", Icon: IoCloudUploadOutline },
 ];
 
+function StrengthBar({ percent }) {
+  const segments = [
+    { color: "#ef4444", label: "Low" },
+    { color: "#f97316", label: "Medium" },
+    { color: "#eab308", label: "Good" },
+    { color: "#22c55e", label: "Strong" },
+  ];
+
+  return (
+    <div className="w-full">
+      <div
+        className="flex gap-0.5 rounded-full overflow-hidden"
+        style={{ height: 10 }}
+      >
+        {segments.map((seg, i) => {
+          const segStart = i * 25;
+          const segEnd = (i + 1) * 25;
+          const fill = Math.min(
+            100,
+            Math.max(0, ((percent - segStart) / 25) * 100),
+          );
+          return (
+            <div
+              key={i}
+              className="flex-1 relative"
+              style={{ backgroundColor: "#f1f5f9" }}
+            >
+              <div
+                className="absolute inset-y-0 left-0 transition-all duration-700"
+                style={{ width: `${fill}%`, backgroundColor: seg.color }}
+              />
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex mt-1">
+        {segments.map((seg, i) => (
+          <div key={i} className="flex-1 flex items-center gap-1">
+            <div
+              className="w-2 h-2 rounded-full shrink-0"
+              style={{ backgroundColor: seg.color }}
+            />
+            <span className="text-[9px] font-bold" style={{ color: "#94a3b8" }}>
+              {seg.label}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function ProfileStrength({
   completedItems = {},
   isGraduate = true,
   mobileOnly = false,
-  onImprove, 
+  onImprove,
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -55,29 +107,24 @@ export default function ProfileStrength({
   const label =
     percent === 100
       ? "Complete"
-      : percent >= 70
+      : percent >= 75
         ? "Strong"
-        : percent >= 40
+        : percent >= 50
           ? "Good"
-          : "Getting started";
+          : percent >= 25
+            ? "Medium"
+            : "Getting started";
 
   const labelColor =
     percent === 100
       ? "#16a34a"
-      : percent >= 70
+      : percent >= 75
         ? "#2563eb"
-        : percent >= 40
-          ? "#f59e0b"
-          : "#94a3b8";
-
-  const ringColor =
-    percent === 100
-      ? "#22c55e"
-      : percent >= 70
-        ? BLUE
-        : percent >= 40
-          ? "#f59e0b"
-          : "#cbd5e1";
+        : percent >= 50
+          ? "#eab308"
+          : percent >= 25
+            ? "#f97316"
+            : "#94a3b8";
 
   const CheckList = ({ small = false }) => (
     <div className="w-full flex flex-col gap-2">
@@ -124,58 +171,37 @@ export default function ProfileStrength({
           style={{
             border: "1.5px solid #f1f5f9",
             boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
-            maxWidth: "300px",
+            maxWidth: 300,
           }}
         >
-          <h3 className="text-base font-bold text-gray-900 mb-5">
+          <h3 className="text-base font-bold text-gray-900 mb-4">
             Profile Strength
           </h3>
 
-          <div className="flex flex-col items-center gap-4 mb-5">
-            <div className="relative" style={{ width: 110, height: 110 }}>
-              <svg width="110" height="110" viewBox="0 0 110 110">
-                <circle
-                  cx="55"
-                  cy="55"
-                  r="46"
-                  fill="none"
-                  stroke="#f1f5f9"
-                  strokeWidth="9"
-                />
-                <circle
-                  cx="55"
-                  cy="55"
-                  r="46"
-                  fill="none"
-                  stroke={ringColor}
-                  strokeWidth="9"
-                  strokeLinecap="round"
-                  strokeDasharray={`${2 * Math.PI * 46}`}
-                  strokeDashoffset={`${2 * Math.PI * 46 * (1 - percent / 100)}`}
-                  transform="rotate(-90 55 55)"
-                  style={{
-                    transition: "stroke-dashoffset 0.6s ease, stroke 0.4s",
-                  }}
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-2xl font-bold text-gray-900">
-                  {percent}%
-                </span>
-                <span
-                  className="text-xs font-semibold"
-                  style={{ color: labelColor }}
-                >
-                  {label}
-                </span>
-              </div>
-            </div>
-            <CheckList />
+          <div className="flex items-end justify-between mb-3">
+            <span
+              className="text-3xl font-extrabold"
+              style={{ color: "#0f172a" }}
+            >
+              {percent}%
+            </span>
+            <span
+              className="text-sm font-bold mb-0.5"
+              style={{ color: labelColor }}
+            >
+              {label}
+            </span>
           </div>
+
+          <div className="mb-5">
+            <StrengthBar percent={percent} />
+          </div>
+
+          <CheckList />
 
           <button
             onClick={onImprove}
-            className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-1.5"
+            className="mt-5 w-full py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-1.5"
             style={{ backgroundColor: BLUE_BG, color: BLUE }}
             onMouseEnter={(e) =>
               (e.currentTarget.style.backgroundColor = BLUE_BG_HOVER)
@@ -197,31 +223,9 @@ export default function ProfileStrength({
           className="flex items-center gap-3 px-4 py-3 cursor-pointer select-none"
           onClick={() => setMobileOpen((v) => !v)}
         >
-          <div className="relative shrink-0" style={{ width: 44, height: 44 }}>
-            <svg width="44" height="44" style={{ transform: "rotate(-90deg)" }}>
-              <circle
-                cx="22"
-                cy="22"
-                r="18"
-                fill="none"
-                stroke="#dbeafe"
-                strokeWidth="4"
-              />
-              <circle
-                cx="22"
-                cy="22"
-                r="18"
-                fill="none"
-                stroke={ringColor}
-                strokeWidth="4"
-                strokeLinecap="round"
-                strokeDasharray={`${2 * Math.PI * 18}`}
-                strokeDashoffset={`${2 * Math.PI * 18 * (1 - percent / 100)}`}
-                style={{ transition: "stroke-dashoffset 0.5s ease" }}
-              />
-            </svg>
+          <div className="shrink-0" style={{ width: 48 }}>
             <span
-              className="absolute inset-0 flex items-center justify-center text-xs font-extrabold"
+              className="text-sm font-extrabold"
               style={{ color: "#0f172a" }}
             >
               {percent}%
@@ -233,9 +237,9 @@ export default function ProfileStrength({
               Profile Strength ·{" "}
               <span style={{ color: labelColor }}>{label}</span>
             </p>
-            <p className="text-xs mt-0.5" style={{ color: "#3b82f6" }}>
-              {mobileOpen ? "Tap to close" : "Tap to see what's pending"}
-            </p>
+            <div className="mt-1.5">
+              <StrengthBar percent={percent} />
+            </div>
           </div>
 
           <div
