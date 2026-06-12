@@ -23,6 +23,7 @@ import {
   where,
   getDocs,
 } from "firebase/firestore";
+import JobApplyModal from "@/dashboardComponents/jobs/Jobapplymodal";
 
 function formatSalary(job) {
   const sym = job.currencies?.[0] || "₹";
@@ -37,8 +38,8 @@ function formatSalary(job) {
 }
 
 export default function JobDetail({ job, isSaved, onSaveToggle }) {
-  const [applying, setApplying] = useState(false);
   const [applied, setApplied] = useState(false);
+  const [showApplyModal, setShowApplyModal] = useState(false);
   const salary = formatSalary(job);
   const location = [job.location, job.targetCountry].filter(Boolean).join(", ");
 
@@ -56,40 +57,6 @@ export default function JobDetail({ job, isSaved, onSaveToggle }) {
       });
     }
     onSaveToggle(job.id);
-  };
-
-  const handleApply = async () => {
-    const user = auth.currentUser;
-    if (!user || applied) return;
-    setApplying(true);
-    try {
-      const existing = await getDocs(
-        query(
-          collection(db, "applications"),
-          where("jobId", "==", job.id),
-          where("applicantUid", "==", user.uid),
-        ),
-      );
-      if (!existing.empty) {
-        setApplied(true);
-        return;
-      }
-      await addDoc(collection(db, "applications"), {
-        jobId: job.id,
-        jobTitle: job.title,
-        employerUid: job.employerUid,
-        applicantUid: user.uid,
-        companyName: job.companyName || "",
-        location: job.location || "",
-        status: "Applied",
-        appliedAt: new Date().toISOString(),
-      });
-      setApplied(true);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setApplying(false);
-    }
   };
 
   const detailFields = [
@@ -136,8 +103,8 @@ export default function JobDetail({ job, isSaved, onSaveToggle }) {
 
         <div className="flex items-center gap-2 mt-4 flex-wrap">
           <button
-            onClick={handleApply}
-            disabled={applying || applied}
+            onClick={() => setShowApplyModal(true)}
+            disabled={applied}
             className="px-6 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer disabled:opacity-70"
             style={{
               backgroundColor: applied ? "#22c55e" : "#60a5fa",
@@ -150,7 +117,7 @@ export default function JobDetail({ job, isSaved, onSaveToggle }) {
               if (!applied) e.currentTarget.style.backgroundColor = "#60a5fa";
             }}
           >
-            {applied ? "Applied!" : applying ? "Applying…" : "Apply Now"}
+            {applied ? "Applied!" : "Apply Now"}
           </button>
           <button
             onClick={handleSave}
@@ -258,8 +225,8 @@ export default function JobDetail({ job, isSaved, onSaveToggle }) {
 
         <div className="pt-4 border-t border-slate-100">
           <button
-            onClick={handleApply}
-            disabled={applying || applied}
+            onClick={() => setShowApplyModal(true)}
+            disabled={applied}
             className="w-full py-3 rounded-xl text-sm font-bold transition-all cursor-pointer disabled:opacity-70"
             style={{
               backgroundColor: applied ? "#22c55e" : "#60a5fa",
@@ -272,10 +239,21 @@ export default function JobDetail({ job, isSaved, onSaveToggle }) {
               if (!applied) e.currentTarget.style.backgroundColor = "#60a5fa";
             }}
           >
-            {applied ? "Applied!" : applying ? "Applying…" : "Apply Now"}
+            {applied ? "Applied!" : "Apply Now"}
           </button>
         </div>
       </div>
+
+      {showApplyModal && (
+        <JobApplyModal
+          job={job}
+          onClose={() => setShowApplyModal(false)}
+          onApplied={() => {
+            setApplied(true);
+            setShowApplyModal(false);
+          }}
+        />
+      )}
     </div>
   );
 }

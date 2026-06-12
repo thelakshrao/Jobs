@@ -30,6 +30,7 @@ export default function JobsPage() {
         if (preselectedId) {
           const match = loaded.find((j) => j.id === preselectedId);
           setSelectedJob(match || loaded[0] || null);
+          if (match && window.innerWidth < 1024) setMobileDrawerOpen(true);
         } else {
           setSelectedJob(loaded[0] || null);
         }
@@ -179,11 +180,12 @@ export default function JobsPage() {
               backgroundColor: "#fff",
               maxHeight: "92vh",
               boxShadow: "0 -8px 40px rgba(0,0,0,0.18)",
+              animation: "slideUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards",
             }}
           >
             <div className="flex items-center justify-between px-5 pt-4 pb-2 shrink-0">
               <div className="w-10 h-1 rounded-full bg-slate-200 mx-auto absolute left-1/2 -translate-x-1/2 top-3" />
-              <div /> 
+              <div />
               <button
                 onClick={() => setMobileDrawerOpen(false)}
                 className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100"

@@ -21,6 +21,7 @@ import ProfileStrength from "@/profileComponents/ProfileStrength";
 import TabsSection from "@/profileComponents/TabsSection";
 import ResumeSidebar from "@/profileComponents/ResumeSidebar";
 import SimpleProfileEdit from "@/profileComponents/Simpleprofileedit";
+import SimpleProfileCard from "@/profileComponents/SimpleProfileCard";
 import { computeCompletedItems } from "@/lib/Computecompleteditems";
 
 export default function ProfileSlugPage() {
@@ -28,13 +29,14 @@ export default function ProfileSlugPage() {
   const params = useParams();
   const slug = params?.slug;
 
-  const [user, setUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [profile, setProfile] = useState(DEFAULT_PROFILE);
   const [form, setForm] = useState(DEFAULT_PROFILE);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [activeTab, setActiveTab] = useState("About");
   const [about, setAbout] = useState(DEFAULT_ABOUT);
   const [aboutForm, setAboutForm] = useState(DEFAULT_ABOUT);
@@ -49,7 +51,6 @@ export default function ProfileSlugPage() {
 
   const isSimple = profile.profileType === "simple";
   const isGraduate = about.educationLevel === "graduate";
-
   const completedItems = computeCompletedItems({
     profile,
     about,
@@ -60,36 +61,54 @@ export default function ProfileSlugPage() {
 
   useEffect(() => {
     if (!slug) return;
-    const unsub = onAuthStateChanged(auth, async (fu) => {
-      const slugSnap = await getDoc(doc(db, "slugs", slug));
-      if (!slugSnap.exists()) {
+
+    // Load profile data immediately — no auth required for public view
+    const loadProfile = async () => {
+      try {
+        const slugSnap = await getDoc(doc(db, "slugs", slug));
+        if (!slugSnap.exists()) {
+          setNotFound(true);
+          setLoading(false);
+          return;
+        }
+
+        const profileUid = slugSnap.data().uid;
+        const profileSnap = await getDoc(doc(db, "users", profileUid));
+        if (!profileSnap.exists()) {
+          setNotFound(true);
+          setLoading(false);
+          return;
+        }
+
+        const data = profileSnap.data();
+        const p = { ...DEFAULT_PROFILE, ...data };
+        const a = { ...DEFAULT_ABOUT, ...(data.about || {}) };
+
+        setProfile(p);
+        setAbout(a);
+        setExperiences(data.experiences || []);
+        setEducations(data.educations || []);
+        setResumeURL(data.resumeURL || data.resume?.url || "");
+
+        // Now check auth to see if this visitor is the owner
+        const unsubAuth = onAuthStateChanged(auth, (fu) => {
+          if (fu && fu.uid === profileUid) {
+            setUid(fu.uid);
+            setForm(p);
+            setAboutForm(a);
+            setIsOwner(true);
+          }
+          setAuthChecked(true);
+          setLoading(false);
+          unsubAuth(); // only need one check
+        });
+      } catch (err) {
+        console.error(err);
         setLoading(false);
-        return;
       }
-      const profileUid = slugSnap.data().uid;
-      const profileSnap = await getDoc(doc(db, "users", profileUid));
-      if (!profileSnap.exists()) {
-        setLoading(false);
-        return;
-      }
-      const data = profileSnap.data();
-      const p = { ...DEFAULT_PROFILE, ...data };
-      const a = { ...DEFAULT_ABOUT, ...(data.about || {}) };
-      setProfile(p);
-      setAbout(a);
-      setExperiences(data.experiences || []);
-      setEducations(data.educations || []);
-      setResumeURL(data.resumeURL || data.resume?.url || "");
-      if (fu && fu.uid === profileUid) {
-        setUser(fu);
-        setUid(fu.uid);
-        setForm(p);
-        setAboutForm(a);
-        setIsOwner(true);
-      }
-      setLoading(false);
-    });
-    return () => unsub();
+    };
+
+    loadProfile();
   }, [slug]);
 
   const saveToDb = async (uid, data) => {
@@ -163,7 +182,39 @@ export default function ProfileSlugPage() {
     setAboutForm(updated);
   };
 
-  if (loading) return null;
+  if (loading)
+    return (
+      <div
+        className="flex items-center justify-center h-screen"
+        style={{ backgroundColor: "#f8fafc" }}
+      >
+        <div
+          className="w-7 h-7 border-[3px] border-t-transparent rounded-full animate-spin"
+          style={{ borderColor: "#60a5fa", borderTopColor: "transparent" }}
+        />
+      </div>
+    );
+
+  if (notFound)
+    return (
+      <div
+        className="flex flex-col items-center justify-center h-screen gap-4"
+        style={{ backgroundColor: "#f8fafc" }}
+      >
+        <p className="text-4xl">🔍</p>
+        <p className="text-xl font-bold text-slate-900">Profile not found</p>
+        <p className="text-sm text-slate-500">
+          This profile link doesn't exist or may have changed.
+        </p>
+        <button
+          onClick={() => router.push("/")}
+          className="mt-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white"
+          style={{ backgroundColor: "#60a5fa" }}
+        >
+          Go Home
+        </button>
+      </div>
+    );
 
   return (
     <div
@@ -171,6 +222,7 @@ export default function ProfileSlugPage() {
       style={{
         paddingTop: "12px",
         backgroundColor: "#f8fafc",
+        fontFamily: "'Inter',system-ui,sans-serif",
       }}
     >
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
@@ -216,12 +268,23 @@ export default function ProfileSlugPage() {
       </div>
 
       {isSimple ? (
-        <div className="w-full">
+        !editing ? (
+          <SimpleProfileCard
+            profile={profile}
+            simpleEmployers={profile.simpleEmployers || []}
+            uid={isOwner ? uid : null}
+            onUpdate={
+              isOwner
+                ? (data) => setProfile((p) => ({ ...p, ...data }))
+                : undefined
+            }
+          />
+        ) : (
           <SimpleProfileEdit
             profile={profile}
             simpleEmployers={profile.simpleEmployers || []}
             uid={uid}
-            editing={isOwner && editing}
+            editing={true}
             onUpdate={(data) => {
               setProfile((p) => ({ ...p, ...data }));
               setForm((p) => ({ ...p, ...data }));
@@ -236,7 +299,7 @@ export default function ProfileSlugPage() {
             }}
             onCancel={() => setEditing(false)}
           />
-        </div>
+        )
       ) : (
         <div className="flex flex-col lg:flex-row gap-4 items-start">
           <div className="w-full lg:flex-1 min-w-0 flex flex-col gap-3">

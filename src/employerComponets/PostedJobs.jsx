@@ -62,6 +62,68 @@ const STATUS_CONFIG = {
 };
 const TABS = ["All", "Open", "Paused", "Closed", "Draft"];
 
+const getInfoFields = (job, salary) => {
+  const location = job.location || "—";
+  return [
+    { label: "Location", value: location, icon: MapPin },
+    { label: "Job Type", value: job.type || job.jobType || "—", icon: Clock },
+    { label: "Work Type", value: job.workType || "—", icon: Building2 },
+    { label: "Applicants", value: job.applicants || 0, icon: Users },
+    { label: "Vacancies", value: job.vacancies || "—", icon: Hash },
+    {
+      label: "Experience",
+      value: job.experienceLevel || "—",
+      icon: Briefcase,
+    },
+    { label: "Department", value: job.department || "—", icon: Building2 },
+    { label: "Industry", value: job.industry || "—", icon: TrendingUp },
+    { label: "Urgency", value: job.urgency || "—", icon: Zap },
+    {
+      label: "Target Country",
+      value: job.targetCountry || "—",
+      icon: Globe,
+    },
+    { label: "Language", value: job.language || "—", icon: Languages },
+    { label: "Compensation", value: salary, icon: DollarSign },
+    {
+      label: "Posted",
+      value: job.createdAt
+        ? new Date(job.createdAt).toLocaleDateString("en-IN", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          })
+        : "—",
+      icon: TrendingUp,
+    },
+    ...(job.applicationDeadline
+      ? [
+          {
+            label: "Deadline",
+            value: new Date(job.applicationDeadline).toLocaleDateString(
+              "en-IN",
+              { day: "numeric", month: "short", year: "numeric" },
+            ),
+            icon: CalendarX,
+          },
+        ]
+      : []),
+    ...(job.jobStartDate
+      ? [
+          {
+            label: "Start Date",
+            value: new Date(job.jobStartDate).toLocaleDateString("en-IN", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            }),
+            icon: CalendarCheck,
+          },
+        ]
+      : []),
+  ];
+};
+
 export default function PostedJobs() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -76,6 +138,7 @@ export default function PostedJobs() {
   const [deleting, setDeleting] = useState(false);
   const [statusDropdown, setStatusDropdown] = useState(null);
   const [selectedJob, setSelectedJob] = useState(null);
+  const [sheetJob, setSheetJob] = useState(null);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -98,6 +161,13 @@ export default function PostedJobs() {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+  document.body.style.overflow = sheetJob ? "hidden" : "";
+  return () => {
+    document.body.style.overflow = "";
+  };
+}, [sheetJob]);
+
   const handleDeleteConfirmed = async () => {
     if (!deleteConfirm) return;
     setDeleting(true);
@@ -105,6 +175,7 @@ export default function PostedJobs() {
       await deleteDoc(doc(db, "jobs", deleteConfirm));
       setJobs((prev) => prev.filter((j) => j.id !== deleteConfirm));
       if (selectedJob?.id === deleteConfirm) setSelectedJob(null);
+      if (sheetJob?.id === deleteConfirm) setSheetJob(null);
       setDeleteConfirm(null);
     } catch (err) {
       console.error(err);
@@ -127,6 +198,8 @@ export default function PostedJobs() {
       );
       if (selectedJob?.id === jobId)
         setSelectedJob((p) => ({ ...p, status: newStatus }));
+      if (sheetJob?.id === jobId)
+        setSheetJob((p) => ({ ...p, status: newStatus }));
       setStatusDropdown(null);
     } catch (err) {
       console.error(err);
@@ -186,7 +259,6 @@ export default function PostedJobs() {
   };
 
   const closeAll = () => setOpenFilter(null);
-
   const clearFilters = () => {
     setTitleSearch("");
     setLocationSearch("");
@@ -195,7 +267,6 @@ export default function PostedJobs() {
   };
 
   const hasFilters = titleSearch || locationSearch || dateFilter || starredOnly;
-
   const openCount = countByStatus("Open");
   const totalApplicants = jobs.reduce((s, j) => s + (j.applicants || 0), 0);
   const draftCount = countByStatus("Draft");
@@ -225,6 +296,20 @@ export default function PostedJobs() {
       className="px-4 sm:px-8 py-8 bg-[#e8eaed] min-h-screen"
       style={{ fontFamily: "'Inter', 'DM Sans', system-ui, sans-serif" }}
     >
+      <style jsx global>{`
+        @keyframes slide-up {
+          from {
+            transform: translateY(100%);
+          }
+          to {
+            transform: translateY(0);
+          }
+        }
+        .animate-slide-up {
+          animation: slide-up 0.3s ease-out;
+        }
+      `}</style>
+
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
@@ -249,7 +334,11 @@ export default function PostedJobs() {
         <div className="grid grid-cols-3 gap-4 mb-7">
           {[
             { label: "Active Jobs", value: openCount, icon: Briefcase },
-            { label: "Total Applicants", value: totalApplicants, icon: Users },
+            {
+              label: "Total Applicants",
+              value: totalApplicants,
+              icon: Users,
+            },
             { label: "Drafts", value: draftCount, icon: FileEdit },
           ].map(({ label, value, icon: Icon }) => (
             <div
@@ -480,7 +569,10 @@ export default function PostedJobs() {
                   return (
                     <div
                       key={job.id}
-                      onClick={() => setSelectedJob(job)}
+                      onClick={() => {
+                        setSelectedJob(job);
+                        setSheetJob(job);
+                      }}
                       className={`px-4 py-4 cursor-pointer transition-all group border-l-2 ${
                         isSelected
                           ? "bg-slate-100 border-l-slate-900"
@@ -668,96 +760,7 @@ export default function PostedJobs() {
                 const cfg = STATUS_CONFIG[job.status] || STATUS_CONFIG.Draft;
                 const location = job.location || "—";
                 const salary = formatSalary(job);
-
-                const infoFields = [
-                  { label: "Location", value: location, icon: MapPin },
-                  {
-                    label: "Job Type",
-                    value: job.type || job.jobType || "—",
-                    icon: Clock,
-                  },
-                  {
-                    label: "Work Type",
-                    value: job.workType || "—",
-                    icon: Building2,
-                  },
-                  {
-                    label: "Applicants",
-                    value: job.applicants || 0,
-                    icon: Users,
-                  },
-                  {
-                    label: "Vacancies",
-                    value: job.vacancies || "—",
-                    icon: Hash,
-                  },
-                  {
-                    label: "Experience",
-                    value: job.experienceLevel || "—",
-                    icon: Briefcase,
-                  },
-                  {
-                    label: "Department",
-                    value: job.department || "—",
-                    icon: Building2,
-                  },
-                  {
-                    label: "Industry",
-                    value: job.industry || "—",
-                    icon: TrendingUp,
-                  },
-                  { label: "Urgency", value: job.urgency || "—", icon: Zap },
-                  {
-                    label: "Target Country",
-                    value: job.targetCountry || "—",
-                    icon: Globe,
-                  },
-                  {
-                    label: "Language",
-                    value: job.language || "—",
-                    icon: Languages,
-                  },
-                  { label: "Compensation", value: salary, icon: DollarSign },
-                  {
-                    label: "Posted",
-                    value: job.createdAt
-                      ? new Date(job.createdAt).toLocaleDateString("en-IN", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })
-                      : "—",
-                    icon: TrendingUp,
-                  },
-                  ...(job.applicationDeadline
-                    ? [
-                        {
-                          label: "Deadline",
-                          value: new Date(
-                            job.applicationDeadline,
-                          ).toLocaleDateString("en-IN", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          }),
-                          icon: CalendarX,
-                        },
-                      ]
-                    : []),
-                  ...(job.jobStartDate
-                    ? [
-                        {
-                          label: "Start Date",
-                          value: new Date(job.jobStartDate).toLocaleDateString(
-                            "en-IN",
-                            { day: "numeric", month: "short", year: "numeric" },
-                          ),
-                          icon: CalendarCheck,
-                        },
-                      ]
-                    : []),
-                ];
-
+                const infoFields = getInfoFields(job, salary);
                 return (
                   <>
                     <div className="px-6 py-5 border-b border-slate-100">
@@ -853,7 +856,6 @@ export default function PostedJobs() {
                         </div>
                       </div>
                     </div>
-
                     <div className="flex-1 overflow-y-auto p-6">
                       <div className="grid grid-cols-2 gap-3 mb-6">
                         {infoFields.map(({ label, value, icon: Icon }) => (
@@ -873,7 +875,6 @@ export default function PostedJobs() {
                           </div>
                         ))}
                       </div>
-
                       {job.perks?.length > 0 && (
                         <div className="mb-6">
                           <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
@@ -891,7 +892,6 @@ export default function PostedJobs() {
                           </div>
                         </div>
                       )}
-
                       {job.description && (
                         <div className="mb-5">
                           <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
@@ -902,7 +902,6 @@ export default function PostedJobs() {
                           </p>
                         </div>
                       )}
-
                       {job.requirements && (
                         <div className="mb-5">
                           <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
@@ -949,6 +948,126 @@ export default function PostedJobs() {
               >
                 Cancel
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {sheetJob && (
+        <div className="lg:hidden fixed inset-0 z-50">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setSheetJob(null)}
+          />
+          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col animate-slide-up">
+            <div className="flex justify-center pt-3 pb-2">
+              <div className="w-10 h-1 bg-slate-300 rounded-full" />
+            </div>
+            <div className="px-5 pb-3 flex items-start justify-between border-b border-slate-100">
+              <div>
+                <h2 className="text-lg font-extrabold text-slate-900 leading-tight">
+                  {sheetJob.title || (
+                    <span className="italic font-normal text-slate-400">
+                      Untitled
+                    </span>
+                  )}
+                </h2>
+                <p className="text-sm text-slate-500 font-medium mt-0.5 flex items-center gap-1">
+                  <MapPin size={11} />
+                  {sheetJob.location || "—"}
+                </p>
+              </div>
+              <button
+                onClick={() => setSheetJob(null)}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 shrink-0"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              <div className="grid grid-cols-2 gap-3 mb-5">
+                {getInfoFields(sheetJob, formatSalary(sheetJob)).map(
+                  ({ label, value, icon: Icon }) => (
+                    <div
+                      key={label}
+                      className="bg-slate-50 rounded-xl px-4 py-3 border border-slate-100"
+                    >
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Icon size={11} className="text-slate-400" />
+                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">
+                          {label}
+                        </span>
+                      </div>
+                      <p className="text-sm font-bold text-slate-800">
+                        {value}
+                      </p>
+                    </div>
+                  ),
+                )}
+              </div>
+              {sheetJob.perks?.length > 0 && (
+                <div className="mb-5">
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
+                    Perks & Benefits
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {sheetJob.perks.map((p) => (
+                      <span
+                        key={p}
+                        className="text-xs font-semibold px-3 py-1 bg-slate-100 text-slate-700 rounded-full border border-slate-200"
+                      >
+                        {p}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {sheetJob.description && (
+                <div className="mb-5">
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
+                    Description
+                  </h4>
+                  <p className="text-sm text-slate-700 leading-relaxed font-medium whitespace-pre-line">
+                    {sheetJob.description}
+                  </p>
+                </div>
+              )}
+              {sheetJob.requirements && (
+                <div className="mb-5">
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
+                    Requirements
+                  </h4>
+                  <p className="text-sm text-slate-700 leading-relaxed font-medium whitespace-pre-line">
+                    {sheetJob.requirements}
+                  </p>
+                </div>
+              )}
+              <div className="flex gap-2 pt-2">
+                {sheetJob.status === "Draft" ? (
+                  <Link
+                    href={`/employer/dashboard/create-job?draftId=${sheetJob.id}`}
+                    className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-slate-900 hover:bg-black transition-colors no-underline shadow-sm"
+                  >
+                    <FileEdit size={14} /> Continue Editing
+                  </Link>
+                ) : (
+                  <Link
+                    href={`/employer/dashboard/create-job?draftId=${sheetJob.id}`}
+                    className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 border border-slate-200 hover:bg-slate-50 transition-colors no-underline"
+                  >
+                    <Pencil size={14} /> Edit Job
+                  </Link>
+                )}
+                <button
+                  onClick={() => {
+                    setDeleteConfirm(sheetJob.id);
+                    setSheetJob(null);
+                  }}
+                  className="w-11 h-11 flex items-center justify-center rounded-xl text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-colors border border-slate-200 shrink-0"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -69,6 +69,13 @@ export default function EmployerSidebar() {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+  document.body.style.overflow = mobileOpen ? "hidden" : "";
+  return () => {
+    document.body.style.overflow = "";
+  };
+}, [mobileOpen]);
+
   const handleSaveCompany = async () => {
     if (!newCompany.trim()) return;
     setSaving(true);
