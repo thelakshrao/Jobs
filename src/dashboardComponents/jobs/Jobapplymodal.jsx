@@ -113,10 +113,12 @@ export default function JobApplyModal({ job, onClose, onApplied }) {
         applicantEmail: editEmail || profile?.email || user.email || "",
         applicantPhone: editPhone || profile?.phone || "",
         applicantLocation: editLocation || profile?.location || "",
+        applicantPhotoURL: profile?.photoURL || "",
+        applicantSlug: profile?.slug || "",
         resumeURL: resumeURL || "",
         location: job.location || "",
         status: "Applied",
-        appliedAt: new Date().toISOString(),
+        appliedAt: new Date(),
       });
       setApplied(true);
       setTimeout(() => {
@@ -132,10 +134,34 @@ export default function JobApplyModal({ job, onClose, onApplied }) {
   const location = [job.location, job.targetCountry].filter(Boolean).join(", ");
 
   const contactRows = [
-    { icon: <User size={14} />, label: "Full Name", value: editName, setter: setEditName, placeholder: "Your full name" },
-    { icon: <Mail size={14} />, label: "Email", value: editEmail, setter: setEditEmail, placeholder: "Your email" },
-    { icon: <Phone size={14} />, label: "Phone", value: editPhone, setter: setEditPhone, placeholder: "Your phone number" },
-    { icon: <MapPin size={14} />, label: "Location", value: editLocation, setter: setEditLocation, placeholder: "Your location" },
+    {
+      icon: <User size={14} />,
+      label: "Full Name",
+      value: editName,
+      setter: setEditName,
+      placeholder: "Your full name",
+    },
+    {
+      icon: <Mail size={14} />,
+      label: "Email",
+      value: editEmail,
+      setter: setEditEmail,
+      placeholder: "Your email",
+    },
+    {
+      icon: <Phone size={14} />,
+      label: "Phone",
+      value: editPhone,
+      setter: setEditPhone,
+      placeholder: "Your phone number",
+    },
+    {
+      icon: <MapPin size={14} />,
+      label: "Location",
+      value: editLocation,
+      setter: setEditLocation,
+      placeholder: "Your location",
+    },
   ];
 
   const modalContent = (
@@ -146,13 +172,15 @@ export default function JobApplyModal({ job, onClose, onApplied }) {
     >
       <div
         className="w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl flex flex-col overflow-hidden"
-        style={{ maxHeight: "92vh", boxShadow: "0 -8px 40px rgba(0,0,0,0.22)", zIndex: 100000 }}
+        style={{
+          maxHeight: "92vh",
+          boxShadow: "0 -8px 40px rgba(0,0,0,0.22)",
+          zIndex: 100000,
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* drag handle mobile */}
         <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mt-3 sm:hidden shrink-0" />
 
-        {/* header */}
         <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-slate-100 shrink-0">
           <div>
             <p className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wide mb-0.5">
@@ -161,7 +189,10 @@ export default function JobApplyModal({ job, onClose, onApplied }) {
             <h2 className="text-base font-extrabold text-slate-900 leading-snug">
               {job.title}
               {job.companyName && (
-                <span className="font-extrabold" style={{ color: BLUE }}> · {job.companyName}</span>
+                <span className="font-extrabold" style={{ color: BLUE }}>
+                  {" "}
+                  · {job.companyName}
+                </span>
               )}
             </h2>
             {location && (
@@ -179,28 +210,30 @@ export default function JobApplyModal({ job, onClose, onApplied }) {
           </button>
         </div>
 
-        {/* scrollable body */}
         <div className="flex-1 overflow-y-auto px-5 py-5">
           {applied ? (
             <div className="flex flex-col items-center justify-center h-full gap-4 py-12">
               <CheckCircle2 size={52} style={{ color: "#22c55e" }} />
-              <p className="text-xl font-extrabold text-slate-900">Application Sent!</p>
+              <p className="text-xl font-extrabold text-slate-900">
+                Application Sent!
+              </p>
               <p className="text-sm font-bold text-slate-500 text-center">
-                Your application has been submitted to {job.companyName || "the employer"}.
+                Your application has been submitted to{" "}
+                {job.companyName || "the employer"}.
               </p>
             </div>
           ) : alreadyApplied ? (
             <div className="flex flex-col items-center justify-center h-full gap-4 py-12">
               <CheckCircle2 size={48} style={{ color: BLUE }} />
-              <p className="text-lg font-extrabold text-slate-900">Already Applied</p>
+              <p className="text-lg font-extrabold text-slate-900">
+                Already Applied
+              </p>
               <p className="text-sm font-bold text-slate-500 text-center">
                 You've already applied to this job.
               </p>
             </div>
           ) : (
             <div className="flex flex-col gap-4">
-
-              {/* contact info */}
               <div className="rounded-2xl border border-slate-200 overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 bg-slate-50">
                   <p className="text-xs font-extrabold text-slate-400 uppercase tracking-wide">
@@ -215,29 +248,35 @@ export default function JobApplyModal({ job, onClose, onApplied }) {
                     {editingContact ? "Done" : "Edit"}
                   </button>
                 </div>
-                {contactRows.filter((r) => r.value || editingContact).map(({ icon, label, value, setter, placeholder }) => (
-                  <div key={label} className="flex items-center gap-3 px-4 py-2.5 border-b border-slate-100 last:border-0">
-                    <span className="text-slate-400 shrink-0">{icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wide mb-0.5">
-                        {label}
-                      </p>
-                      {editingContact ? (
-                        <input
-                          value={value}
-                          onChange={(e) => setter(e.target.value)}
-                          placeholder={placeholder}
-                          className="w-full text-sm font-extrabold text-slate-900 outline-none border-b border-blue-200 bg-transparent pb-0.5 focus:border-blue-400"
-                        />
-                      ) : (
-                        <p className="text-sm font-extrabold text-slate-900 truncate">{value || "—"}</p>
-                      )}
+                {contactRows
+                  .filter((r) => r.value || editingContact)
+                  .map(({ icon, label, value, setter, placeholder }) => (
+                    <div
+                      key={label}
+                      className="flex items-center gap-3 px-4 py-2.5 border-b border-slate-100 last:border-0"
+                    >
+                      <span className="text-slate-400 shrink-0">{icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wide mb-0.5">
+                          {label}
+                        </p>
+                        {editingContact ? (
+                          <input
+                            value={value}
+                            onChange={(e) => setter(e.target.value)}
+                            placeholder={placeholder}
+                            className="w-full text-sm font-extrabold text-slate-900 outline-none border-b border-blue-200 bg-transparent pb-0.5 focus:border-blue-400"
+                          />
+                        ) : (
+                          <p className="text-sm font-extrabold text-slate-900 truncate">
+                            {value || "—"}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
               </div>
 
-              {/* resume */}
               <div className="rounded-2xl border border-slate-200 overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 bg-slate-50">
                   <p className="text-xs font-extrabold text-slate-400 uppercase tracking-wide">
@@ -282,10 +321,17 @@ export default function JobApplyModal({ job, onClose, onApplied }) {
                       <p className="text-sm font-extrabold text-slate-900 truncate">
                         {resumeFile?.name || "Resume from profile"}
                       </p>
-                      <p className="text-xs font-bold text-slate-400">Ready to send</p>
+                      <p className="text-xs font-bold text-slate-400">
+                        Ready to send
+                      </p>
                     </div>
                     {uploading && (
-                      <p className="text-xs font-extrabold shrink-0" style={{ color: BLUE }}>Uploading…</p>
+                      <p
+                        className="text-xs font-extrabold shrink-0"
+                        style={{ color: BLUE }}
+                      >
+                        Uploading…
+                      </p>
                     )}
                   </div>
                 ) : (
@@ -294,11 +340,20 @@ export default function JobApplyModal({ job, onClose, onApplied }) {
                       <Upload size={16} className="text-slate-300" />
                     </div>
                     <div>
-                      <p className="text-sm font-extrabold text-slate-900">Upload resume</p>
-                      <p className="text-xs font-bold text-slate-400">PDF or Word file</p>
+                      <p className="text-sm font-extrabold text-slate-900">
+                        Upload resume
+                      </p>
+                      <p className="text-xs font-bold text-slate-400">
+                        PDF or Word file
+                      </p>
                     </div>
                     {uploading && (
-                      <p className="text-xs font-extrabold ml-auto" style={{ color: BLUE }}>Uploading…</p>
+                      <p
+                        className="text-xs font-extrabold ml-auto"
+                        style={{ color: BLUE }}
+                      >
+                        Uploading…
+                      </p>
                     )}
                     <input
                       type="file"
@@ -309,12 +364,10 @@ export default function JobApplyModal({ job, onClose, onApplied }) {
                   </label>
                 )}
               </div>
-
             </div>
           )}
         </div>
 
-        {/* footer */}
         {!applied && !alreadyApplied && (
           <div className="px-5 pb-6 pt-3 border-t border-slate-100 shrink-0 flex flex-col gap-3">
             <button
@@ -333,11 +386,19 @@ export default function JobApplyModal({ job, onClose, onApplied }) {
 
             <p className="text-[11px] font-bold text-slate-400 text-center leading-relaxed">
               By applying you agree to our{" "}
-              <a href="/terms" className="underline font-extrabold" style={{ color: BLUE }}>
+              <a
+                href="/terms"
+                className="underline font-extrabold"
+                style={{ color: BLUE }}
+              >
                 Terms of Service
               </a>{" "}
               and{" "}
-              <a href="/privacy" className="underline font-extrabold" style={{ color: BLUE }}>
+              <a
+                href="/privacy"
+                className="underline font-extrabold"
+                style={{ color: BLUE }}
+              >
                 Privacy Policy
               </a>
               . Your information may be shared with the employer.

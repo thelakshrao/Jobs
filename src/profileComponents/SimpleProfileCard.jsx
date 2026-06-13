@@ -16,7 +16,6 @@ import {
   IoCheckmarkOutline,
   IoCloseOutline,
   IoPersonOutline,
-  IoTimeOutline,
 } from "react-icons/io5";
 import { BLUE, BLUE_BG } from "./shared";
 
@@ -60,7 +59,7 @@ function InfoRow({ icon, label, value }) {
   );
 }
 
-function EmployerCard({ emp, index, onEdit, onDelete }) {
+function EmployerCard({ emp, index, onEdit, onDelete, isOwner }) {
   return (
     <div
       className="flex items-start gap-3 p-3 rounded-2xl"
@@ -92,14 +91,16 @@ function EmployerCard({ emp, index, onEdit, onDelete }) {
           )}
         </div>
       </div>
-      <div className="flex gap-1.5 shrink-0">
-        <button onClick={onEdit} style={{ color: "#94a3b8" }}>
-          <IoPencilOutline size={13} />
-        </button>
-        <button onClick={onDelete} style={{ color: "#ef4444" }}>
-          <IoTrashOutline size={13} />
-        </button>
-      </div>
+      {isOwner && (
+        <div className="flex gap-1.5 shrink-0">
+          <button onClick={onEdit} style={{ color: "#94a3b8" }}>
+            <IoPencilOutline size={13} />
+          </button>
+          <button onClick={onDelete} style={{ color: "#ef4444" }}>
+            <IoTrashOutline size={13} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -152,9 +153,11 @@ function EmployerForm({ value, onChange, onSave, onCancel }) {
 export default function SimpleProfileCard({
   profile,
   simpleEmployers = [],
-  uid,
+  uid,       
   onUpdate,
 }) {
+  const isOwner = !!uid;
+
   const [photoUploading, setPhotoUploading] = useState(false);
   const [employers, setEmployers] = useState(simpleEmployers);
   const [addingNew, setAddingNew] = useState(false);
@@ -258,48 +261,56 @@ export default function SimpleProfileCard({
                 {profile.name?.[0]?.toUpperCase() || "?"}
               </div>
             )}
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => handlePhoto(e.target.files?.[0])}
-            />
-            <button
-              onClick={() => fileRef.current?.click()}
-              disabled={photoUploading}
-              className="absolute inset-0 flex flex-col items-center justify-center gap-1 transition-all opacity-0 hover:opacity-100"
-              style={{ borderRadius: 36, backgroundColor: "rgba(0,0,0,0.45)" }}
-            >
-              {photoUploading ? (
-                <svg
-                  className="animate-spin"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
+
+            {isOwner && (
+              <>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handlePhoto(e.target.files?.[0])}
+                />
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  disabled={photoUploading}
+                  className="absolute inset-0 flex flex-col items-center justify-center gap-1 transition-all opacity-0 hover:opacity-100"
+                  style={{
+                    borderRadius: 36,
+                    backgroundColor: "rgba(0,0,0,0.45)",
+                  }}
                 >
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="9"
-                    stroke="white"
-                    strokeWidth="3"
-                    strokeDasharray="28"
-                    strokeDashoffset="10"
-                  />
-                </svg>
-              ) : (
-                <>
-                  <IoCameraOutline size={24} color="white" />
-                  <span
-                    style={{ color: "white", fontSize: 9, fontWeight: 700 }}
-                  >
-                    CHANGE
-                  </span>
-                </>
-              )}
-            </button>
+                  {photoUploading ? (
+                    <svg
+                      className="animate-spin"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                    >
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="9"
+                        stroke="white"
+                        strokeWidth="3"
+                        strokeDasharray="28"
+                        strokeDashoffset="10"
+                      />
+                    </svg>
+                  ) : (
+                    <>
+                      <IoCameraOutline size={24} color="white" />
+                      <span
+                        style={{ color: "white", fontSize: 9, fontWeight: 700 }}
+                      >
+                        CHANGE
+                      </span>
+                    </>
+                  )}
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -400,7 +411,7 @@ export default function SimpleProfileCard({
                 : `${employers.length} job${employers.length > 1 ? "s" : ""} added`}
             </p>
           </div>
-          {!addingNew && editIdx === null && (
+          {isOwner && !addingNew && editIdx === null && (
             <button
               onClick={() => setAddingNew(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
@@ -417,7 +428,7 @@ export default function SimpleProfileCard({
 
         <div className="flex flex-col gap-2.5">
           {employers.map((emp, i) =>
-            editIdx === i ? (
+            isOwner && editIdx === i ? (
               <EmployerForm
                 key={i}
                 value={editEmp}
@@ -433,6 +444,7 @@ export default function SimpleProfileCard({
                 key={i}
                 emp={emp}
                 index={i}
+                isOwner={isOwner}
                 onEdit={() => {
                   setEditIdx(i);
                   setEditEmp(emp);
@@ -442,7 +454,7 @@ export default function SimpleProfileCard({
             ),
           )}
 
-          {addingNew && (
+          {isOwner && addingNew && (
             <EmployerForm
               value={newEmp}
               onChange={setNewEmp}
@@ -466,13 +478,15 @@ export default function SimpleProfileCard({
               <p className="text-sm font-semibold" style={{ color: "#94a3b8" }}>
                 No past employers added
               </p>
-              <button
-                onClick={() => setAddingNew(true)}
-                className="text-xs font-bold px-4 py-2 rounded-xl mt-1"
-                style={{ backgroundColor: BLUE_BG, color: BLUE }}
-              >
-                + Add your first job
-              </button>
+              {isOwner && (
+                <button
+                  onClick={() => setAddingNew(true)}
+                  className="text-xs font-bold px-4 py-2 rounded-xl mt-1"
+                  style={{ backgroundColor: BLUE_BG, color: BLUE }}
+                >
+                  + Add your first job
+                </button>
+              )}
             </div>
           )}
         </div>

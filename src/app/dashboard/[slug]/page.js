@@ -29,7 +29,6 @@ export default function ProfileSlugPage() {
   const params = useParams();
   const slug = params?.slug;
 
-  const [authChecked, setAuthChecked] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [profile, setProfile] = useState(DEFAULT_PROFILE);
   const [form, setForm] = useState(DEFAULT_PROFILE);
@@ -62,8 +61,10 @@ export default function ProfileSlugPage() {
   useEffect(() => {
     if (!slug) return;
 
-    // Load profile data immediately — no auth required for public view
-    const loadProfile = async () => {
+
+    const unsubAuth = onAuthStateChanged(auth, async (currentUser) => {
+      unsubAuth();
+
       try {
         const slugSnap = await getDoc(doc(db, "slugs", slug));
         if (!slugSnap.exists()) {
@@ -73,6 +74,7 @@ export default function ProfileSlugPage() {
         }
 
         const profileUid = slugSnap.data().uid;
+
         const profileSnap = await getDoc(doc(db, "users", profileUid));
         if (!profileSnap.exists()) {
           setNotFound(true);
@@ -90,25 +92,21 @@ export default function ProfileSlugPage() {
         setEducations(data.educations || []);
         setResumeURL(data.resumeURL || data.resume?.url || "");
 
-        // Now check auth to see if this visitor is the owner
-        const unsubAuth = onAuthStateChanged(auth, (fu) => {
-          if (fu && fu.uid === profileUid) {
-            setUid(fu.uid);
-            setForm(p);
-            setAboutForm(a);
-            setIsOwner(true);
-          }
-          setAuthChecked(true);
-          setLoading(false);
-          unsubAuth(); // only need one check
-        });
+        if (currentUser && currentUser.uid === profileUid) {
+          setUid(currentUser.uid);
+          setForm(p);
+          setAboutForm(a);
+          setIsOwner(true);
+        }
+
+        setLoading(false);
       } catch (err) {
-        console.error(err);
+        console.error("Error loading profile:", err);
         setLoading(false);
       }
-    };
+    });
 
-    loadProfile();
+    return () => unsubAuth();
   }, [slug]);
 
   const saveToDb = async (uid, data) => {
@@ -279,7 +277,7 @@ export default function ProfileSlugPage() {
                 : undefined
             }
           />
-        ) : (
+        ) : isOwner ? (
           <SimpleProfileEdit
             profile={profile}
             simpleEmployers={profile.simpleEmployers || []}
@@ -298,6 +296,12 @@ export default function ProfileSlugPage() {
               setEditing(false);
             }}
             onCancel={() => setEditing(false)}
+          />
+        ) : (
+          <SimpleProfileCard
+            profile={profile}
+            simpleEmployers={profile.simpleEmployers || []}
+            uid={null}
           />
         )
       ) : (

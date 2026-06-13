@@ -49,7 +49,6 @@ function StrengthBar({ percent }) {
       >
         {segments.map((seg, i) => {
           const segStart = i * 25;
-          const segEnd = (i + 1) * 25;
           const fill = Math.min(
             100,
             Math.max(0, ((percent - segStart) / 25) * 100),
@@ -216,7 +215,7 @@ export default function ProfileStrength({
       )}
 
       <div
-        className="lg:hidden mb-4 rounded-2xl overflow-hidden"
+        className="lg:hidden mx-3 sm:mx-6 mb-4 rounded-2xl overflow-hidden"
         style={{ backgroundColor: "#eff6ff", border: "1.5px solid #dbeafe" }}
       >
         <div

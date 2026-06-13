@@ -23,7 +23,7 @@ const navItems = [
   { href: "/dashboard", icon: IoHomeOutline, label: "Home" },
   { href: "/dashboard/profile", icon: IoPersonCircleOutline, label: "Profile" },
   { href: "/dashboard/jobs", icon: IoBriefcaseOutline, label: "Jobs" },
-  { href: "/dashboard/saved-jobs", icon: IoBookmarkOutline, label: "Saved" },
+  { href: "/dashboard/saved-jobs", icon: IoBookmarkOutline, label: "Saved / Applied" },
   { href: "/dashboard/projects", icon: IoFolderOpenOutline, label: "Projects" },
   {
     href: "/dashboard/notifications",
@@ -230,7 +230,7 @@ export default function DashNavbar() {
             {
               href: "/dashboard/saved-jobs",
               icon: IoBookmarkOutline,
-              label: "Saved",
+              label: "Saved / Applied",
             },
             {
               href: "/dashboard/projects",
