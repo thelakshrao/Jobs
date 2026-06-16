@@ -35,6 +35,9 @@ import {
   Languages,
   CalendarCheck,
   CalendarX,
+  ExternalLink,
+  UserCheck,
+  Phone,
 } from "lucide-react";
 
 const STATUS_OPTIONS = ["Draft", "Open", "Paused", "Closed"];
@@ -60,6 +63,25 @@ const STATUS_CONFIG = {
     pill: "bg-rose-50 text-rose-600",
   },
 };
+
+const POSTING_MODE_CONFIG = {
+  own: null,
+  external: {
+    label: "External",
+    icon: ExternalLink,
+    bg: "bg-slate-100",
+    text: "text-slate-700",
+    border: "border-slate-200",
+  },
+  referral: {
+    label: "Referral",
+    icon: UserCheck,
+    bg: "bg-slate-100",
+    text: "text-slate-700",
+    border: "border-slate-200",
+  },
+};
+
 const TABS = ["All", "Open", "Paused", "Closed", "Draft"];
 
 const getInfoFields = (job, salary) => {
@@ -70,19 +92,11 @@ const getInfoFields = (job, salary) => {
     { label: "Work Type", value: job.workType || "—", icon: Building2 },
     { label: "Applicants", value: job.applicants || 0, icon: Users },
     { label: "Vacancies", value: job.vacancies || "—", icon: Hash },
-    {
-      label: "Experience",
-      value: job.experienceLevel || "—",
-      icon: Briefcase,
-    },
+    { label: "Experience", value: job.experienceLevel || "—", icon: Briefcase },
     { label: "Department", value: job.department || "—", icon: Building2 },
     { label: "Industry", value: job.industry || "—", icon: TrendingUp },
     { label: "Urgency", value: job.urgency || "—", icon: Zap },
-    {
-      label: "Target Country",
-      value: job.targetCountry || "—",
-      icon: Globe,
-    },
+    { label: "Target Country", value: job.targetCountry || "—", icon: Globe },
     { label: "Language", value: job.language || "—", icon: Languages },
     { label: "Compensation", value: salary, icon: DollarSign },
     {
@@ -124,6 +138,82 @@ const getInfoFields = (job, salary) => {
   ];
 };
 
+function PostingTypeBadge({ job }) {
+  const mode = job.postingMode;
+  if (!mode || mode === "own") return null;
+  const cfg = POSTING_MODE_CONFIG[mode];
+  if (!cfg) return null;
+  const Icon = cfg.icon;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${cfg.bg} ${cfg.text} ${cfg.border}`}
+    >
+      <Icon size={9} />
+      {cfg.label}
+    </span>
+  );
+}
+
+function PostingTypeDetail({ job }) {
+  const mode = job.postingMode;
+  if (!mode || mode === "own") return null;
+
+  if (mode === "external") {
+    return (
+      <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 mb-4">
+        <div className="flex items-center gap-2 mb-2">
+          <ExternalLink size={13} className="text-slate-500 shrink-0" />
+          <p className="text-xs font-black text-slate-500 uppercase tracking-widest">
+            External Listing
+          </p>
+        </div>
+        <p className="text-sm font-bold text-slate-900 mb-1">
+          {job.externalCompanyName || job.companyName || "—"}
+        </p>
+        {job.externalCareerUrl && (
+          <a
+            href={job.externalCareerUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="text-xs font-semibold text-slate-500 hover:text-slate-900 underline underline-offset-2 break-all transition-colors"
+          >
+            {job.externalCareerUrl}
+          </a>
+        )}
+      </div>
+    );
+  }
+
+  if (mode === "referral") {
+    return (
+      <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 mb-4">
+        <div className="flex items-center gap-2 mb-2">
+          <UserCheck size={13} className="text-slate-500 shrink-0" />
+          <p className="text-xs font-black text-slate-500 uppercase tracking-widest">
+            Referral Post
+          </p>
+        </div>
+        <p className="text-sm font-bold text-slate-900 mb-1">
+          {job.referralCompanyName || job.companyName || "—"}
+        </p>
+        {job.referralContactName && (
+          <p className="text-xs font-semibold text-slate-600 mt-0.5">
+            Contact: {job.referralContactName}
+          </p>
+        )}
+        {job.referralContactPhone && (
+          <p className="text-xs font-semibold text-slate-500 flex items-center gap-1 mt-0.5">
+            <Phone size={10} />
+            {job.referralContactPhone}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  return null;
+}
+
 export default function PostedJobs() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -149,9 +239,31 @@ export default function PostedJobs() {
           where("employerUid", "==", user.uid),
         );
         const snap = await getDocs(q);
+        const today = new Date().toISOString().split("T")[0];
         const loaded = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        setJobs(loaded);
-        if (loaded.length > 0) setSelectedJob(loaded[0]);
+        const autoUpdates = loaded
+          .filter(
+            (job) =>
+              job.status === "Open" &&
+              job.applicationDeadline &&
+              job.applicationDeadline < today,
+          )
+          .map((job) =>
+            updateDoc(doc(db, "jobs", job.id), {
+              status: "Closed",
+              updatedAt: new Date().toISOString(),
+            }),
+          );
+        await Promise.all(autoUpdates);
+        const finalLoaded = loaded.map((job) =>
+          job.status === "Open" &&
+          job.applicationDeadline &&
+          job.applicationDeadline < today
+            ? { ...job, status: "Closed" }
+            : job,
+        );
+        setJobs(finalLoaded);
+        if (finalLoaded.length > 0) setSelectedJob(finalLoaded[0]);
       } catch (err) {
         console.error("Error fetching jobs:", err);
       } finally {
@@ -162,11 +274,11 @@ export default function PostedJobs() {
   }, []);
 
   useEffect(() => {
-  document.body.style.overflow = sheetJob ? "hidden" : "";
-  return () => {
-    document.body.style.overflow = "";
-  };
-}, [sheetJob]);
+    document.body.style.overflow = sheetJob ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [sheetJob]);
 
   const handleDeleteConfirmed = async () => {
     if (!deleteConfirm) return;
@@ -334,11 +446,7 @@ export default function PostedJobs() {
         <div className="grid grid-cols-3 gap-4 mb-7">
           {[
             { label: "Active Jobs", value: openCount, icon: Briefcase },
-            {
-              label: "Total Applicants",
-              value: totalApplicants,
-              icon: Users,
-            },
+            { label: "Total Applicants", value: totalApplicants, icon: Users },
             { label: "Drafts", value: draftCount, icon: FileEdit },
           ].map(({ label, value, icon: Icon }) => (
             <div
@@ -598,12 +706,15 @@ export default function PostedJobs() {
                                 </span>
                               )}
                             </h3>
-                            {job.location && (
-                              <span className="text-[11px] text-slate-400 font-medium flex items-center gap-0.5 mt-0.5">
-                                <MapPin size={9} />
-                                {job.location}
-                              </span>
-                            )}
+                            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                              {job.location && (
+                                <span className="text-[11px] text-slate-400 font-medium flex items-center gap-0.5">
+                                  <MapPin size={9} />
+                                  {job.location}
+                                </span>
+                              )}
+                              <PostingTypeBadge job={job} />
+                            </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0">
@@ -758,7 +869,6 @@ export default function PostedJobs() {
               (() => {
                 const job = selectedJob;
                 const cfg = STATUS_CONFIG[job.status] || STATUS_CONFIG.Draft;
-                const location = job.location || "—";
                 const salary = formatSalary(job);
                 const infoFields = getInfoFields(job, salary);
                 return (
@@ -770,15 +880,18 @@ export default function PostedJobs() {
                             <Briefcase size={22} className="text-slate-500" />
                           </div>
                           <div>
-                            <h2 className="text-xl font-extrabold text-slate-900 leading-tight">
-                              {job.title || (
-                                <span className="italic font-normal text-slate-400">
-                                  Untitled Draft
-                                </span>
-                              )}
-                            </h2>
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <h2 className="text-xl font-extrabold text-slate-900 leading-tight">
+                                {job.title || (
+                                  <span className="italic font-normal text-slate-400">
+                                    Untitled Draft
+                                  </span>
+                                )}
+                              </h2>
+                              <PostingTypeBadge job={job} />
+                            </div>
                             <p className="text-sm text-slate-500 font-medium mt-0.5">
-                              {[job.type || job.jobType, location]
+                              {[job.type || job.jobType, job.location || "—"]
                                 .filter(Boolean)
                                 .join(" · ")}
                             </p>
@@ -857,6 +970,7 @@ export default function PostedJobs() {
                       </div>
                     </div>
                     <div className="flex-1 overflow-y-auto p-6">
+                      <PostingTypeDetail job={job} />
                       <div className="grid grid-cols-2 gap-3 mb-6">
                         {infoFields.map(({ label, value, icon: Icon }) => (
                           <div
@@ -965,13 +1079,16 @@ export default function PostedJobs() {
             </div>
             <div className="px-5 pb-3 flex items-start justify-between border-b border-slate-100">
               <div>
-                <h2 className="text-lg font-extrabold text-slate-900 leading-tight">
-                  {sheetJob.title || (
-                    <span className="italic font-normal text-slate-400">
-                      Untitled
-                    </span>
-                  )}
-                </h2>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <h2 className="text-lg font-extrabold text-slate-900 leading-tight">
+                    {sheetJob.title || (
+                      <span className="italic font-normal text-slate-400">
+                        Untitled
+                      </span>
+                    )}
+                  </h2>
+                  <PostingTypeBadge job={sheetJob} />
+                </div>
                 <p className="text-sm text-slate-500 font-medium mt-0.5 flex items-center gap-1">
                   <MapPin size={11} />
                   {sheetJob.location || "—"}
@@ -985,6 +1102,7 @@ export default function PostedJobs() {
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-5">
+              <PostingTypeDetail job={sheetJob} />
               <div className="grid grid-cols-2 gap-3 mb-5">
                 {getInfoFields(sheetJob, formatSalary(sheetJob)).map(
                   ({ label, value, icon: Icon }) => (

@@ -24,7 +24,13 @@ export default function JobsPage() {
         const snap = await getDocs(
           query(collection(db, "jobs"), where("status", "==", "Open")),
         );
-        const loaded = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        const today = new Date().toISOString().split("T")[0];
+        const loaded = snap.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .filter(
+            (job) =>
+              !job.applicationDeadline || job.applicationDeadline >= today,
+          );
         setJobs(loaded);
         setFiltered(loaded);
         if (preselectedId) {

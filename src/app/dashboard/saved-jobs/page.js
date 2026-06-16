@@ -103,7 +103,15 @@ export default function MyJobsPage() {
             return { id: jobDoc.id, ...jobDoc.data() };
           }),
         );
-        setSavedJobs(savedJobDetails.filter(Boolean));
+        const today = new Date().toISOString().split("T")[0];
+        setSavedJobs(
+          savedJobDetails
+            .filter(Boolean)
+            .filter(
+              (job) =>
+                !job.applicationDeadline || job.applicationDeadline >= today,
+            ),
+        );
 
         const appliedSnap = await getDocs(
           query(

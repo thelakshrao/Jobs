@@ -2,7 +2,6 @@
 import { useState } from "react";
 import {
   MapPin,
-  Clock,
   Briefcase,
   Building2,
   TrendingUp,
@@ -11,27 +10,19 @@ import {
   BookmarkCheck,
   Share2,
   ThumbsDown,
+  ExternalLink,
 } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
-import {
-  doc,
-  setDoc,
-  deleteDoc,
-  addDoc,
-  collection,
-  query,
-  where,
-  getDocs,
-} from "firebase/firestore";
+import { doc, setDoc, deleteDoc } from "firebase/firestore";
 import JobApplyModal from "@/dashboardComponents/jobs/Jobapplymodal";
 
 function formatSalary(job) {
   const sym = job.currencies?.[0] || "₹";
   if (job.payStructure === "Negotiable") return "Negotiable";
   if (job.payStructure === "Salary Range" && job.salaryMin && job.salaryMax)
-    return `${sym} ${Number(job.salaryMin).toLocaleString()} – ${Number(job.salaryMax).toLocaleString()} / yr`;
+    return `${sym} ${Number(job.salaryMin).toLocaleString()} – ${Number(job.salaryMax).toLocaleString()} ${job.salaryUnit || "/ yr"}`;
   if (job.payStructure === "Fixed" && job.fixedSalary)
-    return `${sym} ${Number(job.fixedSalary).toLocaleString()} / yr`;
+    return `${sym} ${Number(job.fixedSalary).toLocaleString()} ${job.salaryUnit || "/ yr"}`;
   if (job.payStructure === "Hourly" && job.hourlyRate)
     return `${sym} ${job.hourlyRate} / hr`;
   return "Not disclosed";
@@ -42,6 +33,9 @@ export default function JobDetail({ job, isSaved, onSaveToggle }) {
   const [showApplyModal, setShowApplyModal] = useState(false);
   const salary = formatSalary(job);
   const location = [job.location, job.targetCountry].filter(Boolean).join(", ");
+
+  const isExternal = job.postingMode === "external" && job.externalCareerUrl;
+  const isReferral = job.postingMode === "referral";
 
   const handleSave = async () => {
     const user = auth.currentUser;
@@ -74,6 +68,52 @@ export default function JobDetail({ job, isSaved, onSaveToggle }) {
     },
   ];
 
+  const ApplyButton = ({ fullWidth = false }) => {
+    if (isExternal) {
+      return (
+        <a
+          href={job.externalCareerUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`flex items-center justify-center gap-2 rounded-xl text-sm font-bold transition-all cursor-pointer ${fullWidth ? "w-full py-3" : "px-6 py-2.5"}`}
+          style={{ backgroundColor: "#60a5fa", color: "#ffffff" }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.backgroundColor = "#3b82f6")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.backgroundColor = "#60a5fa")
+          }
+        >
+          Apply Now
+          <ExternalLink size={14} />
+        </a>
+      );
+    }
+
+    return (
+      <button
+        onClick={() => setShowApplyModal(true)}
+        disabled={applied}
+        className={`flex items-center justify-center rounded-xl text-sm font-bold transition-all cursor-pointer disabled:opacity-70 ${fullWidth ? "w-full py-3" : "px-6 py-2.5"}`}
+        style={{
+          backgroundColor: applied ? "#22c55e" : "#60a5fa",
+          color: "#ffffff",
+        }}
+        onMouseEnter={(e) => {
+          if (!applied) e.currentTarget.style.backgroundColor = "#3b82f6";
+        }}
+        onMouseLeave={(e) => {
+          if (!applied)
+            e.currentTarget.style.backgroundColor = applied
+              ? "#22c55e"
+              : "#60a5fa";
+        }}
+      >
+        {applied ? "Applied!" : "Apply Now"}
+      </button>
+    );
+  };
+
   return (
     <div
       className="bg-white rounded-2xl border border-slate-200 overflow-hidden"
@@ -101,24 +141,14 @@ export default function JobDetail({ job, isSaved, onSaveToggle }) {
         )}
         <p className="text-base font-bold text-slate-800 mt-1">{salary}</p>
 
+        {isReferral && job.referralContactName && (
+          <div className="mt-3 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-600">
+            Referred by {job.referralContactName} · {job.companyName}
+          </div>
+        )}
+
         <div className="flex items-center gap-2 mt-4 flex-wrap">
-          <button
-            onClick={() => setShowApplyModal(true)}
-            disabled={applied}
-            className="px-6 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer disabled:opacity-70"
-            style={{
-              backgroundColor: applied ? "#22c55e" : "#60a5fa",
-              color: "#ffffff",
-            }}
-            onMouseEnter={(e) => {
-              if (!applied) e.currentTarget.style.backgroundColor = "#3b82f6";
-            }}
-            onMouseLeave={(e) => {
-              if (!applied) e.currentTarget.style.backgroundColor = "#60a5fa";
-            }}
-          >
-            {applied ? "Applied!" : "Apply Now"}
-          </button>
+          <ApplyButton />
           <button
             onClick={handleSave}
             className="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
@@ -223,28 +253,23 @@ export default function JobDetail({ job, isSaved, onSaveToggle }) {
           </div>
         )}
 
+        {job.benefits && (
+          <div className="mb-6">
+            <h2 className="text-base font-bold text-slate-900 mb-3">
+              Benefits
+            </h2>
+            <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
+              {job.benefits}
+            </p>
+          </div>
+        )}
+
         <div className="pt-4 border-t border-slate-100">
-          <button
-            onClick={() => setShowApplyModal(true)}
-            disabled={applied}
-            className="w-full py-3 rounded-xl text-sm font-bold transition-all cursor-pointer disabled:opacity-70"
-            style={{
-              backgroundColor: applied ? "#22c55e" : "#60a5fa",
-              color: "#ffffff",
-            }}
-            onMouseEnter={(e) => {
-              if (!applied) e.currentTarget.style.backgroundColor = "#3b82f6";
-            }}
-            onMouseLeave={(e) => {
-              if (!applied) e.currentTarget.style.backgroundColor = "#60a5fa";
-            }}
-          >
-            {applied ? "Applied!" : "Apply Now"}
-          </button>
+          <ApplyButton fullWidth />
         </div>
       </div>
 
-      {showApplyModal && (
+      {showApplyModal && !isExternal && (
         <JobApplyModal
           job={job}
           onClose={() => setShowApplyModal(false)}

@@ -52,6 +52,7 @@ const INITIAL_FORM = {
   workType: "On-site",
   city: "",
   state: "",
+  addressLine: "",
   department: "",
   jobType: "Full-time",
   experienceLevel: "",
@@ -60,7 +61,8 @@ const INITIAL_FORM = {
   applicationDeadline: "",
   urgency: "Medium",
   payStructure: "Salary Range",
-  currencies: ["INR"],
+  currencies: [],
+  salaryUnit: "LPA",
   salaryMin: "",
   salaryMax: "",
   fixedSalary: "",
@@ -68,6 +70,12 @@ const INITIAL_FORM = {
   perks: [],
   description: "",
   requirements: "",
+  benefits: "",
+  postingMode: "own",
+  externalCompanyName: "",
+  externalCareerUrl: "",
+  referralCompanyName: "",
+  referralContactName: "",
 };
 
 function cls(...args) {
@@ -331,7 +339,7 @@ function CurrencySelect({ selected, onChange }) {
             })}
           </div>
         ) : (
-          <span className="text-slate-400">Select currencies...</span>
+          <span className="text-slate-400">Select currency...</span>
         )}
         <Search size={14} className="text-slate-400 shrink-0" />
       </div>
@@ -443,6 +451,22 @@ function StepBar({ current }) {
 
 function Step1({ form, setForm, employerData }) {
   const update = (key) => (val) => setForm((f) => ({ ...f, [key]: val }));
+
+  const postingMode = form.postingMode || "own";
+
+  const setMode = (mode) => {
+    setForm((f) => ({
+      ...f,
+      postingMode: mode,
+      externalCompanyName: "",
+      externalCareerUrl: "",
+      referralCompanyName: "",
+      referralContactName: "",
+      referralContactPhone: "",
+      companyName: mode === "own" ? employerData?.company || "" : "",
+    }));
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -454,15 +478,180 @@ function Step1({ form, setForm, employerData }) {
         </p>
       </div>
 
-      <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 flex items-center gap-3">
-        <Building2 size={16} className="text-slate-500 shrink-0" />
-        <div>
-          <p className="text-xs text-slate-500 font-semibold">Posting as</p>
-          <p className="text-sm font-bold text-slate-900">
-            {employerData?.company || form.companyName || "Your Company"}
-          </p>
+      <div>
+        <Label required>Posting Type</Label>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-1">
+          {[
+            {
+              key: "own",
+              title: "My Company",
+              desc: "Post a job for your own company",
+            },
+            {
+              key: "external",
+              title: "External Listing",
+              desc: "Post for another company with a redirect to their careers page",
+            },
+            {
+              key: "referral",
+              title: "Referral Post",
+              desc: "Refer applicants to another employer you know is hiring",
+            },
+          ].map((opt) => (
+            <button
+              key={opt.key}
+              type="button"
+              onClick={() => setMode(opt.key)}
+              className={cls(
+                "text-left px-4 py-4 rounded-xl border-2 transition-all",
+                postingMode === opt.key
+                  ? "border-slate-900 bg-slate-900"
+                  : "border-slate-200 bg-white hover:border-slate-400 hover:bg-slate-50",
+              )}
+            >
+              <p
+                className={cls(
+                  "text-sm font-bold",
+                  postingMode === opt.key ? "text-white" : "text-slate-900",
+                )}
+              >
+                {opt.title}
+              </p>
+              <p
+                className={cls(
+                  "text-xs mt-1 leading-relaxed",
+                  postingMode === opt.key ? "text-slate-300" : "text-slate-500",
+                )}
+              >
+                {opt.desc}
+              </p>
+            </button>
+          ))}
         </div>
       </div>
+
+      {postingMode === "own" && (
+        <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 flex items-center gap-3">
+          <Building2 size={16} className="text-slate-500 shrink-0" />
+          <div>
+            <p className="text-xs text-slate-500 font-semibold">Posting as</p>
+            <p className="text-sm font-bold text-slate-900">
+              {employerData?.company || form.companyName || "Your Company"}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {postingMode === "external" && (
+        <div className="space-y-4">
+          <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold text-slate-600 leading-relaxed">
+            Applicants will see all job details on your portal. When they click
+            Apply, they will be redirected to the external company's careers
+            page.
+          </div>
+          <div>
+            <Label required>External Company Name</Label>
+            <Input
+              placeholder="e.g. Google, Infosys, Accenture..."
+              value={form.externalCompanyName || ""}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  externalCompanyName: e.target.value,
+                  companyName: e.target.value,
+                }))
+              }
+            />
+          </div>
+          <div>
+            <Label required>Company Careers Page URL</Label>
+            <Input
+              placeholder="https://careers.company.com/job/..."
+              value={form.externalCareerUrl || ""}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  externalCareerUrl: e.target.value,
+                }))
+              }
+            />
+            <p className="text-xs text-slate-400 mt-1.5">
+              Applicants will be redirected here when they click Apply
+            </p>
+          </div>
+        </div>
+      )}
+
+      {postingMode === "referral" && (
+        <div className="space-y-4">
+          <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold text-slate-600 leading-relaxed">
+            You are referring applicants to another employer. Your name will be
+            shown as the referrer. Applicants apply through your portal and you
+            forward them.
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <Label required>Company You're Referring To</Label>
+              <Input
+                placeholder="e.g. Microsoft, TCS, Wipro..."
+                value={form.referralCompanyName || ""}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    referralCompanyName: e.target.value,
+                    companyName: e.target.value,
+                  }))
+                }
+              />
+            </div>
+            <div>
+              <Label>Contact Person at That Company</Label>
+              <Input
+                placeholder="e.g. Raj Sharma (HR Manager)"
+                value={form.referralContactName || ""}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    referralContactName: e.target.value,
+                  }))
+                }
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <Label>
+                Contact Person Phone{" "}
+                <span className="text-slate-400 font-normal">(optional)</span>
+              </Label>
+              <Input
+                type="tel"
+                placeholder="e.g. +91 98765 43210"
+                value={form.referralContactPhone || ""}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    referralContactPhone: e.target.value,
+                  }))
+                }
+              />
+              <p className="text-xs text-slate-400 mt-1.5">
+                Shown privately to you only — not visible to applicants
+              </p>
+            </div>
+          </div>
+          <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 flex items-center gap-3">
+            <Building2 size={16} className="text-slate-500 shrink-0" />
+            <div>
+              <p className="text-xs text-slate-500 font-semibold">
+                Referral posted by
+              </p>
+              <p className="text-sm font-bold text-slate-900">
+                {employerData?.firstName} {employerData?.lastName} ·{" "}
+                {employerData?.company}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
@@ -501,6 +690,51 @@ function Step1({ form, setForm, employerData }) {
 
 function Step2({ form, setForm }) {
   const update = (key) => (val) => setForm((f) => ({ ...f, [key]: val }));
+  const [states, setStates] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [loadingStates, setLoadingStates] = useState(false);
+  const [loadingCities, setLoadingCities] = useState(false);
+
+  useEffect(() => {
+    if (!form.targetCountry || form.workType === "Remote") return;
+    setStates([]);
+    setCities([]);
+    setForm((f) => ({ ...f, state: "", city: "", addressLine: "" }));
+    setLoadingStates(true);
+    fetch("https://countriesnow.space/api/v0.1/countries/states", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ country: form.targetCountry }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.data?.states) {
+          setStates(data.data.states.map((s) => s.name));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingStates(false));
+  }, [form.targetCountry, form.workType]);
+
+  useEffect(() => {
+    if (!form.state || !form.targetCountry || form.workType === "Remote")
+      return;
+    setCities([]);
+    setForm((f) => ({ ...f, city: "" }));
+    setLoadingCities(true);
+    fetch("https://countriesnow.space/api/v0.1/countries/state/cities", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ country: form.targetCountry, state: form.state }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.data) setCities(data.data);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingCities(false));
+  }, [form.state, form.targetCountry, form.workType]);
+
   return (
     <div className="space-y-6">
       <div>
@@ -539,24 +773,81 @@ function Step2({ form, setForm }) {
         />
       </div>
       {form.workType !== "Remote" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          <div>
-            <Label>City</Label>
-            <Input
-              placeholder="e.g. New York"
-              value={form.city}
-              onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
-            />
+        <div className="space-y-4">
+          {!form.targetCountry && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs font-semibold text-amber-700">
+              Please select a Target Country in Step 1 to load states and
+              cities.
+            </div>
+          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <Label>State / Region</Label>
+              {states.length > 0 ? (
+                <SearchableSelect
+                  options={states}
+                  value={form.state}
+                  onChange={(val) => setForm((f) => ({ ...f, state: val }))}
+                  placeholder={
+                    loadingStates ? "Loading states..." : "Select state..."
+                  }
+                />
+              ) : (
+                <Input
+                  placeholder={
+                    loadingStates ? "Loading states..." : "e.g. Maharashtra"
+                  }
+                  value={form.state}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, state: e.target.value }))
+                  }
+                  disabled={loadingStates}
+                />
+              )}
+            </div>
+            <div>
+              <Label>City</Label>
+              {cities.length > 0 ? (
+                <SearchableSelect
+                  options={cities}
+                  value={form.city}
+                  onChange={(val) => setForm((f) => ({ ...f, city: val }))}
+                  placeholder={
+                    loadingCities ? "Loading cities..." : "Select city..."
+                  }
+                />
+              ) : (
+                <Input
+                  placeholder={
+                    loadingCities
+                      ? "Loading cities..."
+                      : form.state
+                        ? "e.g. Pune"
+                        : "Select state first"
+                  }
+                  value={form.city}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, city: e.target.value }))
+                  }
+                  disabled={
+                    loadingCities || (!form.state && cities.length === 0)
+                  }
+                />
+              )}
+            </div>
           </div>
           <div>
-            <Label>State / Region</Label>
+            <Label>Address Line</Label>
             <Input
-              placeholder="e.g. NY"
-              value={form.state}
+              placeholder="e.g. 4th Floor, Tech Park, Whitefield"
+              value={form.addressLine || ""}
               onChange={(e) =>
-                setForm((f) => ({ ...f, state: e.target.value }))
+                setForm((f) => ({ ...f, addressLine: e.target.value }))
               }
             />
+            <p className="text-xs text-slate-400 mt-1.5">
+              Building, street, or area name
+            </p>
           </div>
         </div>
       )}
@@ -653,6 +944,28 @@ function Step3({ form, setForm }) {
   );
 }
 
+function SalaryUnitToggle({ value, onChange }) {
+  return (
+    <div className="flex gap-2">
+      {["LPA", "CTC"].map((unit) => (
+        <button
+          key={unit}
+          type="button"
+          onClick={() => onChange(unit)}
+          className={cls(
+            "px-4 py-2 text-xs font-semibold rounded-xl border transition-all",
+            value === unit
+              ? "bg-slate-900 text-white border-slate-900"
+              : "bg-white text-slate-700 border-slate-200 hover:border-slate-400",
+          )}
+        >
+          {unit}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function Step4({ form, setForm }) {
   const update = (key) => (e) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -664,7 +977,7 @@ function Step4({ form, setForm }) {
         : [...f.perks, p],
     }));
 
-  const primaryCurrency = form.currencies[0] || "INR";
+  const primaryCurrency = form.currencies[0] || "";
   const currencySymbol =
     CURRENCIES.find((c) => c.code === primaryCurrency)?.symbol ||
     primaryCurrency;
@@ -702,41 +1015,72 @@ function Step4({ form, setForm }) {
       </div>
 
       {form.payStructure === "Salary Range" && (
-        <div className="grid grid-cols-2 gap-5">
-          <div>
-            <Label>Min Salary ({currencySymbol})</Label>
-            <Input
-              type="number"
-              placeholder="50000"
-              value={form.salaryMin}
-              onChange={update("salaryMin")}
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <Label>Salary Unit</Label>
+            <SalaryUnitToggle
+              value={form.salaryUnit}
+              onChange={(v) => setForm((f) => ({ ...f, salaryUnit: v }))}
             />
           </div>
-          <div>
-            <Label>Max Salary ({currencySymbol})</Label>
-            <Input
-              type="number"
-              placeholder="80000"
-              value={form.salaryMax}
-              onChange={update("salaryMax")}
-            />
+          <div className="grid grid-cols-2 gap-5">
+            <div>
+              <Label>
+                Min Salary{currencySymbol ? ` (${currencySymbol})` : ""}{" "}
+                {form.salaryUnit}
+              </Label>
+              <Input
+                type="number"
+                placeholder="50000"
+                value={form.salaryMin}
+                onChange={update("salaryMin")}
+              />
+            </div>
+            <div>
+              <Label>
+                Max Salary{currencySymbol ? ` (${currencySymbol})` : ""}{" "}
+                {form.salaryUnit}
+              </Label>
+              <Input
+                type="number"
+                placeholder="80000"
+                value={form.salaryMax}
+                onChange={update("salaryMax")}
+              />
+            </div>
           </div>
         </div>
       )}
+
       {form.payStructure === "Fixed" && (
-        <div>
-          <Label>Fixed Annual Salary ({currencySymbol})</Label>
-          <Input
-            type="number"
-            placeholder="65000"
-            value={form.fixedSalary}
-            onChange={update("fixedSalary")}
-          />
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <Label>Salary Unit</Label>
+            <SalaryUnitToggle
+              value={form.salaryUnit}
+              onChange={(v) => setForm((f) => ({ ...f, salaryUnit: v }))}
+            />
+          </div>
+          <div>
+            <Label>
+              Fixed Annual Salary{currencySymbol ? ` (${currencySymbol})` : ""}{" "}
+              {form.salaryUnit}
+            </Label>
+            <Input
+              type="number"
+              placeholder="65000"
+              value={form.fixedSalary}
+              onChange={update("fixedSalary")}
+            />
+          </div>
         </div>
       )}
+
       {form.payStructure === "Hourly" && (
         <div>
-          <Label>Hourly Rate ({currencySymbol})</Label>
+          <Label>
+            Hourly Rate{currencySymbol ? ` (${currencySymbol})` : ""}
+          </Label>
           <Input
             type="number"
             placeholder="45"
@@ -745,6 +1089,7 @@ function Step4({ form, setForm }) {
           />
         </div>
       )}
+
       {form.payStructure === "Negotiable" && (
         <div className="bg-slate-50 rounded-xl px-4 py-3 text-sm text-slate-500 border border-slate-200">
           Salary will be discussed during the interview process.
@@ -783,7 +1128,7 @@ function Step5({ form, setForm, employerData }) {
     form.workType === "Remote"
       ? "Remote"
       : [form.city, form.state].filter(Boolean).join(", ") || "—";
-  const primaryCurrency = form.currencies[0] || "INR";
+  const primaryCurrency = form.currencies[0] || "";
   const currencySymbol =
     CURRENCIES.find((c) => c.code === primaryCurrency)?.symbol ||
     primaryCurrency;
@@ -795,13 +1140,58 @@ function Step5({ form, setForm, employerData }) {
       form.salaryMin &&
       form.salaryMax
     )
-      return `${currencySymbol} ${Number(form.salaryMin).toLocaleString()} – ${Number(form.salaryMax).toLocaleString()}`;
+      return `${currencySymbol} ${Number(form.salaryMin).toLocaleString()} – ${Number(form.salaryMax).toLocaleString()} ${form.salaryUnit}`;
     if (form.payStructure === "Fixed" && form.fixedSalary)
-      return `${currencySymbol} ${Number(form.fixedSalary).toLocaleString()} / yr`;
+      return `${currencySymbol} ${Number(form.fixedSalary).toLocaleString()} ${form.salaryUnit}`;
     if (form.payStructure === "Hourly" && form.hourlyRate)
       return `${currencySymbol} ${form.hourlyRate} / hr`;
     return "—";
   })();
+
+  const insertFormatting = (fieldKey, currentValue, type) => {
+    const lines = currentValue ? currentValue.split("\n") : [];
+    let newText = currentValue || "";
+    if (type === "numbered") {
+      const nextNum = lines.filter((l) => /^\d+\./.test(l)).length + 1;
+      newText = currentValue ? currentValue + `\n${nextNum}. ` : `${nextNum}. `;
+    } else if (type === "bullet") {
+      newText = currentValue ? currentValue + "\n• " : "• ";
+    } else if (type === "newline") {
+      newText = currentValue ? currentValue + "\n" : "\n";
+    }
+    setForm((f) => ({ ...f, [fieldKey]: newText }));
+  };
+
+  function FormattingToolbar({ fieldKey, value }) {
+    return (
+      <div className="flex items-center gap-1.5 mb-1.5">
+        <button
+          type="button"
+          onClick={() => insertFormatting(fieldKey, value, "numbered")}
+          className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-200 transition-colors"
+        >
+          1. Numbered
+        </button>
+        <button
+          type="button"
+          onClick={() => insertFormatting(fieldKey, value, "bullet")}
+          className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-200 transition-colors"
+        >
+          • Bullet
+        </button>
+        <button
+          type="button"
+          onClick={() => insertFormatting(fieldKey, value, "newline")}
+          className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-200 transition-colors"
+        >
+          ↵ New Line
+        </button>
+        <span className="text-xs text-slate-400 ml-auto">
+          {value ? value.split("\n").length : 0} lines
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -816,20 +1206,40 @@ function Step5({ form, setForm, employerData }) {
 
       <div>
         <Label required>Job Description</Label>
-        <Textarea
-          rows={6}
-          placeholder="Describe the role, responsibilities, and what a typical day looks like…"
+        <FormattingToolbar fieldKey="description" value={form.description} />
+        <textarea
+          rows={8}
+          placeholder={`Describe the role, responsibilities, and what a typical day looks like…\n\nExample:\n1. Lead the frontend development team\n2. Collaborate with designers\n• Work in an agile environment`}
           value={form.description}
           onChange={update("description")}
+          className="w-full px-4 py-3 text-sm text-slate-900 bg-white border border-slate-200 rounded-xl placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent transition-all font-mono leading-relaxed"
+          style={{ resize: "vertical", minHeight: "180px" }}
         />
       </div>
+
       <div>
         <Label required>Requirements</Label>
-        <Textarea
-          rows={5}
-          placeholder="List required skills, qualifications, and experience…"
+        <FormattingToolbar fieldKey="requirements" value={form.requirements} />
+        <textarea
+          rows={7}
+          placeholder={`List required skills, qualifications, and experience…\n\nExample:\n1. 3+ years of React experience\n2. Strong communication skills\n• Bachelor's degree in CS or related field`}
           value={form.requirements}
           onChange={update("requirements")}
+          className="w-full px-4 py-3 text-sm text-slate-900 bg-white border border-slate-200 rounded-xl placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent transition-all font-mono leading-relaxed"
+          style={{ resize: "vertical", minHeight: "160px" }}
+        />
+      </div>
+
+      <div>
+        <Label>Benefits</Label>
+        <FormattingToolbar fieldKey="benefits" value={form.benefits} />
+        <textarea
+          rows={5}
+          placeholder={`List the benefits you offer…\n\nExample:\n• Health insurance\n• Flexible working hours\n1. Annual performance bonus`}
+          value={form.benefits || ""}
+          onChange={(e) => setForm((f) => ({ ...f, benefits: e.target.value }))}
+          className="w-full px-4 py-3 text-sm text-slate-900 bg-white border border-slate-200 rounded-xl placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent transition-all font-mono leading-relaxed"
+          style={{ resize: "vertical", minHeight: "120px" }}
         />
       </div>
 
@@ -880,6 +1290,7 @@ function Step5({ form, setForm, employerData }) {
             </div>
           ))}
         </div>
+
         {form.perks.length > 0 && (
           <div>
             <span className="text-slate-400 text-xs font-semibold">Perks</span>
@@ -893,6 +1304,39 @@ function Step5({ form, setForm, employerData }) {
                 </span>
               ))}
             </div>
+          </div>
+        )}
+
+        {form.description && (
+          <div>
+            <span className="text-slate-400 text-xs font-semibold">
+              Description Preview
+            </span>
+            <p className="text-slate-700 text-xs mt-1 whitespace-pre-line leading-relaxed line-clamp-4">
+              {form.description}
+            </p>
+          </div>
+        )}
+
+        {form.requirements && (
+          <div>
+            <span className="text-slate-400 text-xs font-semibold">
+              Requirements Preview
+            </span>
+            <p className="text-slate-700 text-xs mt-1 whitespace-pre-line leading-relaxed line-clamp-4">
+              {form.requirements}
+            </p>
+          </div>
+        )}
+
+        {form.benefits && (
+          <div>
+            <span className="text-slate-400 text-xs font-semibold">
+              Benefits Preview
+            </span>
+            <p className="text-slate-700 text-xs mt-1 whitespace-pre-line leading-relaxed line-clamp-4">
+              {form.benefits}
+            </p>
           </div>
         )}
       </div>

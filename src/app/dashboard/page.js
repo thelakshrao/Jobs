@@ -217,7 +217,15 @@ export default function DashboardHome() {
           ),
           getDoc(doc(db, "users", user.uid)),
         ]);
-        setJobs(jobsSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+        const today = new Date().toISOString().split("T")[0];
+        setJobs(
+          jobsSnap.docs
+            .map((d) => ({ id: d.id, ...d.data() }))
+            .filter(
+              (job) =>
+                !job.applicationDeadline || job.applicationDeadline >= today,
+            ),
+        );
         setSavedJobs(savedSnap.docs.map((d) => d.data().jobId));
 
         if (userSnap.exists()) {
