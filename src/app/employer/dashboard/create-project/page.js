@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -161,6 +161,22 @@ const RATE_TYPES = [
 ];
 
 export default function CreateProjectPage() {
+  return (
+    <Suspense fallback={<CreateProjectFallback />}>
+      <CreateProjectPageInner />
+    </Suspense>
+  );
+}
+
+function CreateProjectFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="w-6 h-6 border-2 border-slate-700 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
+
+function CreateProjectPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get("edit");
