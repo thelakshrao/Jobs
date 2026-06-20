@@ -38,6 +38,16 @@ const navItems = [
     icon: MessageSquare,
     label: "Messages",
   },
+  {
+    href: "/employer/dashboard/projects",
+    icon: Briefcase,
+    label: "All Projects",
+  },
+  {
+    href: "/employer/dashboard/create-project",
+    icon: PlusCircle,
+    label: "Add New Project",
+  },
 ];
 
 export default function EmployerSidebar() {
@@ -70,11 +80,11 @@ export default function EmployerSidebar() {
   }, []);
 
   useEffect(() => {
-  document.body.style.overflow = mobileOpen ? "hidden" : "";
-  return () => {
-    document.body.style.overflow = "";
-  };
-}, [mobileOpen]);
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
 
   const handleSaveCompany = async () => {
     if (!newCompany.trim()) return;

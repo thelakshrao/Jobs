@@ -26,16 +26,26 @@ import { DEFAULT_PROFILE, DEFAULT_ABOUT } from "@/profileComponents/shared";
 
 const BLUE = "#60a5fa";
 
-function timeAgo(dateStr) {
-  if (!dateStr) return null;
-  const d = dateStr?.toDate ? dateStr.toDate() : new Date(dateStr);
-  if (isNaN(d.getTime())) return null;
-  const diff = (new Date() - d) / (1000 * 60 * 60 * 24);
-  if (diff < 1) return "Today";
-  if (diff < 2) return "Yesterday";
-  if (diff < 7) return `${Math.floor(diff)}d ago`;
-  if (diff < 30) return `${Math.floor(diff / 7)}w ago`;
-  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+function timeAgo(dateVal) {
+  if (!dateVal) return null;
+  const date = dateVal?.toDate ? dateVal.toDate() : new Date(dateVal);
+  if (isNaN(date.getTime())) return null;
+  const diff = new Date() - date;
+  const mins = Math.floor(diff / (1000 * 60));
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const weeks = Math.floor(days / 7);
+  const months = Math.floor(days / 30);
+
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins} min ago`;
+  if (hours < 24) return `${hours} hr ago`;
+  if (days === 1) return "1 day ago";
+  if (days < 14) return `${days} days ago`;
+  if (weeks === 1) return "1 week ago";
+  if (weeks < 4) return `${weeks} weeks ago`;
+  if (months === 1) return "1 month ago";
+  return `${months} months ago`;
 }
 
 const STATUS_COLORS = {
@@ -165,7 +175,6 @@ export default function MyJobsPage() {
 
   return (
     <>
-      <SearchNavbar />
       <main className="min-h-screen bg-[#f8fafc] pb-16 md:pb-0">
         <div className="w-full max-w-6xl mx-auto pt-3 md:pt-6">
           <h1 className="text-2xl md:text-3xl font-black text-slate-900 mb-3 px-3 sm:px-6">

@@ -2,7 +2,6 @@ import { IoCalendarOutline, IoSchoolOutline } from "react-icons/io5";
 
 const PURPLE = "#8b5cf6";
 
-// Smart label: detect if it's CGPA (<=10) or percentage
 function gradeLabel(value) {
   if (!value) return null;
   const str = value.toString().trim();

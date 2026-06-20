@@ -504,7 +504,7 @@ export default function PostedJobs() {
       </div>
 
       <div
-        className="flex items-center gap-3 mb-6 overflow-x-auto pb-0.5"
+        className="flex items-center gap-3 mb-6 p-3 overflow-x-auto"
         style={{ scrollbarWidth: "none" }}
       >
         <div className="relative shrink-0">
@@ -517,7 +517,7 @@ export default function PostedJobs() {
             placeholder="Search title…"
             value={titleSearch}
             onChange={(e) => setTitleSearch(e.target.value)}
-            className="pl-9 pr-4 py-2.5 text-sm font-semibold text-slate-800 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-slate-400 w-44 placeholder:font-normal placeholder:text-slate-400"
+            className="pl-9 pr-4 py-2.5 text-sm font-semibold text-slate-800 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-slate-400 w-64 placeholder:font-normal placeholder:text-slate-400"
           />
         </div>
         <div className="relative shrink-0">
@@ -530,7 +530,7 @@ export default function PostedJobs() {
             placeholder="Location…"
             value={locationSearch}
             onChange={(e) => setLocationSearch(e.target.value)}
-            className="pl-9 pr-4 py-2.5 text-sm font-semibold text-slate-800 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-slate-400 w-40 placeholder:font-normal placeholder:text-slate-400"
+            className="pl-9 pr-4 py-2.5 text-sm font-semibold text-slate-800 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-slate-400 w-50 placeholder:font-normal placeholder:text-slate-400"
           />
         </div>
         <button

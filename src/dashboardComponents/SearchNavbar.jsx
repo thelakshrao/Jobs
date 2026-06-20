@@ -29,9 +29,12 @@ export default function SearchNavbar() {
   const [filteredSuggestions, setFilteredSuggestions] = useState([]);
   const [searchOpen, setSearchOpen] = useState(false);
   const locationRef = useRef(null);
+  const mobileSearchRef = useRef(null);
 
   useEffect(() => {
-    const handler = (e) => setSearchOpen(e.detail);
+    const handler = (e) => {
+      setSearchOpen(e.detail);
+    };
     window.addEventListener("searchToggle", handler);
     return () => window.removeEventListener("searchToggle", handler);
   }, []);
@@ -236,10 +239,16 @@ export default function SearchNavbar() {
         </div>
       </header>
 
-      {searchOpen && (
+      <div
+        className="md:hidden overflow-hidden transition-all duration-300 ease-in-out"
+        style={{
+          maxHeight: searchOpen ? "120px" : "0px",
+          opacity: searchOpen ? 1 : 0,
+        }}
+      >
         <div
-          className="md:hidden fixed z-30 left-0 right-0 px-3 flex flex-col gap-2"
-          style={{ top: "64px" }}
+          className="px-3 pt-2 pb-3 flex flex-col gap-2"
+          ref={mobileSearchRef}
         >
           <div
             className="flex items-center gap-2 rounded-2xl px-3"
@@ -262,13 +271,12 @@ export default function SearchNavbar() {
           </div>
           <div className="flex gap-2">
             <div
-              className="flex items-center gap-2 rounded-2xl px-3 flex-1"
+              className="flex items-center gap-2 rounded-2xl px-3 flex-1 relative"
               ref={locationRef}
               style={{
                 backgroundColor: "#ffffff",
                 height: "44px",
                 boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
-                position: "relative",
               }}
             >
               <IoLocationOutline size={16} color="#94a3b8" />
@@ -326,7 +334,7 @@ export default function SearchNavbar() {
             </button>
           </div>
         </div>
-      )}
+      </div>
     </>
   );
 }

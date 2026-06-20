@@ -1,21 +1,50 @@
 "use client";
-import {
-  Bookmark,
-  BookmarkCheck,
-  ThumbsDown,
-  MapPin,
-  Clock,
-} from "lucide-react";
+import { Bookmark, BookmarkCheck, ThumbsDown, MapPin } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { doc, setDoc, deleteDoc } from "firebase/firestore";
 
+const CURRENCY_SYMBOLS = {
+  INR: "₹",
+  USD: "$",
+  EUR: "€",
+  GBP: "£",
+  AED: "د.إ",
+  SAR: "ر.س",
+  CAD: "C$",
+  AUD: "A$",
+  SGD: "S$",
+  MYR: "RM",
+  JPY: "¥",
+  CNY: "¥",
+  KRW: "₩",
+  CHF: "Fr",
+  QAR: "ر.ق",
+  KWD: "د.ك",
+  BHD: "BD",
+  OMR: "ر.ع.",
+  NZD: "NZ$",
+  ZAR: "R",
+  NGN: "₦",
+  PKR: "₨",
+  BDT: "৳",
+  PHP: "₱",
+  THB: "฿",
+  IDR: "Rp",
+  VND: "₫",
+  MXN: "MX$",
+  BRL: "R$",
+  TRY: "₺",
+  EGP: "£",
+};
+
 function formatSalary(job) {
-  const sym = job.currencies?.[0] || "₹";
+  const code = job.currencies?.[0] || "INR";
+  const sym = CURRENCY_SYMBOLS[code] || code;
   if (job.payStructure === "Negotiable") return "Negotiable";
   if (job.payStructure === "Salary Range" && job.salaryMin && job.salaryMax)
-    return `${sym} ${Number(job.salaryMin).toLocaleString()} – ${Number(job.salaryMax).toLocaleString()}`;
+    return `${sym} ${Number(job.salaryMin).toLocaleString()} – ${Number(job.salaryMax).toLocaleString()} ${job.salaryUnit || ""}`.trim();
   if (job.payStructure === "Fixed" && job.fixedSalary)
-    return `${sym} ${Number(job.fixedSalary).toLocaleString()} / yr`;
+    return `${sym} ${Number(job.fixedSalary).toLocaleString()} ${job.salaryUnit || "/ yr"}`.trim();
   if (job.payStructure === "Hourly" && job.hourlyRate)
     return `${sym} ${job.hourlyRate} / hr`;
   return null;
@@ -23,15 +52,22 @@ function formatSalary(job) {
 
 function timeAgo(dateStr) {
   if (!dateStr) return null;
-  const diff = (new Date() - new Date(dateStr)) / (1000 * 60 * 60 * 24);
-  if (diff < 1) return "Today";
-  if (diff < 2) return "1 day ago";
-  if (diff < 7) return `${Math.floor(diff)} days ago`;
-  if (diff < 30) return `${Math.floor(diff / 7)}w ago`;
-  return new Date(dateStr).toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-  });
+  const diff = new Date() - new Date(dateStr);
+  const mins = Math.floor(diff / (1000 * 60));
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const weeks = Math.floor(days / 7);
+  const months = Math.floor(days / 30);
+
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins} min ago`;
+  if (hours < 24) return `${hours} hr ago`;
+  if (days === 1) return "1 day ago";
+  if (days < 14) return `${days} days ago`;
+  if (weeks === 1) return "1 week ago";
+  if (weeks < 4) return `${weeks} weeks ago`;
+  if (months === 1) return "1 month ago";
+  return `${months} months ago`;
 }
 
 export default function JobCard({
@@ -89,6 +125,14 @@ export default function JobCard({
           <p className="text-sm text-slate-500 mt-0.5">
             {job.companyName || "Company"}
           </p>
+          {salary && (
+            <p
+              className="text-sm font-bold mt-0.5"
+              style={{ color: "#60a5fa" }}
+            >
+              {salary}
+            </p>
+          )}
           {location && (
             <p className="text-sm text-slate-500 mt-0.5 flex items-center gap-1">
               <MapPin size={11} className="shrink-0 text-slate-400" />
@@ -106,18 +150,15 @@ export default function JobCard({
                 {p}
               </span>
             ))}
-            {salary && !job.perks?.length && (
-              <span
-                className="text-xs font-semibold px-2.5 py-1 rounded-full border"
-                style={{ borderColor: "#e2e8f0", color: "#475569" }}
-              >
-                {salary}
-              </span>
-            )}
           </div>
 
           {posted && (
-            <p className="text-[11px] text-slate-400 mt-2">{posted}</p>
+            <span
+              className="inline-block text-[11px] font-bold px-2 py-0.5 rounded-full mt-2"
+              style={{ color: "#60a5fa", backgroundColor: "#eff6ff" }}
+            >
+              {posted}
+            </span>
           )}
         </div>
 
