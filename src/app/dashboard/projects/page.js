@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { db, auth } from "@/lib/firebase";
@@ -7,8 +7,11 @@ import {
   collection,
   getDocs,
   query,
+  where,
   orderBy,
   addDoc,
+  doc,
+  getDoc,
   serverTimestamp,
 } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
@@ -71,6 +74,25 @@ const COMPANY_TYPES = [
 ];
 
 export default function ApplicantProjectsPage() {
+  return (
+    <Suspense fallback={<ProjectsPageFallback />}>
+      <ApplicantProjectsPageInner />
+    </Suspense>
+  );
+}
+
+function ProjectsPageFallback() {
+  return (
+    <div className="min-h-screen bg-[#f5f5f0] flex items-center justify-center">
+      <div
+        className="w-7 h-7 border-[3px] border-slate-200 rounded-full animate-spin"
+        style={{ borderTopColor: "#fb923c" }}
+      />
+    </div>
+  );
+}
+
+function ApplicantProjectsPageInner() {
   const searchParams = useSearchParams();
   const targetProjectId = searchParams.get("projectId");
   const cardRefs = useRef({});
@@ -91,14 +113,47 @@ export default function ApplicantProjectsPage() {
     mobile: "",
     email: "",
   });
+  // Profile info pulled from the logged-in applicant's `users` doc, so it can
+  // be attached to each application (mirrors what the job-apply flow stores).
+  const [profileInfo, setProfileInfo] = useState({
+    photoURL: "",
+    slug: "",
+  });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [formError, setFormError] = useState("");
   const [showApplyModal, setShowApplyModal] = useState(false);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
-      if (user) setFormData((f) => ({ ...f, email: user.email || "" }));
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (!user) return;
+      setFormData((f) => ({ ...f, email: user.email || "" }));
+
+      // Pull photoURL straight off the user's profile doc.
+      try {
+        const userSnap = await getDoc(doc(db, "users", user.uid));
+        const userData = userSnap.exists() ? userSnap.data() : {};
+
+        // Slug isn't stored on the user doc itself — it lives in a separate
+        // top-level `slugs` collection keyed by slug, pointing back at uid.
+        // Reverse-lookup it here so we can save it onto the application.
+        let slug = "";
+        try {
+          const slugSnap = await getDocs(
+            query(collection(db, "slugs"), where("uid", "==", user.uid)),
+          );
+          if (!slugSnap.empty) slug = slugSnap.docs[0].id;
+        } catch (slugErr) {
+          console.error("Slug lookup error:", slugErr);
+        }
+
+        setProfileInfo({
+          photoURL: userData.photoURL || "",
+          slug,
+        });
+      } catch (err) {
+        console.error("User profile fetch error:", err);
+      }
     });
     return () => unsub();
   }, []);
@@ -212,6 +267,8 @@ export default function ApplicantProjectsPage() {
             applicantLocation: p.state
               ? `${p.location}, ${p.state}`
               : p.location || "",
+            applicantPhotoURL: profileInfo.photoURL || "",
+            applicantSlug: profileInfo.slug || "",
             status: "Applied",
             appliedAt: serverTimestamp(),
           }),
