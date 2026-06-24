@@ -26,8 +26,6 @@ import ProfileStrength from "@/profileComponents/ProfileStrength";
 
 function timeAgo(dateStr) {
   if (!dateStr) return null;
-  // Firestore Timestamps come through as { seconds, nanoseconds } objects
-  // (or with a .toDate() method) rather than plain date strings.
   const date =
     typeof dateStr?.toDate === "function"
       ? dateStr.toDate()
@@ -364,6 +362,7 @@ export default function DashboardHome() {
   const [canScrollRight, setCanScrollRight] = useState(false);
   const [canProjScrollLeft, setCanProjScrollLeft] = useState(false);
   const [canProjScrollRight, setCanProjScrollRight] = useState(false);
+  const projectsToday = new Date().toISOString().split("T")[0];
 
   const checkScroll = () => {
     const el = scrollRef.current;
@@ -418,7 +417,6 @@ export default function DashboardHome() {
         return;
       }
 
-      // Jobs + saved jobs + user profile — unchanged from the working version.
       try {
         const [jobsSnap, savedSnap, userSnap] = await Promise.all([
           getDocs(query(collection(db, "jobs"), where("status", "==", "Open"))),
@@ -434,10 +432,14 @@ export default function DashboardHome() {
         setJobs(
           jobsSnap.docs
             .map((d) => ({ id: d.id, ...d.data() }))
-            .filter(
-              (job) =>
-                !job.applicationDeadline || job.applicationDeadline >= today,
-            ),
+            .filter((job) => {
+              const today = new Date().toISOString().split("T")[0];
+              if (job.status === "closed" || job.status === "draft")
+                return false;
+              if (job.applicationDeadline && job.applicationDeadline < today)
+                return false;
+              return true;
+            }),
         );
         setSavedJobs(savedSnap.docs.map((d) => d.data().jobId));
 
@@ -498,13 +500,15 @@ export default function DashboardHome() {
         setLoading(false);
       }
 
-      // Projects + saved projects are fetched separately and isolated:
-      // a problem here won't take down the Jobs section above.
       try {
         const projectsSnap = await getDocs(
           query(collection(db, "projects"), orderBy("createdAt", "desc")),
         );
-        setProjects(projectsSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+        setProjects(
+          projectsSnap.docs
+            .map((d) => ({ id: d.id, ...d.data() }))
+            .filter((p) => !p.deadline || p.deadline >= projectsToday),
+        );
       } catch (err) {
         console.error("Failed to load projects:", err);
       }

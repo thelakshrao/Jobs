@@ -6,6 +6,8 @@ import {
   doc,
   getDoc,
   addDoc,
+  updateDoc,
+  increment,
   collection,
   query,
   where,
@@ -103,6 +105,19 @@ export default function JobApplyModal({ job, onClose, onApplied }) {
     if (!user || submitting) return;
     setSubmitting(true);
     try {
+      const dupCheck = await getDocs(
+        query(
+          collection(db, "applications"),
+          where("jobId", "==", job.id),
+          where("applicantUid", "==", user.uid),
+        ),
+      );
+      if (!dupCheck.empty) {
+        setAlreadyApplied(true);
+        setSubmitting(false);
+        return;
+      }
+
       await addDoc(collection(db, "applications"), {
         jobId: job.id,
         jobTitle: job.title,
@@ -120,6 +135,11 @@ export default function JobApplyModal({ job, onClose, onApplied }) {
         status: "Applied",
         appliedAt: new Date(),
       });
+
+      await updateDoc(doc(db, "jobs", job.id), {
+        applicants: increment(1),
+      });
+
       setApplied(true);
       setTimeout(() => {
         onApplied?.();

@@ -12,11 +12,13 @@ import {
   addDoc,
   doc,
   getDoc,
+  updateDoc,
   serverTimestamp,
+  increment,
 } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import sideimage from "@/images/projectpage2.webp";
-import { MapPin, Zap, ChevronDown, X, Check } from "lucide-react";
+import { MapPin, Zap, ChevronDown, X, Check, CalendarX } from "lucide-react";
 
 const PROJECT_TYPES = [
   "All",
@@ -64,14 +66,6 @@ const WORKS = [
   "Personal Assistant/Helper",
   "Caregiver/Nursing Help",
 ];
-const COMPANY_TYPES = [
-  "Proprietorship",
-  "Partnership",
-  "Private Limited",
-  "Public Limited",
-  "LLP",
-  "Other",
-];
 
 export default function ApplicantProjectsPage() {
   return (
@@ -113,8 +107,6 @@ function ApplicantProjectsPageInner() {
     mobile: "",
     email: "",
   });
-  // Profile info pulled from the logged-in applicant's `users` doc, so it can
-  // be attached to each application (mirrors what the job-apply flow stores).
   const [profileInfo, setProfileInfo] = useState({
     photoURL: "",
     slug: "",
@@ -129,14 +121,10 @@ function ApplicantProjectsPageInner() {
       if (!user) return;
       setFormData((f) => ({ ...f, email: user.email || "" }));
 
-      // Pull photoURL straight off the user's profile doc.
       try {
         const userSnap = await getDoc(doc(db, "users", user.uid));
         const userData = userSnap.exists() ? userSnap.data() : {};
 
-        // Slug isn't stored on the user doc itself — it lives in a separate
-        // top-level `slugs` collection keyed by slug, pointing back at uid.
-        // Reverse-lookup it here so we can save it onto the application.
         let slug = "";
         try {
           const slugSnap = await getDocs(
@@ -164,7 +152,14 @@ function ApplicantProjectsPageInner() {
         const snap = await getDocs(
           query(collection(db, "projects"), orderBy("createdAt", "desc")),
         );
-        setProjects(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+
+        const today = new Date().toISOString().split("T")[0];
+
+        const visible = snap.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .filter((p) => !p.deadline || p.deadline >= today);
+
+        setProjects(visible);
       } catch (err) {
         console.error(err);
       } finally {
@@ -251,8 +246,28 @@ function ApplicantProjectsPageInner() {
     try {
       const user = auth.currentUser;
 
-      // Write one application doc per selected project to Firestore
-      // so it shows up in the employer's Applicants dashboard.
+      const dupChecks = await Promise.all(
+        selectedProjects.map((p) =>
+          getDocs(
+            query(
+              collection(db, "applications"),
+              where("projectId", "==", p.id),
+              where("applicantUid", "==", user?.uid || ""),
+            ),
+          ),
+        ),
+      );
+      const alreadyApplied = selectedProjects.filter(
+        (_, i) => !dupChecks[i].empty,
+      );
+      if (alreadyApplied.length > 0) {
+        setFormError(
+          `Already applied to: ${alreadyApplied.map((p) => p.title).join(", ")}`,
+        );
+        setSubmitting(false);
+        return;
+      }
+
       await Promise.all(
         selectedProjects.map((p) =>
           addDoc(collection(db, "applications"), {
@@ -275,7 +290,14 @@ function ApplicantProjectsPageInner() {
         ),
       );
 
-      // Keep the existing Formspree notification as well.
+      await Promise.all(
+        selectedProjects.map((p) =>
+          updateDoc(doc(db, "projects", p.id), {
+            applicants: increment(1),
+          }),
+        ),
+      );
+
       await fetch("https://formspree.io/f/your-form-id", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -286,6 +308,7 @@ function ApplicantProjectsPageInner() {
             .join(", "),
         }),
       });
+
       setSubmitted(true);
       setSelected([]);
     } catch (err) {
@@ -294,6 +317,23 @@ function ApplicantProjectsPageInner() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const formatDeadline = (deadline) => {
+    if (!deadline) return null;
+    return new Date(deadline).toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const daysUntilDeadline = (deadline) => {
+    if (!deadline) return null;
+    const diff = Math.ceil(
+      (new Date(deadline) - new Date()) / (1000 * 60 * 60 * 24),
+    );
+    return diff;
   };
 
   return (
@@ -443,6 +483,10 @@ function ApplicantProjectsPageInner() {
               {filtered.map((project) => {
                 const isSelected = selected.includes(project.id);
                 const isDeepLinked = project.id === targetProjectId;
+                const deadlineDays = daysUntilDeadline(project.deadline);
+                const isClosingSoon =
+                  deadlineDays !== null && deadlineDays <= 3;
+
                 return (
                   <div
                     key={project.id}
@@ -469,6 +513,14 @@ function ApplicantProjectsPageInner() {
                         {project.urgent && (
                           <span className="bg-red-500 text-white text-[10px] font-black px-2.5 py-1 rounded-full">
                             Urgent hiring
+                          </span>
+                        )}
+                        {isClosingSoon && (
+                          <span className="bg-amber-100 text-amber-700 text-[10px] font-black px-2.5 py-1 rounded-full flex items-center gap-1">
+                            <CalendarX size={9} />
+                            {deadlineDays === 0
+                              ? "Last day"
+                              : `${deadlineDays}d left`}
                           </span>
                         )}
                         <div
@@ -506,11 +558,21 @@ function ApplicantProjectsPageInner() {
                       <span className="mx-2">·</span>
                       <span>
                         <strong className="text-slate-700">
-                          Worker Required:
+                          Workers Required:
                         </strong>{" "}
                         {project.workersRequired}
                       </span>
                     </div>
+
+                    {project.deadline && (
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+                        <CalendarX size={11} className="text-slate-400" />
+                        <span>
+                          <strong className="text-slate-700">Deadline:</strong>{" "}
+                          {formatDeadline(project.deadline)}
+                        </span>
+                      </div>
+                    )}
 
                     <div className="flex flex-wrap gap-2">
                       <span className="border border-slate-800 text-slate-800 text-[11px] font-bold px-3 py-1 rounded-full">

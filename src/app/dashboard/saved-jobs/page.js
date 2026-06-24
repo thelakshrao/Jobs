@@ -18,8 +18,9 @@ import {
   MapPin,
   ChevronRight,
   Search,
+  HardHat,
+  Lock,
 } from "lucide-react";
-import SearchNavbar from "@/dashboardComponents/SearchNavbar";
 import ProfileStrength from "@/profileComponents/ProfileStrength";
 import { computeCompletedItems } from "@/lib/Computecompleteditems";
 import { DEFAULT_PROFILE, DEFAULT_ABOUT } from "@/profileComponents/shared";
@@ -36,7 +37,6 @@ function timeAgo(dateVal) {
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const weeks = Math.floor(days / 7);
   const months = Math.floor(days / 30);
-
   if (mins < 1) return "Just now";
   if (mins < 60) return `${mins} min ago`;
   if (hours < 24) return `${hours} hr ago`;
@@ -61,6 +61,7 @@ export default function MyJobsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("Applied");
   const [savedJobs, setSavedJobs] = useState([]);
+  const [savedProjects, setSavedProjects] = useState([]);
   const [appliedJobs, setAppliedJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(DEFAULT_PROFILE);
@@ -115,12 +116,34 @@ export default function MyJobsPage() {
         );
         const today = new Date().toISOString().split("T")[0];
         setSavedJobs(
-          savedJobDetails
-            .filter(Boolean)
-            .filter(
-              (job) =>
-                !job.applicationDeadline || job.applicationDeadline >= today,
-            ),
+          savedJobDetails.filter(Boolean).map((job) => ({
+            ...job,
+            isClosed:
+              job.status === "closed" ||
+              job.status === "draft" ||
+              (job.applicationDeadline && job.applicationDeadline < today),
+          })),
+        );
+
+        const savedProjSnap = await getDocs(
+          query(
+            collection(db, "savedProjects"),
+            where("applicantUid", "==", user.uid),
+          ),
+        );
+        const savedProjIds = savedProjSnap.docs.map((d) => d.data().projectId);
+        const savedProjDetails = await Promise.all(
+          savedProjIds.map(async (projId) => {
+            const projDoc = await getDoc(doc(db, "projects", projId));
+            if (!projDoc.exists()) return null;
+            return { id: projDoc.id, ...projDoc.data() };
+          }),
+        );
+        setSavedProjects(
+          savedProjDetails.filter(Boolean).map((proj) => ({
+            ...proj,
+            isClosed: proj.deadline && proj.deadline < today,
+          })),
         );
 
         const appliedSnap = await getDocs(
@@ -150,7 +173,11 @@ export default function MyJobsPage() {
     return () => unsub();
   }, []);
 
-  const counts = { Saved: savedJobs.length, Applied: appliedJobs.length };
+  const counts = {
+    Saved: savedJobs.length + savedProjects.length,
+    Applied: appliedJobs.length,
+  };
+
   const now = new Date();
   const recentApplied = appliedJobs.filter((a) => {
     const d = a.appliedAt?.toDate
@@ -164,8 +191,11 @@ export default function MyJobsPage() {
       : new Date(a.appliedAt);
     return (now - d) / (1000 * 60 * 60 * 24) > 14;
   });
+
   const isEmpty =
-    (activeTab === "Saved" && savedJobs.length === 0) ||
+    (activeTab === "Saved" &&
+      savedJobs.length === 0 &&
+      savedProjects.length === 0) ||
     (activeTab === "Applied" && appliedJobs.length === 0);
 
   const goToProfile = () =>
@@ -174,188 +204,307 @@ export default function MyJobsPage() {
       : router.push("/dashboard/profile");
 
   return (
-    <>
-      <main className="min-h-screen bg-[#f8fafc] pb-16 md:pb-0">
-        <div className="w-full max-w-6xl mx-auto pt-3 md:pt-6">
-          <h1 className="text-2xl md:text-3xl font-black text-slate-900 mb-3 px-3 sm:px-6">
-            My jobs
-          </h1>
-
-          <div className="flex flex-col lg:flex-row gap-6 items-start">
-            <div className="flex-1 min-w-0 w-full">
-              {showStrength && (
-                <div className="lg:hidden mb-3">
-                  <ProfileStrength
-                    completedItems={completedItems}
-                    isGraduate={isGraduate}
-                    mobileOnly={true}
-                    onImprove={goToProfile}
-                  />
-                </div>
-              )}
-
-              <div className="px-3 sm:px-6">
-                <div className="flex border-b border-slate-200 mb-6 gap-6">
-                  {TABS.map((tab) => {
-                    const active = activeTab === tab;
-                    return (
-                      <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab)}
-                        className="pb-3 text-sm md:text-base font-black flex items-center gap-1.5 transition-colors"
-                        style={{
-                          color: active ? BLUE : "#94a3b8",
-                          borderBottom: active
-                            ? `2px solid ${BLUE}`
-                            : "2px solid transparent",
-                          marginBottom: "-1px",
-                        }}
-                      >
-                        <span className="text-sm md:text-base font-black">
-                          {counts[tab]}
-                        </span>
-                        {tab}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {loading ? (
-                  <div className="flex items-center justify-center h-64">
-                    <div
-                      className="w-7 h-7 border-[3px] rounded-full animate-spin"
-                      style={{ borderColor: "#bfdbfe", borderTopColor: BLUE }}
-                    />
-                  </div>
-                ) : isEmpty ? (
-                  <div className="flex flex-col items-center justify-center py-20 text-center">
-                    <div
-                      className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
-                      style={{ backgroundColor: "#eff6ff" }}
-                    >
-                      {activeTab === "Saved" ? (
-                        <Bookmark size={28} style={{ color: BLUE }} />
-                      ) : (
-                        <Briefcase size={28} style={{ color: BLUE }} />
-                      )}
-                    </div>
-                    <p className="text-lg font-black text-slate-800 mb-1">
-                      {activeTab === "Saved"
-                        ? "No saved jobs yet"
-                        : "No applications yet"}
-                    </p>
-                    <p className="text-sm font-semibold text-slate-400 mb-6 max-w-xs">
-                      {activeTab === "Saved"
-                        ? "Save jobs you're interested in and find them here."
-                        : "Jobs you apply to will appear here."}
-                    </p>
-                    <Link
-                      href="/dashboard/jobs"
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all"
-                      style={{ backgroundColor: BLUE }}
-                    >
-                      <Search size={14} />
-                      Browse jobs
-                    </Link>
-                  </div>
-                ) : activeTab === "Saved" ? (
-                  <div className="flex flex-col gap-3">
-                    {savedJobs.map((job) => (
-                      <Link
-                        key={job.id}
-                        href={`/dashboard/jobs?jobId=${job.id}`}
-                        className="bg-white rounded-2xl border px-5 py-4 flex items-start gap-4 transition-all group"
-                        style={{
-                          borderColor: "#e2e8f0",
-                          boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-                        }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.borderColor = BLUE)
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.borderColor = "#e2e8f0")
-                        }
-                      >
-                        <div
-                          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                          style={{ backgroundColor: "#eff6ff" }}
-                        >
-                          <Briefcase size={18} style={{ color: BLUE }} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-lg md:text-xl font-black text-slate-900 leading-tight">
-                            {job.title}
-                          </p>
-                          <p className="text-sm font-semibold text-slate-500 mt-0.5">
-                            {job.companyName || "Company"}
-                          </p>
-                          {(job.location || job.targetCountry) && (
-                            <p className="text-xs text-slate-400 flex items-center gap-1 mt-1">
-                              <MapPin size={10} />
-                              {[job.location, job.targetCountry]
-                                .filter(Boolean)
-                                .join(", ")}
-                            </p>
-                          )}
-                        </div>
-                        <ChevronRight
-                          size={16}
-                          className="shrink-0 mt-1"
-                          style={{ color: "#bfdbfe" }}
-                        />
-                      </Link>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-6">
-                    {recentApplied.length > 0 && (
-                      <div>
-                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">
-                          Last 14 days
-                        </p>
-                        <div className="flex flex-col gap-2">
-                          {recentApplied.map((app) => (
-                            <AppliedCard key={app.id} app={app} />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {olderApplied.length > 0 && (
-                      <div>
-                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">
-                          Older
-                        </p>
-                        <div className="flex flex-col gap-2">
-                          {olderApplied.map((app) => (
-                            <AppliedCard key={app.id} app={app} />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
+    <main className="min-h-screen bg-[#f8fafc] pb-16 md:pb-0">
+      <div className="w-full max-w-6xl mx-auto pt-3 md:pt-6">
+        <h1 className="text-2xl md:text-3xl font-black text-slate-900 mb-3 px-3 sm:px-6">
+          My jobs
+        </h1>
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
+          <div className="flex-1 min-w-0 w-full">
             {showStrength && (
-              <div className="hidden lg:block shrink-0 w-72">
+              <div className="lg:hidden mb-3">
                 <ProfileStrength
                   completedItems={completedItems}
                   isGraduate={isGraduate}
+                  mobileOnly={true}
                   onImprove={goToProfile}
                 />
               </div>
             )}
+            <div className="px-3 sm:px-6">
+              <div className="flex border-b border-slate-200 mb-6 gap-6">
+                {TABS.map((tab) => {
+                  const active = activeTab === tab;
+                  return (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className="pb-3 text-sm md:text-base font-black flex items-center gap-1.5 transition-colors"
+                      style={{
+                        color: active ? BLUE : "#94a3b8",
+                        borderBottom: active
+                          ? `2px solid ${BLUE}`
+                          : "2px solid transparent",
+                        marginBottom: "-1px",
+                      }}
+                    >
+                      <span className="text-sm md:text-base font-black">
+                        {counts[tab]}
+                      </span>
+                      {tab}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {loading ? (
+                <div className="flex items-center justify-center h-64">
+                  <div
+                    className="w-7 h-7 border-[3px] rounded-full animate-spin"
+                    style={{ borderColor: "#bfdbfe", borderTopColor: BLUE }}
+                  />
+                </div>
+              ) : isEmpty ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <div
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+                    style={{ backgroundColor: "#eff6ff" }}
+                  >
+                    {activeTab === "Saved" ? (
+                      <Bookmark size={28} style={{ color: BLUE }} />
+                    ) : (
+                      <Briefcase size={28} style={{ color: BLUE }} />
+                    )}
+                  </div>
+                  <p className="text-lg font-black text-slate-800 mb-1">
+                    {activeTab === "Saved"
+                      ? "No saved jobs yet"
+                      : "No applications yet"}
+                  </p>
+                  <p className="text-sm font-semibold text-slate-400 mb-6 max-w-xs">
+                    {activeTab === "Saved"
+                      ? "Save jobs you're interested in and find them here."
+                      : "Jobs you apply to will appear here."}
+                  </p>
+                  <Link
+                    href="/dashboard/jobs"
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all"
+                    style={{ backgroundColor: BLUE }}
+                  >
+                    <Search size={14} />
+                    Browse jobs
+                  </Link>
+                </div>
+              ) : activeTab === "Saved" ? (
+                <div className="flex flex-col gap-6">
+                  {savedJobs.length > 0 && (
+                    <div>
+                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">
+                        Jobs
+                      </p>
+                      <div className="flex flex-col gap-3">
+                        {savedJobs.map((job) => (
+                          <Link
+                            key={job.id}
+                            href={`/dashboard/jobs?jobId=${job.id}`}
+                            className="bg-white rounded-2xl border px-5 py-4 flex items-start gap-4 transition-all group"
+                            style={{
+                              borderColor: job.isClosed ? "#e2e8f0" : "#e2e8f0",
+                              boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                              opacity: job.isClosed ? 0.7 : 1,
+                            }}
+                            onMouseEnter={(e) =>
+                              !job.isClosed &&
+                              (e.currentTarget.style.borderColor = BLUE)
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.borderColor = "#e2e8f0")
+                            }
+                          >
+                            <div
+                              className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                              style={{
+                                backgroundColor: job.isClosed
+                                  ? "#f1f5f9"
+                                  : "#eff6ff",
+                              }}
+                            >
+                              {job.isClosed ? (
+                                <Lock size={18} className="text-slate-400" />
+                              ) : (
+                                <Briefcase size={18} style={{ color: BLUE }} />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                                <p className="text-lg md:text-xl font-black text-slate-900 leading-tight">
+                                  {job.title}
+                                </p>
+                                {job.isClosed && (
+                                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">
+                                    Closed
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm font-semibold text-slate-500">
+                                {job.companyName || "Company"}
+                              </p>
+                              {(job.location || job.targetCountry) && (
+                                <p className="text-xs text-slate-400 flex items-center gap-1 mt-1">
+                                  <MapPin size={10} />
+                                  {[job.location, job.targetCountry]
+                                    .filter(Boolean)
+                                    .join(", ")}
+                                </p>
+                              )}
+                            </div>
+                            <ChevronRight
+                              size={16}
+                              className="shrink-0 mt-1"
+                              style={{ color: "#bfdbfe" }}
+                            />
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {savedProjects.length > 0 && (
+                    <div>
+                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                        <HardHat size={12} />
+                        Projects
+                      </p>
+                      <div className="flex flex-col gap-3">
+                        {savedProjects.map((proj) => (
+                          <Link
+                            key={proj.id}
+                            href={`/dashboard/projects?projectId=${proj.id}`}
+                            className="bg-white rounded-2xl border px-5 py-4 flex items-start gap-4 transition-all group"
+                            style={{
+                              borderColor: "#e2e8f0",
+                              boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                              opacity: proj.isClosed ? 0.7 : 1,
+                            }}
+                            onMouseEnter={(e) =>
+                              !proj.isClosed &&
+                              (e.currentTarget.style.borderColor = BLUE)
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.borderColor = "#e2e8f0")
+                            }
+                          >
+                            <div
+                              className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                              style={{
+                                backgroundColor: proj.isClosed
+                                  ? "#f1f5f9"
+                                  : "#fff7ed",
+                              }}
+                            >
+                              {proj.isClosed ? (
+                                <Lock size={18} className="text-slate-400" />
+                              ) : (
+                                <HardHat
+                                  size={18}
+                                  style={{ color: "#f97316" }}
+                                />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                                <p className="text-lg md:text-xl font-black text-slate-900 leading-tight">
+                                  {proj.title}
+                                </p>
+                                {proj.isClosed && (
+                                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">
+                                    Closed
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm font-semibold text-slate-500">
+                                {proj.company || "Company"}
+                              </p>
+                              {(proj.projectType || proj.workType) && (
+                                <div className="flex flex-wrap gap-1.5 mt-2">
+                                  {proj.projectType && (
+                                    <span className="border border-slate-300 text-slate-600 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
+                                      {proj.projectType}
+                                    </span>
+                                  )}
+                                  {proj.workType && (
+                                    <span className="border border-red-300 text-red-500 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
+                                      {proj.workType}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                              {(proj.location || proj.state) && (
+                                <p className="text-xs text-slate-400 flex items-center gap-1 mt-1.5">
+                                  <MapPin size={10} />
+                                  {[proj.location, proj.state]
+                                    .filter(Boolean)
+                                    .join(", ")}
+                                </p>
+                              )}
+                            </div>
+                            <ChevronRight
+                              size={16}
+                              className="shrink-0 mt-1"
+                              style={{ color: "#bfdbfe" }}
+                            />
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-6">
+                  {recentApplied.length > 0 && (
+                    <div>
+                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">
+                        Last 14 days
+                      </p>
+                      <div className="flex flex-col gap-2">
+                        {recentApplied.map((app) => (
+                          <AppliedCard key={app.id} app={app} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {olderApplied.length > 0 && (
+                    <div>
+                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">
+                        Older
+                      </p>
+                      <div className="flex flex-col gap-2">
+                        {olderApplied.map((app) => (
+                          <AppliedCard key={app.id} app={app} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
+
+          {showStrength && (
+            <div className="hidden lg:block shrink-0 w-72">
+              <ProfileStrength
+                completedItems={completedItems}
+                isGraduate={isGraduate}
+                onImprove={goToProfile}
+              />
+            </div>
+          )}
         </div>
-      </main>
-    </>
+      </div>
+    </main>
   );
 }
 
 function AppliedCard({ app }) {
   const sc = STATUS_COLORS[app.status] || STATUS_COLORS.Applied;
   const when = timeAgo(app.appliedAt);
+  const isProject = app.type === "project";
+  const title = app.jobTitle || app.projectTitle || "Untitled";
+  const company = app.companyName || app.company || "";
+  const linkHref = isProject
+    ? `/dashboard/projects?projectId=${app.projectId}`
+    : `/dashboard/jobs?jobId=${app.jobId}`;
+
   return (
     <div
       className="bg-white rounded-2xl border border-slate-200 px-5 py-4 flex items-start gap-4"
@@ -363,9 +512,13 @@ function AppliedCard({ app }) {
     >
       <div
         className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-        style={{ backgroundColor: "#eff6ff" }}
+        style={{ backgroundColor: isProject ? "#fff7ed" : "#eff6ff" }}
       >
-        <Briefcase size={18} style={{ color: BLUE }} />
+        {isProject ? (
+          <HardHat size={18} style={{ color: "#f97316" }} />
+        ) : (
+          <Briefcase size={18} style={{ color: BLUE }} />
+        )}
       </div>
       <div className="flex-1 min-w-0">
         <span
@@ -379,14 +532,12 @@ function AppliedCard({ app }) {
           {app.status || "Applied"}
         </span>
         <Link
-          href={`/dashboard/jobs?jobId=${app.jobId}`}
+          href={linkHref}
           className="block text-lg md:text-xl font-black text-slate-900 leading-tight hover:underline underline-offset-2"
         >
-          {app.jobTitle}
+          {title}
         </Link>
-        <p className="text-sm font-semibold text-slate-500 mt-0.5">
-          {app.companyName}
-        </p>
+        <p className="text-sm font-semibold text-slate-500 mt-0.5">{company}</p>
         {app.applicantLocation && (
           <p className="text-xs text-slate-400 flex items-center gap-1 mt-1">
             <MapPin size={10} />

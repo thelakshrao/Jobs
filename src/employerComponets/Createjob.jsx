@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
 import { collection, addDoc, updateDoc, doc, getDoc } from "firebase/firestore";
@@ -33,6 +33,7 @@ import {
   CURRENCIES,
   ALL_PERKS,
 } from "@/app/employer/dashboard/create-job/constants";
+
 
 const STEPS = [
   { id: 1, label: "Context", icon: Globe },
@@ -470,9 +471,7 @@ function Step1({ form, setForm, employerData }) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-black">
-          Context & Localization
-        </h2>
+        <h2 className="text-xl font-bold text-black">Context & Localization</h2>
         <p className="text-sm text-slate-500 mt-1">
           Set the target market and framing before anything else.
         </p>
@@ -694,12 +693,20 @@ function Step2({ form, setForm }) {
   const [cities, setCities] = useState([]);
   const [loadingStates, setLoadingStates] = useState(false);
   const [loadingCities, setLoadingCities] = useState(false);
+  const prevCountryRef = useRef(null);
+  const prevStateRef = useRef(null);
 
   useEffect(() => {
     if (!form.targetCountry || form.workType === "Remote") return;
+    const countryChanged =
+      prevCountryRef.current !== null &&
+      prevCountryRef.current !== form.targetCountry;
+    prevCountryRef.current = form.targetCountry;
     setStates([]);
     setCities([]);
-    setForm((f) => ({ ...f, state: "", city: "", addressLine: "" }));
+    if (countryChanged) {
+      setForm((f) => ({ ...f, state: "", city: "", addressLine: "" }));
+    }
     setLoadingStates(true);
     fetch("https://countriesnow.space/api/v0.1/countries/states", {
       method: "POST",
@@ -719,8 +726,13 @@ function Step2({ form, setForm }) {
   useEffect(() => {
     if (!form.state || !form.targetCountry || form.workType === "Remote")
       return;
+    const stateChanged =
+      prevStateRef.current !== null && prevStateRef.current !== form.state;
+    prevStateRef.current = form.state;
     setCities([]);
-    setForm((f) => ({ ...f, city: "" }));
+    if (stateChanged) {
+      setForm((f) => ({ ...f, city: "" }));
+    }
     setLoadingCities(true);
     fetch("https://countriesnow.space/api/v0.1/countries/state/cities", {
       method: "POST",
@@ -985,9 +997,7 @@ function Step4({ form, setForm }) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-black">
-          Compensation & Perks
-        </h2>
+        <h2 className="text-xl font-bold text-black">Compensation & Perks</h2>
         <p className="text-sm text-slate-500 mt-1">
           Tell candidates what they'll earn and enjoy.
         </p>

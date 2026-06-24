@@ -115,7 +115,6 @@ const WORKS = [
     label: "General Construction Labour",
     example: "Site clearing, general assistance",
   },
-
   {
     label: "Delivery Executive",
     example: "Food, parcel, or document delivery",
@@ -193,6 +192,8 @@ function CreateProjectPageInner() {
   const [states, setStates] = useState([]);
   const [loadingStates, setLoadingStates] = useState(false);
 
+  const todayStr = new Date().toISOString().split("T")[0];
+
   const [form, setForm] = useState({
     company: "",
     companySearch: "",
@@ -207,6 +208,7 @@ function CreateProjectPageInner() {
     country: "",
     state: "",
     urgent: false,
+    deadline: "", 
   });
 
   useEffect(() => {
@@ -307,6 +309,7 @@ function CreateProjectPageInner() {
               country: d.country || "",
               state: d.state || "",
               urgent: d.urgent || false,
+              deadline: d.deadline || "",
             });
           }
         } catch (err) {
@@ -368,6 +371,7 @@ function CreateProjectPageInner() {
         country: form.country,
         state: form.state,
         urgent: form.urgent,
+        deadline: form.deadline || null,
         employerUid: currentUser.uid,
         employerEmail: currentUser.email,
       };
@@ -375,6 +379,7 @@ function CreateProjectPageInner() {
         await updateDoc(doc(db, "projects", editId), payload);
       } else {
         payload.createdAt = serverTimestamp();
+        payload.applicants = 0;
         await addDoc(collection(db, "projects"), payload);
       }
       setSuccess(true);
@@ -636,6 +641,20 @@ function CreateProjectPageInner() {
                       <option key={s}>{s}</option>
                     ))}
                   </select>
+                </Field>
+
+                <Field
+                  label="Application Deadline"
+                  hint="After this date the project will be hidden from applicants. Leave blank for no expiry."
+                  error={errors.deadline}
+                >
+                  <input
+                    type="date"
+                    value={form.deadline}
+                    min={todayStr}
+                    onChange={(e) => set("deadline", e.target.value)}
+                    className={inputCls(errors.deadline)}
+                  />
                 </Field>
 
                 <div className="flex items-center gap-3 mb-7">
