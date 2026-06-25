@@ -20,6 +20,7 @@ import {
   Search,
   HardHat,
   Lock,
+  Check,
 } from "lucide-react";
 import ProfileStrength from "@/profileComponents/ProfileStrength";
 import { computeCompletedItems } from "@/lib/Computecompleteditems";
@@ -48,14 +49,296 @@ function timeAgo(dateVal) {
   return `${months} months ago`;
 }
 
-const STATUS_COLORS = {
-  Applied: { bg: "#eff6ff", text: "#60a5fa", border: "#bfdbfe" },
-  Shortlisted: { bg: "#fefce8", text: "#854d0e", border: "#fde047" },
-  Rejected: { bg: "#fef2f2", text: "#991b1b", border: "#fca5a5" },
-  Hired: { bg: "#f0fdf4", text: "#166534", border: "#86efac" },
-};
-
 const TABS = ["Saved", "Applied"];
+
+const PIPELINE_STAGES = [
+  { key: "applied", label: "Applied" },
+  { key: "viewed", label: "Application\nViewed" },
+  { key: "shortlist", label: "Shortlisted" },
+  { key: "interview", label: "Hiring\nProcess" },
+  { key: "hired", label: "Hired" },
+];
+
+function computeStageStates(app) {
+  const status = app.status || "Applied";
+  const hasViewed = !!(
+    app.applicationViewedAt ||
+    app.resumeViewedAt ||
+    app.profileViewedAt
+  );
+
+  let currentIdx = 0;
+  let rejectedIdx = null;
+
+  if (status === "Hired") {
+    currentIdx = 4;
+  } else if (status === "Interviewing") {
+    currentIdx = 3;
+  } else if (status === "Shortlisted") {
+    currentIdx = 2;
+  } else if (status === "Rejected") {
+
+    if (app.interviewingAt) {
+      currentIdx = 3;
+      rejectedIdx = 3;
+    } else if (app.shortlistedAt) {
+      currentIdx = 2;
+      rejectedIdx = 2;
+    } else {
+      currentIdx = 2;
+      rejectedIdx = 2;
+    } 
+  } else {
+    currentIdx = hasViewed ? 1 : 0;
+  }
+
+  return PIPELINE_STAGES.map((stage, i) => {
+    if (rejectedIdx !== null && i === rejectedIdx) return "rejected";
+    if (i < currentIdx) return "done";
+    if (i === currentIdx) return rejectedIdx !== null ? "done" : "active";
+    return "pending";
+  });
+}
+
+function getStageDate(app, key) {
+  switch (key) {
+    case "applied":
+      return app.appliedAt;
+    case "viewed":
+      return (
+        app.applicationViewedAt || app.resumeViewedAt || app.profileViewedAt
+      );
+    case "shortlist":
+      return (
+        app.shortlistedAt ||
+        (app.status === "Shortlisted" ||
+        app.status === "Interviewing" ||
+        app.status === "Hired"
+          ? app.statusUpdatedAt
+          : null)
+      );
+    case "interview":
+      return (
+        app.interviewingAt ||
+        (app.status === "Interviewing" || app.status === "Hired"
+          ? app.statusUpdatedAt
+          : null)
+      );
+    case "hired":
+      return (
+        app.hiredAt || (app.status === "Hired" ? app.statusUpdatedAt : null)
+      );
+    default:
+      return null;
+  }
+}
+
+function getStageLabel(app, key, state) {
+  if (key === "shortlist" && state === "rejected") return "Not\nShortlisted";
+  if (key === "interview" && state === "rejected") return "Did Not\nAdvance";
+  if (key === "hired" && app.status !== "Hired") return "Hired";
+  return PIPELINE_STAGES.find((s) => s.key === key)?.label || "";
+}
+
+function fmtDate(dateVal) {
+  if (!dateVal) return null;
+  const d = dateVal?.toDate ? dateVal.toDate() : new Date(dateVal);
+  if (isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "2-digit",
+  });
+}
+
+function PipelineTracker({ app }) {
+  const states = computeStageStates(app);
+
+  const dotStyle = (state) => ({
+    bg:
+      state === "done"
+        ? "#22c55e"
+        : state === "active"
+          ? "#ffffff"
+          : state === "rejected"
+            ? "#ef4444"
+            : "#f1f5f9",
+    border:
+      state === "done"
+        ? "#16a34a"
+        : state === "active"
+          ? "#22c55e"
+          : state === "rejected"
+            ? "#dc2626"
+            : "#cbd5e1",
+    ring: state === "active",
+  });
+
+  const lineColor = (i) => {
+    const next = states[i + 1];
+    if (next === "rejected") return "#ef4444";
+    if (states[i] === "done" && (next === "done" || next === "active"))
+      return "#22c55e";
+    return "#e2e8f0";
+  };
+
+  return (
+    <div
+      className="w-full overflow-x-auto"
+      style={{
+        paddingLeft: 8,
+        paddingRight: 8,
+        paddingTop: 16,
+        paddingBottom: 8,
+      }}
+    >
+      <div style={{ minWidth: 380, display: "flex", alignItems: "flex-start" }}>
+        {PIPELINE_STAGES.map((stage, i) => {
+          const state = states[i];
+          const d = dotStyle(state);
+          const isLast = i === PIPELINE_STAGES.length - 1;
+          const label = getStageLabel(app, stage.key, state);
+          const date = fmtDate(getStageDate(app, stage.key));
+          const labelColor =
+            state === "rejected"
+              ? "#dc2626"
+              : state === "done" || state === "active"
+                ? "#0f172a"
+                : "#94a3b8";
+
+          return (
+            <div
+              key={stage.key}
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                position: "relative",
+              }}
+            >
+              <div
+                style={{ display: "flex", alignItems: "center", width: "100%" }}
+              >
+                <div
+                  style={{
+                    flex: 1,
+                    height: 2,
+                    backgroundColor: i === 0 ? "transparent" : lineColor(i - 1),
+                    borderRadius: 999,
+                  }}
+                />
+
+                <div style={{ position: "relative", flexShrink: 0 }}>
+                  {d.ring && (
+                    <div
+                      className="animate-ping"
+                      style={{
+                        position: "absolute",
+                        inset: -5,
+                        borderRadius: "50%",
+                        backgroundColor: "#22c55e",
+                        opacity: 0.25,
+                      }}
+                    />
+                  )}
+                  <div
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: "50%",
+                      border: `2px solid ${d.border}`,
+                      backgroundColor: d.bg,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      boxShadow: d.ring ? "0 0 0 3px #dcfce7" : "none",
+                      position: "relative",
+                      zIndex: 1,
+                    }}
+                  >
+                    {state === "done" && (
+                      <Check size={11} color="#fff" strokeWidth={3.5} />
+                    )}
+                    {state === "active" && (
+                      <div
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: "50%",
+                          backgroundColor: "#22c55e",
+                        }}
+                      />
+                    )}
+                    {state === "rejected" && (
+                      <svg
+                        width="10"
+                        height="10"
+                        viewBox="0 0 10 10"
+                        fill="none"
+                      >
+                        <path
+                          d="M2 2l6 6M8 2l-6 6"
+                          stroke="#fff"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    )}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    flex: 1,
+                    height: 2,
+                    backgroundColor: isLast ? "transparent" : lineColor(i),
+                    borderRadius: 999,
+                  }}
+                />
+              </div>
+
+              <div
+                style={{
+                  marginTop: 8,
+                  textAlign: "center",
+                  paddingLeft: 2,
+                  paddingRight: 2,
+                }}
+              >
+                <span
+                  style={{
+                    display: "block",
+                    fontSize: 10,
+                    fontWeight: 900,
+                    color: labelColor,
+                    lineHeight: 1.3,
+                    whiteSpace: "pre-line",
+                  }}
+                >
+                  {label}
+                </span>
+                {date && (
+                  <span
+                    style={{
+                      display: "block",
+                      fontSize: 9,
+                      fontWeight: 600,
+                      color: "#94a3b8",
+                      marginTop: 2,
+                    }}
+                  >
+                    {date}
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function MyJobsPage() {
   const router = useRouter();
@@ -299,7 +582,7 @@ export default function MyJobsPage() {
                             href={`/dashboard/jobs?jobId=${job.id}`}
                             className="bg-white rounded-2xl border px-5 py-4 flex items-start gap-4 transition-all group"
                             style={{
-                              borderColor: job.isClosed ? "#e2e8f0" : "#e2e8f0",
+                              borderColor: "#e2e8f0",
                               boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
                               opacity: job.isClosed ? 0.7 : 1,
                             }}
@@ -496,7 +779,6 @@ export default function MyJobsPage() {
 }
 
 function AppliedCard({ app }) {
-  const sc = STATUS_COLORS[app.status] || STATUS_COLORS.Applied;
   const when = timeAgo(app.appliedAt);
   const isProject = app.type === "project";
   const title = app.jobTitle || app.projectTitle || "Untitled";
@@ -505,48 +787,60 @@ function AppliedCard({ app }) {
     ? `/dashboard/projects?projectId=${app.projectId}`
     : `/dashboard/jobs?jobId=${app.jobId}`;
 
+  const isRejected = app.status === "Rejected";
+  const isHired = app.status === "Hired";
+
   return (
     <div
-      className="bg-white rounded-2xl border border-slate-200 px-5 py-4 flex items-start gap-4"
-      style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}
+      className="bg-white rounded-2xl border px-5 py-4"
+      style={{
+        boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+        borderColor: isRejected ? "#fca5a5" : isHired ? "#86efac" : "#e2e8f0",
+        backgroundColor: isRejected
+          ? "#fff5f5"
+          : isHired
+            ? "#f0fdf4"
+            : "#ffffff",
+      }}
     >
-      <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-        style={{ backgroundColor: isProject ? "#fff7ed" : "#eff6ff" }}
-      >
-        {isProject ? (
-          <HardHat size={18} style={{ color: "#f97316" }} />
-        ) : (
-          <Briefcase size={18} style={{ color: BLUE }} />
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <span
-          className="text-[11px] font-black px-2.5 py-1 rounded-full inline-block mb-1.5"
-          style={{
-            backgroundColor: sc.bg,
-            color: sc.text,
-            border: `1px solid ${sc.border}`,
-          }}
+      <div className="flex items-start gap-4">
+        <div
+          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+          style={{ backgroundColor: isProject ? "#fff7ed" : "#eff6ff" }}
         >
-          {app.status || "Applied"}
-        </span>
-        <Link
-          href={linkHref}
-          className="block text-lg md:text-xl font-black text-slate-900 leading-tight hover:underline underline-offset-2"
-        >
-          {title}
-        </Link>
-        <p className="text-sm font-semibold text-slate-500 mt-0.5">{company}</p>
-        {app.applicantLocation && (
-          <p className="text-xs text-slate-400 flex items-center gap-1 mt-1">
-            <MapPin size={10} />
-            {app.applicantLocation}
+          {isProject ? (
+            <HardHat size={18} style={{ color: "#f97316" }} />
+          ) : (
+            <Briefcase size={18} style={{ color: BLUE }} />
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <Link
+            href={linkHref}
+            className="block text-lg md:text-xl font-black text-slate-900 leading-tight hover:underline underline-offset-2"
+          >
+            {title}
+          </Link>
+          <p className="text-sm font-semibold text-slate-500 mt-0.5">
+            {company}
           </p>
-        )}
-        {when && (
-          <p className="text-xs text-slate-400 mt-1.5">Applied {when}</p>
-        )}
+          {app.applicantLocation && (
+            <p className="text-xs text-slate-400 flex items-center gap-1 mt-1">
+              <MapPin size={10} />
+              {app.applicantLocation}
+            </p>
+          )}
+          {when && (
+            <p className="text-xs text-slate-400 mt-1">Applied {when}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-4 pt-4 border-t border-slate-100">
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">
+          Application status
+        </p>
+        <PipelineTracker app={app} />
       </div>
     </div>
   );

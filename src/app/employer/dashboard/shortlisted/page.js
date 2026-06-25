@@ -33,12 +33,16 @@ import {
   Banknote,
   Clock,
   Building2 as Building2Icon,
+  Star,
+  XCircle,
 } from "lucide-react";
 
-const STATUS_COLORS = {
-  Applied: { bg: "#f1f5f9", text: "#0f172a", border: "#cbd5e1" },
-  "Application Viewed": { bg: "#eff6ff", text: "#1e40af", border: "#93c5fd" },
+const PIPELINE_STAGES = ["Shortlisted", "Interviewing", "Hired"];
+
+const STAGE_COLORS = {
   Shortlisted: { bg: "#fefce8", text: "#854d0e", border: "#fde047" },
+  Interviewing: { bg: "#eff6ff", text: "#1e40af", border: "#93c5fd" },
+  Hired: { bg: "#f0fdf4", text: "#166534", border: "#86efac" },
   Rejected: { bg: "#fef2f2", text: "#991b1b", border: "#fca5a5" },
 };
 
@@ -61,7 +65,7 @@ function getRefId(app) {
   return app.type === "project" ? app.projectId : app.jobId;
 }
 
-export default function EmployerApplicantsPage() {
+export default function EmployerShortlistedPage() {
   const router = useRouter();
   const [checking, setChecking] = useState(true);
   const [applications, setApplications] = useState([]);
@@ -88,26 +92,6 @@ export default function EmployerApplicantsPage() {
     }
   };
 
-  const markAsViewed = async (appId) => {
-    try {
-      await updateDoc(doc(db, "applications", appId), {
-        applicationViewedAt: serverTimestamp(),
-      });
-      setApplications((prev) =>
-        prev.map((a) =>
-          a.id === appId ? { ...a, applicationViewedAt: new Date() } : a,
-        ),
-      );
-      setSelectedApp((prev) =>
-        prev?.id === appId
-          ? { ...prev, applicationViewedAt: new Date() }
-          : prev,
-      );
-    } catch (e) {
-      console.error("markAsViewed error:", e);
-    }
-  };
-
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -125,6 +109,12 @@ export default function EmployerApplicantsPage() {
           query(
             collection(db, "applications"),
             where("employerUid", "==", user.uid),
+            where("status", "in", [
+              "Shortlisted",
+              "Interviewing",
+              "Hired",
+              "Rejected",
+            ]),
           ),
         );
         let apps = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
@@ -148,7 +138,7 @@ export default function EmployerApplicantsPage() {
           setSelectedApp(apps[0]);
         }
       } catch (err) {
-        console.error("Applicants fetch error:", err);
+        console.error("Shortlisted fetch error:", err);
       } finally {
         setLoading(false);
       }
@@ -162,14 +152,18 @@ export default function EmployerApplicantsPage() {
       const timestampField =
         status === "Shortlisted"
           ? "shortlistedAt"
-          : status === "Rejected"
-            ? "rejectedAt"
-            : null;
+          : status === "Interviewing"
+            ? "interviewingAt"
+            : status === "Hired"
+              ? "hiredAt"
+              : status === "Rejected"
+                ? "rejectedAt"
+                : null;
 
-      const payload = { status, statusUpdatedAt: serverTimestamp() };
-      if (timestampField) payload[timestampField] = serverTimestamp();
+      const updatePayload = { status, statusUpdatedAt: serverTimestamp() };
+      if (timestampField) updatePayload[timestampField] = serverTimestamp();
 
-      await updateDoc(doc(db, "applications", appId), payload);
+      await updateDoc(doc(db, "applications", appId), updatePayload);
       setApplications((prev) =>
         prev.map((a) => (a.id === appId ? { ...a, status } : a)),
       );
@@ -237,201 +231,282 @@ export default function EmployerApplicantsPage() {
     </div>
   );
 
-  const DetailPanel = () => (
-    <div
-      className="rounded-2xl border overflow-hidden"
-      style={{
-        backgroundColor:
-          selectedApp?.status === "Rejected" ? "#fff5f5" : "#ffffff",
-        borderColor: selectedApp?.status === "Rejected" ? "#fca5a5" : "#e2e8f0",
-        boxShadow: "0 2px 16px rgba(0,0,0,0.06)",
-      }}
-    >
-      <div className="px-5 py-5 border-b border-slate-100">
-        <div className="flex items-start gap-4">
-          {selectedApp.applicantPhotoURL ? (
-            <img
-              src={selectedApp.applicantPhotoURL}
-              alt={selectedApp.applicantName}
-              className="w-14 h-14 rounded-xl object-cover shrink-0 border-2 border-slate-100"
-            />
-          ) : (
-            <div className="w-14 h-14 rounded-xl bg-black flex items-center justify-center shrink-0">
-              <span className="text-white text-xl font-black">
-                {selectedApp.applicantName?.[0]?.toUpperCase() || "?"}
-              </span>
-            </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-black text-black leading-tight">
-              {selectedApp.applicantName || "Applicant"}
-            </h2>
-            <p className="text-sm font-bold text-slate-500 mt-0.5">
-              Applied for{" "}
-              <span className="text-black">{getTitle(selectedApp)}</span>
-            </p>
-            <p className="text-xs font-semibold text-slate-400 mt-0.5">
-              {timeAgo(selectedApp.appliedAt)}
-            </p>
-          </div>
+  const PipelineBar = ({ currentStatus }) => {
+    const isRejected = currentStatus === "Rejected";
+    const currentIdx = PIPELINE_STAGES.indexOf(currentStatus);
+
+    return (
+      <div className="mt-4">
+        <div className="flex items-center gap-0 mb-3">
+          {PIPELINE_STAGES.map((stage, i) => {
+            const done = !isRejected && i <= currentIdx;
+            const isActive = !isRejected && i === currentIdx;
+            return (
+              <div
+                key={stage}
+                className="flex items-center flex-1 last:flex-none"
+              >
+                <div
+                  className="w-2.5 h-2.5 rounded-full shrink-0 border-2 transition-all"
+                  style={{
+                    backgroundColor: done ? "#22c55e" : "#e2e8f0",
+                    borderColor: done ? "#16a34a" : "#e2e8f0",
+                    transform: isActive ? "scale(1.3)" : "scale(1)",
+                  }}
+                />
+                {i < PIPELINE_STAGES.length - 1 && (
+                  <div
+                    className="h-0.5 flex-1 transition-all"
+                    style={{
+                      backgroundColor:
+                        !isRejected && i < currentIdx ? "#22c55e" : "#e2e8f0",
+                    }}
+                  />
+                )}
+              </div>
+            );
+          })}
         </div>
 
-        <div className="flex flex-wrap gap-2 mt-4">
-          {["Applied", "Shortlisted", "Rejected"].map((s) => {
-            const active = selectedApp.status === s;
+        <div className="flex flex-wrap gap-2">
+          {PIPELINE_STAGES.map((s) => {
+            const active = currentStatus === s;
             return (
               <button
                 key={s}
                 onClick={() => updateStatus(selectedApp.id, s)}
-                disabled={updatingStatus}
-                className="flex items-center gap-1.5 text-xs font-black px-3.5 py-1.5 rounded-xl border transition-all disabled:opacity-50"
+                disabled={updatingStatus || isRejected}
+                className="flex items-center gap-1.5 text-xs font-black px-3.5 py-1.5 rounded-xl border transition-all disabled:opacity-40"
                 style={{
-                  backgroundColor: active
-                    ? s === "Rejected"
-                      ? "#ef4444"
-                      : "#000000"
-                    : s === "Rejected"
-                      ? "#fff5f5"
-                      : "#f8fafc",
-                  color: active
-                    ? "#ffffff"
-                    : s === "Rejected"
-                      ? "#dc2626"
-                      : "#475569",
-                  borderColor: active
-                    ? s === "Rejected"
-                      ? "#dc2626"
-                      : "#0f172a"
-                    : s === "Rejected"
-                      ? "#fca5a5"
-                      : "#e2e8f0",
+                  backgroundColor: active ? "#000000" : "#f8fafc",
+                  color: active ? "#ffffff" : "#475569",
+                  borderColor: active ? "#0f172a" : "#e2e8f0",
                 }}
               >
                 {active && <Check size={11} />}
-                {s}
+                {s === "Shortlisted"
+                  ? "Shortlisted"
+                  : s === "Interviewing"
+                    ? "In Hiring Process"
+                    : "Hired 🎉"}
               </button>
             );
           })}
-        </div>
-      </div>
 
-      <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-            Contact
+          <button
+            onClick={() => updateStatus(selectedApp.id, "Rejected")}
+            disabled={updatingStatus}
+            className="flex items-center gap-1.5 text-xs font-black px-3.5 py-1.5 rounded-xl border transition-all disabled:opacity-40 ml-auto"
+            style={{
+              backgroundColor:
+                currentStatus === "Rejected" ? "#ef4444" : "#fff5f5",
+              color: currentStatus === "Rejected" ? "#ffffff" : "#dc2626",
+              borderColor: currentStatus === "Rejected" ? "#dc2626" : "#fca5a5",
+            }}
+          >
+            {currentStatus === "Rejected" ? (
+              <>
+                <XCircle size={11} /> Not a Fit
+              </>
+            ) : (
+              <>
+                <XCircle size={11} /> Reject
+              </>
+            )}
+          </button>
+        </div>
+
+        {currentStatus === "Rejected" && (
+          <p className="text-xs font-semibold text-red-400 mt-2">
+            This candidate has been marked as not a fit. You can re-shortlist
+            them using the stage buttons above.
           </p>
-          <div className="flex flex-col gap-2">
-            {[
-              {
-                icon: <Mail size={13} />,
-                label: "Email",
-                value: selectedApp.applicantEmail,
-              },
-              {
-                icon: <Phone size={13} />,
-                label: "Phone",
-                value: selectedApp.applicantPhone,
-              },
-              {
-                icon: <MapPin size={13} />,
-                label: "Location",
-                value: selectedApp.applicantLocation,
-              },
-            ]
-              .filter((i) => i.value)
-              .map(({ icon, label, value }) => (
-                <div
-                  key={label}
-                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-100"
+        )}
+      </div>
+    );
+  };
+
+  const DetailPanel = () => {
+    const sc = STAGE_COLORS[selectedApp.status] || STAGE_COLORS.Shortlisted;
+    const isRejected = selectedApp.status === "Rejected";
+
+    return (
+      <div
+        className="rounded-2xl border overflow-hidden"
+        style={{
+          backgroundColor: isRejected ? "#fff5f5" : "#ffffff",
+          borderColor: isRejected
+            ? "#fca5a5"
+            : selectedApp.status === "Hired"
+              ? "#86efac"
+              : "#e2e8f0",
+          boxShadow: "0 2px 16px rgba(0,0,0,0.06)",
+        }}
+      >
+        <div className="px-5 py-5 border-b border-slate-100">
+          <div className="flex items-start gap-4">
+            {selectedApp.applicantPhotoURL ? (
+              <img
+                src={selectedApp.applicantPhotoURL}
+                alt={selectedApp.applicantName}
+                className="w-14 h-14 rounded-xl object-cover shrink-0 border-2 border-slate-100"
+              />
+            ) : (
+              <div className="w-14 h-14 rounded-xl bg-black flex items-center justify-center shrink-0">
+                <span className="text-white text-xl font-black">
+                  {selectedApp.applicantName?.[0]?.toUpperCase() || "?"}
+                </span>
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-xl font-black text-black leading-tight">
+                  {selectedApp.applicantName || "Applicant"}
+                </h2>
+                <span
+                  className="text-[9px] font-black px-2 py-0.5 rounded-full"
+                  style={{
+                    backgroundColor: sc.bg,
+                    color: sc.text,
+                    border: `1px solid ${sc.border}`,
+                  }}
                 >
-                  <span className="text-slate-400 shrink-0">{icon}</span>
-                  <div className="min-w-0">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-wide">
-                      {label}
+                  {selectedApp.status === "Rejected"
+                    ? "Not a Fit"
+                    : selectedApp.status}
+                </span>
+              </div>
+              <p className="text-sm font-bold text-slate-500 mt-0.5">
+                Applied for{" "}
+                <span className="text-black">{getTitle(selectedApp)}</span>
+              </p>
+              <p className="text-xs font-semibold text-slate-400 mt-0.5">
+                {timeAgo(selectedApp.appliedAt)}
+              </p>
+            </div>
+          </div>
+
+          <PipelineBar currentStatus={selectedApp.status} />
+        </div>
+
+        <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+              Contact
+            </p>
+            <div className="flex flex-col gap-2">
+              {[
+                {
+                  icon: <Mail size={13} />,
+                  label: "Email",
+                  value: selectedApp.applicantEmail,
+                },
+                {
+                  icon: <Phone size={13} />,
+                  label: "Phone",
+                  value: selectedApp.applicantPhone,
+                },
+                {
+                  icon: <MapPin size={13} />,
+                  label: "Location",
+                  value: selectedApp.applicantLocation,
+                },
+              ]
+                .filter((i) => i.value)
+                .map(({ icon, label, value }) => (
+                  <div
+                    key={label}
+                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-100"
+                  >
+                    <span className="text-slate-400 shrink-0">{icon}</span>
+                    <div className="min-w-0">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-wide">
+                        {label}
+                      </p>
+                      <p className="text-sm font-black text-black truncate">
+                        {value}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+          <div className="flex flex-col gap-3">
+            {selectedApp.resumeURL && (
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                  Resume
+                </p>
+                <a
+                  href={selectedApp.resumeURL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 transition-all"
+                >
+                  <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+                    <FileText size={16} className="text-slate-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-black text-black">View Resume</p>
+                    <p className="text-xs font-semibold text-slate-400">
+                      Click to open
                     </p>
-                    <p className="text-sm font-black text-black truncate">
-                      {value}
+                  </div>
+                  <ExternalLink size={13} className="text-slate-400" />
+                </a>
+              </div>
+            )}
+            {selectedApp.applicantSlug && (
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                  Profile
+                </p>
+                <a
+                  href={`/dashboard/${selectedApp.applicantSlug}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 transition-all"
+                >
+                  <div className="w-9 h-9 rounded-lg bg-black flex items-center justify-center shrink-0">
+                    <User size={16} className="text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-black text-black">
+                      View Profile
+                    </p>
+                    <p className="text-xs font-semibold text-slate-400">
+                      Open full profile
+                    </p>
+                  </div>
+                  <ExternalLink size={13} className="text-slate-400" />
+                </a>
+              </div>
+            )}
+            {(selectedApp.lastCompany || selectedApp.lastJobTitle) && (
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                  Experience
+                </p>
+                <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                  <div className="w-9 h-9 rounded-lg bg-slate-200 flex items-center justify-center shrink-0">
+                    <Briefcase size={15} className="text-slate-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-black">
+                      {selectedApp.lastJobTitle || "—"}
+                    </p>
+                    <p className="text-xs font-semibold text-slate-500">
+                      {selectedApp.lastCompany || "—"}
                     </p>
                   </div>
                 </div>
-              ))}
+              </div>
+            )}
           </div>
         </div>
-        <div className="flex flex-col gap-3">
-          {selectedApp.resumeURL && (
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                Resume
-              </p>
-              <a
-                href={selectedApp.resumeURL}
-                target="_blank"
-                rel="noreferrer"
-                onClick={() => markAsViewed(selectedApp.id)}
-                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 transition-all"
-              >
-                <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
-                  <FileText size={16} className="text-slate-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-black text-black">View Resume</p>
-                  <p className="text-xs font-semibold text-slate-400">
-                    Click to open
-                  </p>
-                </div>
-                <ExternalLink size={13} className="text-slate-400" />
-              </a>
-            </div>
-          )}
-          {selectedApp.applicantSlug && (
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                Profile
-              </p>
-              <a
-                href={`/dashboard/${selectedApp.applicantSlug}`}
-                target="_blank"
-                rel="noreferrer"
-                onClick={() => markAsViewed(selectedApp.id)}
-                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 transition-all"
-              >
-                <div className="w-9 h-9 rounded-lg bg-black flex items-center justify-center shrink-0">
-                  <User size={16} className="text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-black text-black">View Profile</p>
-                  <p className="text-xs font-semibold text-slate-400">
-                    Open full profile
-                  </p>
-                </div>
-                <ExternalLink size={13} className="text-slate-400" />
-              </a>
-            </div>
-          )}
-          {(selectedApp.lastCompany || selectedApp.lastJobTitle) && (
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                Experience
-              </p>
-              <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                <div className="w-9 h-9 rounded-lg bg-slate-200 flex items-center justify-center shrink-0">
-                  <Briefcase size={15} className="text-slate-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-black text-black">
-                    {selectedApp.lastJobTitle || "—"}
-                  </p>
-                  <p className="text-xs font-semibold text-slate-500">
-                    {selectedApp.lastCompany || "—"}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <>
@@ -440,11 +515,14 @@ export default function EmployerApplicantsPage() {
       <main className="md:ml-64 pt-14 pb-16 md:pb-0 min-h-screen bg-[#f8fafc]">
         <div className="pt-5 pb-10 px-4 sm:px-6 h-[calc(100vh-56px)] flex flex-col">
           <div className="mb-5 shrink-0">
-            <h1 className="text-2xl font-black text-black">Applicants</h1>
+            <div className="flex items-center gap-2">
+              <Star size={20} className="text-black" />
+              <h1 className="text-2xl font-black text-black">Shortlisted</h1>
+            </div>
             <p className="text-sm font-semibold text-slate-500 mt-0.5">
               {loading
                 ? "Loading…"
-                : `${applications.length} application${applications.length !== 1 ? "s" : ""} received`}
+                : `${applications.length} candidate${applications.length !== 1 ? "s" : ""} in pipeline`}
             </p>
           </div>
 
@@ -454,12 +532,12 @@ export default function EmployerApplicantsPage() {
             </div>
           ) : applications.length === 0 ? (
             <div className="bg-white rounded-2xl border border-slate-200 flex flex-col items-center justify-center py-24 px-6 text-center">
-              <User size={40} className="text-slate-200 mb-4" />
+              <Star size={40} className="text-slate-200 mb-4" />
               <p className="text-lg font-black text-black mb-1">
-                No applicants yet
+                No shortlisted candidates yet
               </p>
               <p className="text-sm font-semibold text-slate-400">
-                Applications will appear here when candidates apply.
+                Shortlist applicants from the Applicants page to see them here.
               </p>
             </div>
           ) : (
@@ -474,8 +552,8 @@ export default function EmployerApplicantsPage() {
                   </div>
                   {jobs.length === 0 && (
                     <p className="text-xs font-semibold text-slate-400 px-1 py-3">
-                      No {viewType === "job" ? "job" : "project"} applicants
-                      yet.
+                      No shortlisted {viewType === "job" ? "job" : "project"}{" "}
+                      candidates yet.
                     </p>
                   )}
                   {jobs.map((job) => {
@@ -508,7 +586,7 @@ export default function EmployerApplicantsPage() {
                           <p
                             className={`text-xs font-bold mt-0.5 ${active ? "text-slate-300" : "text-slate-400"}`}
                           >
-                            {count} applicant{count !== 1 ? "s" : ""}
+                            {count} candidate{count !== 1 ? "s" : ""}
                           </p>
                         </button>
                         <button
@@ -536,32 +614,22 @@ export default function EmployerApplicantsPage() {
                     {selectedJob || `Select a ${viewType}`}
                   </p>
                   {jobApplicants.map((app) => {
-                    const displayStatus =
-                      app.applicationViewedAt && app.status === "Applied"
-                        ? "Application Viewed"
-                        : app.status;
                     const sc =
-                      STATUS_COLORS[displayStatus] || STATUS_COLORS.Applied;
+                      STAGE_COLORS[app.status] || STAGE_COLORS.Shortlisted;
                     const active = selectedApp?.id === app.id;
+                    const isRejected = app.status === "Rejected";
                     return (
                       <button
                         key={app.id}
                         onClick={() => setSelectedApp(app)}
                         className="w-full text-left px-3.5 py-3 rounded-xl transition-all shrink-0"
                         style={{
-                          backgroundColor:
-                            app.status === "Rejected"
-                              ? "#fef2f2"
-                              : active
-                                ? "#f1f5f9"
-                                : "#ffffff",
-                          border: `1.5px solid ${
-                            app.status === "Rejected"
-                              ? "#fca5a5"
-                              : active
-                                ? "#94a3b8"
-                                : "#e2e8f0"
-                          }`,
+                          backgroundColor: isRejected
+                            ? "#fff5f5"
+                            : active
+                              ? "#f1f5f9"
+                              : "#ffffff",
+                          border: `1.5px solid ${isRejected ? "#fca5a5" : active ? "#94a3b8" : "#e2e8f0"}`,
                         }}
                       >
                         <div className="flex items-center gap-2 mb-1">
@@ -589,7 +657,7 @@ export default function EmployerApplicantsPage() {
                               border: `1px solid ${sc.border}`,
                             }}
                           >
-                            {displayStatus}
+                            {isRejected ? "Not a Fit" : app.status}
                           </span>
                         </div>
                         {app.applicantLocation && (
@@ -613,7 +681,7 @@ export default function EmployerApplicantsPage() {
                   ) : (
                     <div className="h-full flex items-center justify-center">
                       <p className="text-sm font-bold text-slate-400">
-                        Select an applicant to view details
+                        Select a candidate to view details
                       </p>
                     </div>
                   )}
@@ -626,8 +694,8 @@ export default function EmployerApplicantsPage() {
                     <ViewToggle />
                     {jobs.length === 0 && (
                       <p className="text-xs font-semibold text-slate-400 px-1 py-3">
-                        No {viewType === "job" ? "job" : "project"} applicants
-                        yet.
+                        No shortlisted {viewType === "job" ? "job" : "project"}{" "}
+                        candidates yet.
                       </p>
                     )}
                     {jobs.map((job) => {
@@ -654,7 +722,7 @@ export default function EmployerApplicantsPage() {
                                 {title}
                               </p>
                               <p className="text-sm font-bold text-slate-400 mt-0.5">
-                                {count} applicant{count !== 1 ? "s" : ""}
+                                {count} candidate{count !== 1 ? "s" : ""}
                               </p>
                             </div>
                             <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center shrink-0">
@@ -680,6 +748,7 @@ export default function EmployerApplicantsPage() {
                     })}
                   </div>
                 )}
+
                 {mobileView === "applicants" && (
                   <div className="flex flex-col gap-2">
                     <button
@@ -693,12 +762,9 @@ export default function EmployerApplicantsPage() {
                       {selectedJob}
                     </p>
                     {jobApplicants.map((app) => {
-                      const displayStatus =
-                        app.applicationViewedAt && app.status === "Applied"
-                          ? "Application Viewed"
-                          : app.status;
                       const sc =
-                        STATUS_COLORS[displayStatus] || STATUS_COLORS.Applied;
+                        STAGE_COLORS[app.status] || STAGE_COLORS.Shortlisted;
+                      const isRejected = app.status === "Rejected";
                       return (
                         <button
                           key={app.id}
@@ -708,10 +774,8 @@ export default function EmployerApplicantsPage() {
                           }}
                           className="w-full text-left px-4 py-3.5 rounded-2xl border flex items-center gap-3"
                           style={{
-                            backgroundColor:
-                              app.status === "Rejected" ? "#fef2f2" : "#ffffff",
-                            borderColor:
-                              app.status === "Rejected" ? "#fca5a5" : "#e2e8f0",
+                            backgroundColor: isRejected ? "#fff5f5" : "#ffffff",
+                            borderColor: isRejected ? "#fca5a5" : "#e2e8f0",
                             boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
                           }}
                         >
@@ -741,7 +805,7 @@ export default function EmployerApplicantsPage() {
                                   border: `1px solid ${sc.border}`,
                                 }}
                               >
-                                {displayStatus}
+                                {isRejected ? "Not a Fit" : app.status}
                               </span>
                             </div>
                             {app.applicantLocation && (
@@ -762,6 +826,7 @@ export default function EmployerApplicantsPage() {
                     })}
                   </div>
                 )}
+
                 {mobileView === "detail" && selectedApp && (
                   <div>
                     <button

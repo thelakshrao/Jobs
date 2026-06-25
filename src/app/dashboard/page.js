@@ -21,6 +21,8 @@ import {
   ChevronLeft,
   ChevronRight,
   HardHat,
+  Briefcase,
+  Search,
 } from "lucide-react";
 import ProfileStrength from "@/profileComponents/ProfileStrength";
 
@@ -39,7 +41,6 @@ function timeAgo(dateStr) {
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const weeks = Math.floor(days / 7);
   const months = Math.floor(days / 30);
-
   if (mins < 1) return "Just now";
   if (mins < 60) return `${mins} min ago`;
   if (hours < 24) return `${hours} hr ago`;
@@ -92,7 +93,13 @@ function formatRate(project) {
   return null;
 }
 
-function JobCardHorizontal({ job, isSaved, onSaveToggle, onClick }) {
+function JobCardHorizontal({
+  job,
+  isSaved,
+  onSaveToggle,
+  onClick,
+  onAuthRequired,
+}) {
   const location = [job.location, job.targetCountry].filter(Boolean).join(", ");
   const posted = timeAgo(job.publishedAt || job.createdAt);
   const salary = formatSalary(job);
@@ -101,7 +108,10 @@ function JobCardHorizontal({ job, isSaved, onSaveToggle, onClick }) {
     e.stopPropagation();
     const { auth: fbAuth, db: fbDb } = await import("@/lib/firebase");
     const user = fbAuth.currentUser;
-    if (!user) return;
+    if (!user) {
+      onAuthRequired();
+      return;
+    }
     const ref = doc(fbDb, "savedJobs", `${user.uid}_${job.id}`);
     if (isSaved) {
       await deleteDoc(ref);
@@ -213,7 +223,13 @@ function JobCardHorizontal({ job, isSaved, onSaveToggle, onClick }) {
   );
 }
 
-function ProjectCardHorizontal({ project, isSaved, onSaveToggle, onClick }) {
+function ProjectCardHorizontal({
+  project,
+  isSaved,
+  onSaveToggle,
+  onClick,
+  onAuthRequired,
+}) {
   const location = [project.location, project.state].filter(Boolean).join(", ");
   const posted = timeAgo(project.publishedAt || project.createdAt);
   const rate = formatRate(project);
@@ -222,7 +238,10 @@ function ProjectCardHorizontal({ project, isSaved, onSaveToggle, onClick }) {
     e.stopPropagation();
     const { auth: fbAuth, db: fbDb } = await import("@/lib/firebase");
     const user = fbAuth.currentUser;
-    if (!user) return;
+    if (!user) {
+      onAuthRequired();
+      return;
+    }
     const ref = doc(fbDb, "savedProjects", `${user.uid}_${project.id}`);
     if (isSaved) {
       await deleteDoc(ref);
@@ -345,19 +364,66 @@ function ProjectCardHorizontal({ project, isSaved, onSaveToggle, onClick }) {
   );
 }
 
+function LoginPromptModal({ onClose, router }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
+          style={{ backgroundColor: "#eff6ff" }}
+        >
+          <Briefcase size={22} style={{ color: "#60a5fa" }} />
+        </div>
+        <h2 className="text-lg font-black text-slate-900 mb-1">
+          Sign in to continue
+        </h2>
+        <p className="text-sm font-medium text-slate-500 mb-5">
+          Create an account or sign in to save jobs, apply, and track your
+          applications.
+        </p>
+        <div className="flex gap-2">
+          <button
+            onClick={() => router.push("/login")}
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90"
+            style={{ backgroundColor: "#60a5fa" }}
+          >
+            Sign in
+          </button>
+          <button
+            onClick={() => router.push("/signup")}
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+          >
+            Sign up
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardHome() {
   const router = useRouter();
   const scrollRef = useRef(null);
   const projScrollRef = useRef(null);
+  const [authed, setAuthed] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [savedJobs, setSavedJobs] = useState([]);
   const [projects, setProjects] = useState([]);
   const [savedProjects, setSavedProjects] = useState([]);
   const [userName, setUserName] = useState("");
+  const [isNewUser, setIsNewUser] = useState(false);
   const [completedItems, setCompletedItems] = useState({});
   const [isGraduate, setIsGraduate] = useState(true);
   const [isSimple, setIsSimple] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
   const [canProjScrollLeft, setCanProjScrollLeft] = useState(false);
@@ -413,10 +479,41 @@ export default function DashboardHome() {
   useEffect(() => {
     const unsub = auth.onAuthStateChanged(async (user) => {
       if (!user) {
+        setAuthed(false);
         setLoading(false);
+        try {
+          const [jobsSnap, projectsSnap] = await Promise.all([
+            getDocs(
+              query(collection(db, "jobs"), where("status", "==", "Open")),
+            ),
+            getDocs(
+              query(collection(db, "projects"), orderBy("createdAt", "desc")),
+            ),
+          ]);
+          const today = new Date().toISOString().split("T")[0];
+          setJobs(
+            jobsSnap.docs
+              .map((d) => ({ id: d.id, ...d.data() }))
+              .filter((job) => {
+                if (job.status === "closed" || job.status === "draft")
+                  return false;
+                if (job.applicationDeadline && job.applicationDeadline < today)
+                  return false;
+                return true;
+              }),
+          );
+          setProjects(
+            projectsSnap.docs
+              .map((d) => ({ id: d.id, ...d.data() }))
+              .filter((p) => !p.deadline || p.deadline >= today),
+          );
+        } catch (err) {
+          console.error(err);
+        }
         return;
       }
 
+      setAuthed(true);
       try {
         const [jobsSnap, savedSnap, userSnap] = await Promise.all([
           getDocs(query(collection(db, "jobs"), where("status", "==", "Open"))),
@@ -433,7 +530,6 @@ export default function DashboardHome() {
           jobsSnap.docs
             .map((d) => ({ id: d.id, ...d.data() }))
             .filter((job) => {
-              const today = new Date().toISOString().split("T")[0];
               if (job.status === "closed" || job.status === "draft")
                 return false;
               if (job.applicationDeadline && job.applicationDeadline < today)
@@ -446,9 +542,10 @@ export default function DashboardHome() {
         if (userSnap.exists()) {
           const data = userSnap.data();
           const about = data.about || {};
-          setUserName(
-            data.firstName || about.firstName || data.name?.split(" ")[0] || "",
-          );
+          const name =
+            data.firstName || about.firstName || data.name?.split(" ")[0] || "";
+          setUserName(name);
+          setIsNewUser(!name);
           const profileType = data.profileType || "";
           const eduLevel = about.educationLevel || data.educationLevel || "";
           const simple = profileType === "simple" || eduLevel === "simple";
@@ -493,6 +590,8 @@ export default function DashboardHome() {
               resume: !!(data.resumeUrl || data.resume || about.resume),
             });
           }
+        } else {
+          setIsNewUser(true);
         }
       } catch (err) {
         console.error(err);
@@ -538,6 +637,8 @@ export default function DashboardHome() {
       </div>
     );
 
+  const handleAuthRequired = () => setShowLoginPrompt(true);
+
   return (
     <div
       className="min-h-screen pb-20 md:pb-6 px-4 sm:px-6"
@@ -547,13 +648,82 @@ export default function DashboardHome() {
         paddingTop: "12px",
       }}
     >
-      {userName && (
-        <p className="text-xl font-bold text-slate-900 mb-3 md:mb-6 md:mt-2">
+      {showLoginPrompt && (
+        <LoginPromptModal
+          onClose={() => setShowLoginPrompt(false)}
+          router={router}
+        />
+      )}
+
+      {authed === false && (
+        <div
+          className="rounded-2xl mt-5 p-6 mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+          style={{
+            background: "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)",
+            border: "1px solid #bfdbfe",
+          }}
+        >
+          <div>
+            <h1 className="text-xl font-black text-slate-900 mb-1">
+              Find your next opportunity 
+            </h1>
+            <p className="text-sm font-semibold text-slate-500 max-w-md">
+              Discover jobs and projects matched to your skills. Sign in to
+              apply, save, and track your applications.
+            </p>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <button
+              onClick={() => router.push("/login")}
+              className="px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90"
+              style={{ backgroundColor: "#60a5fa" }}
+            >
+              Sign in
+            </button>
+            <button
+              onClick={() => router.push("/signup")}
+              className="px-5 py-2.5 rounded-xl text-sm font-bold border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-colors"
+            >
+              Sign up
+            </button>
+          </div>
+        </div>
+      )}
+
+      {authed === true && isNewUser && (
+        <div
+          className="rounded-2xl mt-5 p-5 mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+          style={{
+            background: "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)",
+            border: "1px solid #bfdbfe",
+          }}
+        >
+          <div>
+            <h1 className="text-lg font-black text-slate-900 mb-1">
+              Welcome to JobsAbroad! 
+            </h1>
+            <p className="text-sm font-semibold text-slate-500">
+              Complete your profile to get noticed by employers and start
+              applying to jobs.
+            </p>
+          </div>
+          <button
+            onClick={() => router.push("/dashboard/profile")}
+            className="px-5 py-2.5 rounded-xl text-sm font-bold text-white shrink-0 transition-opacity hover:opacity-90"
+            style={{ backgroundColor: "#60a5fa" }}
+          >
+            Complete profile
+          </button>
+        </div>
+      )}
+
+      {authed === true && !isNewUser && userName && (
+        <p className="text-xl font-bold text-slate-900 mb-3 md:mb-5 md:mt-2">
           Welcome back, {userName}
         </p>
       )}
 
-      {!isSimple && (
+      {authed === true && !isSimple && (
         <div className="xl:hidden mb-3">
           <ProfileStrength
             completedItems={completedItems}
@@ -632,6 +802,7 @@ export default function DashboardHome() {
                     onClick={() =>
                       router.push(`/dashboard/jobs?jobId=${job.id}`)
                     }
+                    onAuthRequired={handleAuthRequired}
                   />
                 ))}
               </div>
@@ -648,8 +819,7 @@ export default function DashboardHome() {
                   className="text-sm font-bold uppercase tracking-wide flex items-center gap-1.5"
                   style={{ color: "#60a5fa" }}
                 >
-                  <HardHat size={14} />
-                  Projects for you
+                  <HardHat size={14} /> Projects for you
                 </h2>
                 <div className="flex items-center gap-2">
                   {(canProjScrollLeft || canProjScrollRight) && (
@@ -697,6 +867,7 @@ export default function DashboardHome() {
                     onClick={() =>
                       router.push(`/dashboard/projects?projectId=${project.id}`)
                     }
+                    onAuthRequired={handleAuthRequired}
                   />
                 ))}
               </div>
@@ -704,7 +875,7 @@ export default function DashboardHome() {
           )}
         </div>
 
-        {!isSimple && (
+        {authed === true && !isSimple && (
           <div className="hidden xl:block shrink-0" style={{ width: "280px" }}>
             <ProfileStrength
               completedItems={completedItems}

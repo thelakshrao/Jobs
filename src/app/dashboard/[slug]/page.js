@@ -23,6 +23,51 @@ import ResumeSidebar from "@/profileComponents/ResumeSidebar";
 import SimpleProfileEdit from "@/profileComponents/Simpleprofileedit";
 import SimpleProfileCard from "@/profileComponents/SimpleProfileCard";
 import { computeCompletedItems } from "@/lib/Computecompleteditems";
+import { Briefcase } from "lucide-react";
+
+function LoginPromptModal({ onClose, router }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
+          style={{ backgroundColor: "#eff6ff" }}
+        >
+          <Briefcase size={22} style={{ color: "#60a5fa" }} />
+        </div>
+        <h2 className="text-lg font-black text-slate-900 mb-1">
+          Sign in to continue
+        </h2>
+        <p className="text-sm font-medium text-slate-500 mb-5">
+          Create an account or sign in to apply to jobs, save opportunities, and
+          track your applications.
+        </p>
+        <div className="flex gap-2">
+          <button
+            onClick={() => router.push("/login")}
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90"
+            style={{ backgroundColor: "#60a5fa" }}
+          >
+            Sign in
+          </button>
+          <button
+            onClick={() => router.push("/signup")}
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+          >
+            Sign up
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function ProfileSlugPage() {
   const router = useRouter();
@@ -30,6 +75,8 @@ export default function ProfileSlugPage() {
   const slug = params?.slug;
 
   const [isOwner, setIsOwner] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [profile, setProfile] = useState(DEFAULT_PROFILE);
   const [form, setForm] = useState(DEFAULT_PROFILE);
   const [editing, setEditing] = useState(false);
@@ -58,13 +105,21 @@ export default function ProfileSlugPage() {
     resumeURL,
   });
 
+  const requireAuth = () => {
+    if (!isLoggedIn) {
+      setShowLoginPrompt(true);
+      return true;
+    }
+    return false;
+  };
+
   useEffect(() => {
     if (!slug) return;
 
+    let currentUserUid = null;
+    let authDone = false;
 
-    const unsubAuth = onAuthStateChanged(auth, async (currentUser) => {
-      unsubAuth();
-
+    const loadProfile = async () => {
       try {
         const slugSnap = await getDoc(doc(db, "slugs", slug));
         if (!slugSnap.exists()) {
@@ -74,7 +129,6 @@ export default function ProfileSlugPage() {
         }
 
         const profileUid = slugSnap.data().uid;
-
         const profileSnap = await getDoc(doc(db, "users", profileUid));
         if (!profileSnap.exists()) {
           setNotFound(true);
@@ -92,8 +146,8 @@ export default function ProfileSlugPage() {
         setEducations(data.educations || []);
         setResumeURL(data.resumeURL || data.resume?.url || "");
 
-        if (currentUser && currentUser.uid === profileUid) {
-          setUid(currentUser.uid);
+        if (currentUserUid && currentUserUid === profileUid) {
+          setUid(currentUserUid);
           setForm(p);
           setAboutForm(a);
           setIsOwner(true);
@@ -104,6 +158,15 @@ export default function ProfileSlugPage() {
         console.error("Error loading profile:", err);
         setLoading(false);
       }
+    };
+
+    const unsubAuth = onAuthStateChanged(auth, (currentUser) => {
+      if (authDone) return;
+      authDone = true;
+      currentUserUid = currentUser?.uid || null;
+      setIsLoggedIn(!!currentUser);
+      unsubAuth();
+      loadProfile();
     });
 
     return () => unsubAuth();
@@ -223,6 +286,13 @@ export default function ProfileSlugPage() {
         fontFamily: "'Inter',system-ui,sans-serif",
       }}
     >
+      {showLoginPrompt && (
+        <LoginPromptModal
+          onClose={() => setShowLoginPrompt(false)}
+          router={router}
+        />
+      )}
+
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div>
           <h1
@@ -263,6 +333,24 @@ export default function ProfileSlugPage() {
             <IoPencilOutline size={15} /> Edit Profile
           </BtnPrimary>
         )}
+
+        {!isOwner && !isLoggedIn && (
+          <div className="flex gap-2">
+            <button
+              onClick={() => router.push("/login")}
+              className="px-4 py-2 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90"
+              style={{ backgroundColor: "#60a5fa" }}
+            >
+              Sign in
+            </button>
+            <button
+              onClick={() => router.push("/signup")}
+              className="px-4 py-2 rounded-xl text-sm font-bold border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 transition-colors"
+            >
+              Sign up
+            </button>
+          </div>
+        )}
       </div>
 
       {isSimple ? (
@@ -276,6 +364,7 @@ export default function ProfileSlugPage() {
                 ? (data) => setProfile((p) => ({ ...p, ...data }))
                 : undefined
             }
+            onAuthRequired={requireAuth}
           />
         ) : isOwner ? (
           <SimpleProfileEdit
@@ -302,6 +391,7 @@ export default function ProfileSlugPage() {
             profile={profile}
             simpleEmployers={profile.simpleEmployers || []}
             uid={null}
+            onAuthRequired={requireAuth}
           />
         )
       ) : (
@@ -319,7 +409,11 @@ export default function ProfileSlugPage() {
             )}
 
             {!editing ? (
-              <ProfileCard profile={profile} />
+              <ProfileCard
+                profile={profile}
+                onAuthRequired={requireAuth}
+                isOwner={isOwner}
+              />
             ) : (
               isOwner && (
                 <ProfileEdit
@@ -357,6 +451,7 @@ export default function ProfileSlugPage() {
                 setActiveTab={setActiveTab}
                 profile={profile}
                 isOwner={isOwner}
+                onAuthRequired={requireAuth}
               />
             )}
 
