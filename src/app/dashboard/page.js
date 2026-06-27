@@ -22,9 +22,9 @@ import {
   ChevronRight,
   HardHat,
   Briefcase,
-  Search,
 } from "lucide-react";
 import ProfileStrength from "@/profileComponents/ProfileStrength";
+import { computeCompletedItems } from "@/lib/Computecompleteditems";
 
 function timeAgo(dateStr) {
   if (!dateStr) return null;
@@ -546,49 +546,41 @@ export default function DashboardHome() {
             data.firstName || about.firstName || data.name?.split(" ")[0] || "";
           setUserName(name);
           setIsNewUser(!name);
+
           const profileType = data.profileType || "";
           const eduLevel = about.educationLevel || data.educationLevel || "";
           const simple = profileType === "simple" || eduLevel === "simple";
           setIsSimple(simple);
-          setIsGraduate(!simple && eduLevel !== "");
+
+          const isFresher = about.isFresher === true;
+          setIsGraduate(!simple && eduLevel === "graduate" && !isFresher);
+
           if (!simple) {
-            setCompletedItems({
-              basicInfo: !!(
-                (data.firstName || about.firstName || data.name) &&
-                (data.phone || data.phoneNumber || about.phone)
-              ),
-              about: !!(
-                about.description ||
-                about.currentRole ||
-                about.bio ||
-                data.bio
-              ),
-              skills:
-                !!(Array.isArray(about.skills) && about.skills.length > 0) ||
-                !!(Array.isArray(data.skills) && data.skills.length > 0),
-              experience:
-                !!(
-                  Array.isArray(data.experience) && data.experience.length > 0
-                ) ||
-                !!(
-                  Array.isArray(about.experience) && about.experience.length > 0
-                ) ||
-                !!about.currentRole,
-              education:
-                !!(
-                  Array.isArray(data.education) && data.education.length > 0
-                ) ||
-                !!about.educationLevel ||
-                !!about.institution,
-              links: !!(
-                data.linkedin ||
-                data.github ||
-                data.portfolio ||
-                about.linkedin ||
-                about.github
-              ),
-              resume: !!(data.resumeUrl || data.resume || about.resume),
-            });
+            const profile = {
+              name: data.name || data.firstName || "",
+              title: data.title || about.currentRole || "",
+              location: data.location || about.location || "",
+              phone: data.phone || data.phoneNumber || about.phone || "",
+              email: data.email || "",
+              linkedin: data.linkedin || about.linkedin || "",
+              github: data.github || about.github || "",
+              portfolio: data.portfolio || about.portfolio || "",
+              twitter: data.twitter || about.twitter || "",
+            };
+            const experiences = data.experiences || [];
+            const educations = data.educations || [];
+            const resumeURL =
+              data.resumeURL || data.resume?.url || data.resumeUrl || "";
+
+            setCompletedItems(
+              computeCompletedItems({
+                profile,
+                about,
+                experiences,
+                educations,
+                resumeURL,
+              }),
+            );
           }
         } else {
           setIsNewUser(true);
@@ -665,7 +657,7 @@ export default function DashboardHome() {
         >
           <div>
             <h1 className="text-xl font-black text-slate-900 mb-1">
-              Find your next opportunity 
+              Find your next opportunity 🚀
             </h1>
             <p className="text-sm font-semibold text-slate-500 max-w-md">
               Discover jobs and projects matched to your skills. Sign in to
@@ -700,7 +692,7 @@ export default function DashboardHome() {
         >
           <div>
             <h1 className="text-lg font-black text-slate-900 mb-1">
-              Welcome to JobsAbroad! 
+              Welcome to JobsAbroad! 👋
             </h1>
             <p className="text-sm font-semibold text-slate-500">
               Complete your profile to get noticed by employers and start

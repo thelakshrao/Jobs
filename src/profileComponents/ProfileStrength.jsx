@@ -67,7 +67,6 @@ function StrengthBar({ percent }) {
           );
         })}
       </div>
-
       <div className="flex mt-1">
         {segments.map((seg, i) => (
           <div key={i} className="flex-1 flex items-center gap-1">
@@ -93,11 +92,18 @@ export default function ProfileStrength({
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const activeItems = isGraduate
-    ? STRENGTH_ITEMS
-    : STRENGTH_ITEMS.filter(
-        (i) => i.key !== "experience" && i.key !== "education",
-      );
+  const isFresher = completedItems.fresher === true;
+
+  const activeItems = STRENGTH_ITEMS.map((item) => {
+    if (item.key === "experience" && isFresher) {
+      return {
+        ...item,
+        label: "Fresher / Student",
+        Icon: IoPersonOutline,
+      };
+    }
+    return item;
+  });
 
   const doneCount = activeItems.filter((i) => completedItems[i.key]).length;
   const total = activeItems.length;

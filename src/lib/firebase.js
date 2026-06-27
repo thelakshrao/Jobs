@@ -2,6 +2,7 @@ import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
+import { getMessaging } from "firebase/messaging"; // ← NEW
 import { signInWithEmailAndPassword, signInWithPopup, sendPasswordResetEmail } from "firebase/auth";
 
 const firebaseConfig = {
@@ -20,5 +21,7 @@ export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 export const db = getFirestore(app);
 export const analytics = typeof window !== "undefined" ? getAnalytics(app) : null;
+export const messaging = typeof window !== "undefined" ? getMessaging(app) : null; 
+export const VAPID_KEY = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;           
 
 export default app;

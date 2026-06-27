@@ -127,6 +127,7 @@ export const COUNTRIES = [
 export const LANGUAGES = ["English"];
 
 export const INDUSTRIES = [
+  "Management",
   "Accounting & Finance",
   "Advertising & Marketing",
   "Aerospace & Defense",

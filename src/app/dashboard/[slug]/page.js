@@ -314,12 +314,12 @@ export default function ProfileSlugPage() {
         {isOwner &&
           !isSimple &&
           (!editing ? (
-            <BtnPrimary onClick={() => setEditing(true)}>
+            <BtnPrimary className="cursor-pointer" onClick={() => setEditing(true)}>
               <IoPencilOutline size={15} /> Edit Profile
             </BtnPrimary>
           ) : (
             <div className="flex gap-2 flex-wrap">
-              <BtnPrimary onClick={handleSave} disabled={saving}>
+              <BtnPrimary className="cursor-pointer" onClick={handleSave} disabled={saving}>
                 <IoCheckmarkOutline size={15} />
                 {saving ? "Saving…" : "Save All"}
               </BtnPrimary>

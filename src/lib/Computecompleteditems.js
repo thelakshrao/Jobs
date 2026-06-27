@@ -22,9 +22,12 @@ export function computeCompletedItems({
 
   const skills = Array.isArray(about.skills) ? about.skills.length >= 3 : false;
 
-  const experience =
-    hasItems(experiences) &&
-    experiences.some((e) => filled(e.title) && filled(e.company));
+  const isFresher = about.isFresher === true;
+
+  const experience = isFresher
+    ? true 
+    : hasItems(experiences) &&
+      experiences.some((e) => filled(e.title) && filled(e.company));
 
   const education =
     hasItems(educations) &&
@@ -46,5 +49,6 @@ export function computeCompletedItems({
     education,
     links,
     resume,
+    fresher: isFresher,
   };
 }

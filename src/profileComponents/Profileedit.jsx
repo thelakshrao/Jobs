@@ -9,9 +9,12 @@ import {
   IoPencilOutline,
   IoCameraOutline,
   IoCloudUploadOutline,
-  IoImageOutline,
   IoGlobeOutline,
   IoLinkOutline,
+  IoPersonOutline,
+  IoBriefcaseOutline,
+  IoSchoolOutline,
+  IoStarOutline,
 } from "react-icons/io5";
 import {
   BLUE,
@@ -27,6 +30,13 @@ import {
   EDU_TYPE_GRADUATE,
 } from "./shared";
 import { usePhotoUpload } from "@/hooks/Usephotoupload";
+
+const SIDEBAR_ITEMS = [
+  { key: "profile", label: "Profile Settings", icon: IoPersonOutline },
+  { key: "experience", label: "Work Experience", icon: IoBriefcaseOutline },
+  { key: "education", label: "Education", icon: IoSchoolOutline },
+  { key: "skills", label: "Skills", icon: IoStarOutline },
+];
 
 function PasteURLModal({ onConfirm, onClose }) {
   const [url, setUrl] = useState("");
@@ -90,13 +100,12 @@ function PasteURLModal({ onConfirm, onClose }) {
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
+            className="w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer"
             style={{ backgroundColor: "#f1f5f9", color: "#64748b" }}
           >
             <IoCloseOutline size={16} />
           </button>
         </div>
-
         <div className="px-5 py-4 flex flex-col gap-3">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-bold" style={{ color: "#475569" }}>
@@ -145,7 +154,6 @@ function PasteURLModal({ onConfirm, onClose }) {
               Tip: Right-click any image online → "Copy image address"
             </p>
           </div>
-
           {url && url.startsWith("http") && (
             <div
               className="rounded-xl overflow-hidden flex items-center justify-center"
@@ -164,21 +172,20 @@ function PasteURLModal({ onConfirm, onClose }) {
             </div>
           )}
         </div>
-
         <div
           className="flex gap-2 px-5 py-4"
           style={{ borderTop: "1.5px solid #f1f5f9" }}
         >
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all"
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer"
             style={{ backgroundColor: "#f1f5f9", color: "#64748b" }}
           >
             Cancel
           </button>
           <button
             onClick={handleConfirm}
-            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all"
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all cursor-pointer"
             style={{ backgroundColor: BLUE }}
           >
             Use this URL
@@ -189,37 +196,152 @@ function PasteURLModal({ onConfirm, onClose }) {
   );
 }
 
-function SectionLabel({ title, action }) {
+function SectionTitle({ title }) {
   return (
-    <div
-      className="flex items-center justify-between pt-3 pb-1 border-t"
-      style={{ borderColor: "#f1f5f9" }}
+    <h2 className="text-base font-bold mb-5" style={{ color: "#0f172a" }}>
+      {title}
+    </h2>
+  );
+}
+
+function Divider() {
+  return (
+    <div style={{ height: 1, backgroundColor: "#f1f5f9", margin: "24px 0" }} />
+  );
+}
+
+function FormLabel({ children, required }) {
+  return (
+    <label
+      className="block text-xs font-semibold mb-1.5"
+      style={{ color: "#374151" }}
     >
-      <p
-        className="text-[11px] font-bold uppercase tracking-wider"
-        style={{ color: "#94a3b8" }}
-      >
-        {title}
-      </p>
-      {action}
+      {children}
+      {required && <span style={{ color: "#ef4444" }}> *</span>}
+    </label>
+  );
+}
+
+function StyledInput({
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+  disabled,
+}) {
+  return (
+    <input
+      type={type}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      disabled={disabled}
+      className="w-full rounded-xl px-3.5 py-2.5 text-sm font-medium outline-none transition-all"
+      style={{
+        border: "1.5px solid #e5e7eb",
+        backgroundColor: disabled ? "#f9fafb" : "#ffffff",
+        color: disabled ? "#9ca3af" : "#111827",
+        fontFamily: "inherit",
+      }}
+      onFocus={(e) => !disabled && (e.target.style.borderColor = BLUE)}
+      onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
+    />
+  );
+}
+
+function StyledTextarea({ value, onChange, placeholder, rows = 3 }) {
+  return (
+    <textarea
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      rows={rows}
+      className="w-full rounded-xl px-3.5 py-2.5 text-sm font-medium outline-none transition-all resize-none"
+      style={{
+        border: "1.5px solid #e5e7eb",
+        backgroundColor: "#ffffff",
+        color: "#111827",
+        fontFamily: "inherit",
+      }}
+      onFocus={(e) => (e.target.style.borderColor = BLUE)}
+      onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
+    />
+  );
+}
+
+function GenderRadio({ value, onChange }) {
+  const options = ["Male", "Female", "Other", "Prefer not to say"];
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map((opt) => (
+        <button
+          key={opt}
+          type="button"
+          onClick={() => onChange(opt)}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer"
+          style={{
+            border: `1.5px solid ${value === opt ? BLUE : "#e5e7eb"}`,
+            backgroundColor: value === opt ? "#eff6ff" : "#ffffff",
+            color: value === opt ? BLUE : "#374151",
+          }}
+        >
+          <span
+            className="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
+            style={{
+              border: `2px solid ${value === opt ? BLUE : "#d1d5db"}`,
+              backgroundColor: value === opt ? BLUE : "transparent",
+            }}
+          >
+            {value === opt && (
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  backgroundColor: "#fff",
+                  display: "block",
+                }}
+              />
+            )}
+          </span>
+          {opt}
+        </button>
+      ))}
     </div>
+  );
+}
+
+function SaveButton({ onClick, loading }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={loading}
+      className="px-6 py-2.5 rounded-xl text-sm font-bold text-white transition-all cursor-pointer"
+      style={{
+        backgroundColor: BLUE,
+        opacity: loading ? 0.7 : 1,
+        minWidth: 120,
+      }}
+    >
+      {loading ? "Saving…" : "Save Changes"}
+    </button>
   );
 }
 
 function MiniExpRow({ exp, onEdit, onDelete }) {
   return (
     <div
-      className="flex gap-2 items-start p-2.5 rounded-xl mb-2"
-      style={{ backgroundColor: "#f8fafc", border: "1.5px solid #f1f5f9" }}
+      className="flex gap-3 items-start p-3.5 rounded-xl mb-2.5"
+      style={{ backgroundColor: "#f8fafc", border: "1.5px solid #e5e7eb" }}
     >
       <div
-        className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0"
+        className="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0"
         style={{ backgroundColor: BLUE }}
       >
         {exp.company ? exp.company.slice(0, 2).toUpperCase() : "CO"}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-bold text-gray-900 truncate">{exp.title}</p>
+        <p className="text-sm font-bold text-gray-900 truncate">{exp.title}</p>
         <p className="text-xs font-semibold truncate" style={{ color: BLUE }}>
           {exp.company}
         </p>
@@ -241,11 +363,19 @@ function MiniExpRow({ exp, onEdit, onDelete }) {
               : ""}
         </p>
       </div>
-      <div className="flex gap-1.5 shrink-0">
-        <button onClick={onEdit} style={{ color: "#94a3b8" }}>
+      <div className="flex gap-2 shrink-0">
+        <button
+          onClick={onEdit}
+          className="w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer"
+          style={{ backgroundColor: "#f1f5f9", color: "#64748b" }}
+        >
           <IoPencilOutline size={13} />
         </button>
-        <button onClick={onDelete} style={{ color: "#94a3b8" }}>
+        <button
+          onClick={onDelete}
+          className="w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer"
+          style={{ backgroundColor: "#fef2f2", color: "#ef4444" }}
+        >
           <IoTrashOutline size={13} />
         </button>
       </div>
@@ -256,17 +386,17 @@ function MiniExpRow({ exp, onEdit, onDelete }) {
 function MiniEduRow({ edu, onEdit, onDelete }) {
   return (
     <div
-      className="flex gap-2 items-start p-2.5 rounded-xl mb-2"
-      style={{ backgroundColor: "#f8fafc", border: "1.5px solid #f1f5f9" }}
+      className="flex gap-3 items-start p-3.5 rounded-xl mb-2.5"
+      style={{ backgroundColor: "#f8fafc", border: "1.5px solid #e5e7eb" }}
     >
       <div
-        className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0"
+        className="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0"
         style={{ backgroundColor: "#8b5cf6" }}
       >
         {edu.institution ? edu.institution.slice(0, 2).toUpperCase() : "ED"}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-bold text-gray-900 truncate">{edu.type}</p>
+        <p className="text-sm font-bold text-gray-900 truncate">{edu.type}</p>
         <p className="text-xs font-semibold text-gray-600 truncate">
           {edu.institution}
         </p>
@@ -277,11 +407,19 @@ function MiniEduRow({ edu, onEdit, onDelete }) {
           {edu.percentage ? ` · ${edu.percentage}` : ""}
         </p>
       </div>
-      <div className="flex gap-1.5 shrink-0">
-        <button onClick={onEdit} style={{ color: "#94a3b8" }}>
+      <div className="flex gap-2 shrink-0">
+        <button
+          onClick={onEdit}
+          className="w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer"
+          style={{ backgroundColor: "#f1f5f9", color: "#64748b" }}
+        >
           <IoPencilOutline size={13} />
         </button>
-        <button onClick={onDelete} style={{ color: "#94a3b8" }}>
+        <button
+          onClick={onDelete}
+          className="w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer"
+          style={{ backgroundColor: "#fef2f2", color: "#ef4444" }}
+        >
           <IoTrashOutline size={13} />
         </button>
       </div>
@@ -292,52 +430,58 @@ function MiniEduRow({ edu, onEdit, onDelete }) {
 function ExpForm({ value, onChange, onSave, onCancel }) {
   return (
     <div
-      className="rounded-xl p-3 flex flex-col gap-2.5 mb-2"
+      className="rounded-xl p-4 flex flex-col gap-3 mb-3"
       style={{ border: "1.5px solid #e2e8f0", backgroundColor: "#fafafa" }}
     >
-      <Field
-        label="Job Title / Role"
-        value={value.title || ""}
-        onChange={(e) => onChange({ ...value, title: e.target.value })}
-        placeholder="e.g. Sales Executive"
-      />
-      <Field
-        label="Company Name"
-        value={value.company || ""}
-        onChange={(e) => onChange({ ...value, company: e.target.value })}
-        placeholder="e.g. Reliance Industries"
-      />
-      <Field
-        label="Job Location"
-        value={value.location || ""}
-        onChange={(e) => onChange({ ...value, location: e.target.value })}
-        placeholder="e.g. Mumbai, India"
-      />
-      <div className="flex gap-2">
-        <div className="flex-1">
-          <p className="text-[11px] font-bold text-gray-500 mb-1">
-            Start Month
-          </p>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div>
+          <FormLabel>Job Title / Role</FormLabel>
+          <StyledInput
+            value={value.title || ""}
+            onChange={(e) => onChange({ ...value, title: e.target.value })}
+            placeholder="e.g. Sales Executive"
+          />
+        </div>
+        <div>
+          <FormLabel>Company Name</FormLabel>
+          <StyledInput
+            value={value.company || ""}
+            onChange={(e) => onChange({ ...value, company: e.target.value })}
+            placeholder="e.g. Reliance Industries"
+          />
+        </div>
+        <div>
+          <FormLabel>Job Location</FormLabel>
+          <StyledInput
+            value={value.location || ""}
+            onChange={(e) => onChange({ ...value, location: e.target.value })}
+            placeholder="e.g. Mumbai, India"
+          />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <FormLabel>Start Month</FormLabel>
           <input
             type="month"
             value={value.startDate || ""}
             onChange={(e) => onChange({ ...value, startDate: e.target.value })}
-            className="rounded-lg px-2 py-1.5 text-xs outline-none w-full"
-            style={{ border: "1.5px solid #e2e8f0", color: "#0f172a" }}
+            className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
+            style={{ border: "1.5px solid #e5e7eb", color: "#111827" }}
           />
         </div>
-        <div className="flex-1">
-          <p className="text-[11px] font-bold text-gray-500 mb-1">End Month</p>
+        <div>
+          <FormLabel>End Month</FormLabel>
           <input
             type="month"
             value={value.endDate || ""}
             onChange={(e) => onChange({ ...value, endDate: e.target.value })}
             disabled={value.current}
-            className="rounded-lg px-2 py-1.5 text-xs outline-none w-full"
+            className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
             style={{
-              border: "1.5px solid #e2e8f0",
-              color: value.current ? "#94a3b8" : "#0f172a",
-              backgroundColor: value.current ? "#f8fafc" : "#fff",
+              border: "1.5px solid #e5e7eb",
+              color: value.current ? "#9ca3af" : "#111827",
+              backgroundColor: value.current ? "#f9fafb" : "#fff",
             }}
           />
         </div>
@@ -353,21 +497,26 @@ function ExpForm({ value, onChange, onSave, onCancel }) {
         />
         I currently work here
       </label>
-      <Field
-        as="textarea"
-        label="What did you do there? (optional)"
-        value={value.description || ""}
-        onChange={(e) => onChange({ ...value, description: e.target.value })}
-        placeholder={"• Managed sales targets\n• Handled customer queries"}
-        rows={2}
-      />
-      <div className="flex gap-2">
-        <BtnPrimary small onClick={onSave}>
-          <IoCheckmarkOutline size={11} /> Save
-        </BtnPrimary>
+      <div>
+        <FormLabel>Description (optional)</FormLabel>
+        <StyledTextarea
+          value={value.description || ""}
+          onChange={(e) => onChange({ ...value, description: e.target.value })}
+          placeholder={"• Managed sales targets\n• Handled customer queries"}
+          rows={2}
+        />
+      </div>
+      <div className="flex gap-2 pt-1">
+        <button
+          onClick={onSave}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white cursor-pointer"
+          style={{ backgroundColor: BLUE }}
+        >
+          <IoCheckmarkOutline size={13} /> Save
+        </button>
         <button
           onClick={onCancel}
-          className="text-xs font-semibold px-3 py-1.5 rounded-lg"
+          className="text-xs font-semibold px-4 py-2 rounded-xl cursor-pointer"
           style={{ color: "#64748b", backgroundColor: "#f1f5f9" }}
         >
           Cancel
@@ -380,53 +529,69 @@ function ExpForm({ value, onChange, onSave, onCancel }) {
 function EduForm({ value, onChange, onSave, onCancel }) {
   return (
     <div
-      className="rounded-xl p-3 flex flex-col gap-2.5 mb-2"
+      className="rounded-xl p-4 flex flex-col gap-3 mb-3"
       style={{ border: "1.5px solid #e2e8f0", backgroundColor: "#fafafa" }}
     >
-      <NativeSelect
-        label="Type of Education"
-        value={value.type || ""}
-        onChange={(e) => onChange({ ...value, type: e.target.value })}
-        options={EDU_TYPE_GRADUATE}
-      />
-      <Field
-        label="School / College Name"
-        value={value.institution || ""}
-        onChange={(e) => onChange({ ...value, institution: e.target.value })}
-        placeholder="e.g. Delhi Public School"
-      />
-      <StreamField
-        label="Subject / Branch (optional)"
-        value={value.stream || ""}
-        onChange={(v) => onChange({ ...value, stream: v })}
-      />
-      <div className="flex gap-2">
-        <Field
-          label="Start Year"
-          value={value.startYear || ""}
-          onChange={(e) => onChange({ ...value, startYear: e.target.value })}
-          placeholder="2018"
-        />
-        <Field
-          label="End Year"
-          value={value.endYear || ""}
-          onChange={(e) => onChange({ ...value, endYear: e.target.value })}
-          placeholder="2022"
-        />
-        <Field
-          label="% or Grade"
-          value={value.percentage || ""}
-          onChange={(e) => onChange({ ...value, percentage: e.target.value })}
-          placeholder="85%"
+      <div>
+        <FormLabel>Type of Education</FormLabel>
+        <NativeSelect
+          value={value.type || ""}
+          onChange={(e) => onChange({ ...value, type: e.target.value })}
+          options={EDU_TYPE_GRADUATE}
         />
       </div>
-      <div className="flex gap-2">
-        <BtnPrimary small onClick={onSave}>
-          <IoCheckmarkOutline size={11} /> Save
-        </BtnPrimary>
+      <div>
+        <FormLabel>School / College Name</FormLabel>
+        <StyledInput
+          value={value.institution || ""}
+          onChange={(e) => onChange({ ...value, institution: e.target.value })}
+          placeholder="e.g. Delhi Public School"
+        />
+      </div>
+      <div>
+        <FormLabel>Subject / Branch (optional)</FormLabel>
+        <StreamField
+          value={value.stream || ""}
+          onChange={(v) => onChange({ ...value, stream: v })}
+        />
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <div>
+          <FormLabel>Start Year</FormLabel>
+          <StyledInput
+            value={value.startYear || ""}
+            onChange={(e) => onChange({ ...value, startYear: e.target.value })}
+            placeholder="2018"
+          />
+        </div>
+        <div>
+          <FormLabel>End Year</FormLabel>
+          <StyledInput
+            value={value.endYear || ""}
+            onChange={(e) => onChange({ ...value, endYear: e.target.value })}
+            placeholder="2022"
+          />
+        </div>
+        <div>
+          <FormLabel>% or Grade</FormLabel>
+          <StyledInput
+            value={value.percentage || ""}
+            onChange={(e) => onChange({ ...value, percentage: e.target.value })}
+            placeholder="85%"
+          />
+        </div>
+      </div>
+      <div className="flex gap-2 pt-1">
+        <button
+          onClick={onSave}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white cursor-pointer"
+          style={{ backgroundColor: BLUE }}
+        >
+          <IoCheckmarkOutline size={13} /> Save
+        </button>
         <button
           onClick={onCancel}
-          className="text-xs font-semibold px-3 py-1.5 rounded-lg"
+          className="text-xs font-semibold px-4 py-2 rounded-xl cursor-pointer"
           style={{ color: "#64748b", backgroundColor: "#f1f5f9" }}
         >
           Cancel
@@ -458,11 +623,14 @@ export default function ProfileEdit({
   saveExpToFirebase,
   saveEduToFirebase,
 }) {
+  const [activeTab, setActiveTab] = useState("profile");
   const [langInput, setLangInput] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const [showURLModal, setShowURLModal] = useState(false);
   const fileInputRef = useRef(null);
   const { uploading, error, upload } = usePhotoUpload(setForm);
+
+  const isFresher = !!aboutForm.isFresher;
 
   const onDragOver = (e) => {
     e.preventDefault();
@@ -524,613 +692,815 @@ export default function ProfileEdit({
         />
       )}
 
-      <div
-        className="rounded-2xl overflow-hidden mb-10"
-        style={{
-          border: "1.5px solid #f1f5f9",
-          boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
-        }}
-       >
-        <div className="px-4 pt-5 pb-5 flex flex-col gap-3">
-          <div className="flex items-start gap-4">
-            <div className="relative shrink-0">
-              {form.photoURL ? (
-                <img
-                  src={form.photoURL}
-                  alt="avatar"
-                  className="rounded-2xl object-cover"
-                  style={{ width: 80, height: 80, border: "3px solid #e2e8f0" }}
-                />
-              ) : (
-                <div
-                  className="rounded-2xl flex items-center justify-center font-extrabold text-white"
-                  style={{
-                    width: 80,
-                    height: 80,
-                    fontSize: 28,
-                    backgroundColor: BLUE,
-                    border: "3px solid #e2e8f0",
-                  }}
-                >
-                  {form.name?.slice(0, 1).toUpperCase() || "?"}
-                </div>
-              )}
-              <>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => upload(e.target.files?.[0])}
-                />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  title="Tap to change photo"
-                  className="absolute inset-0 rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all"
-                  style={{ backgroundColor: "rgba(0,0,0,0.48)" }}
-                >
-                  {uploading ? (
-                    <svg
-                      className="animate-spin"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                    >
-                      <circle
-                        cx="12"
-                        cy="12"
-                        r="9"
-                        stroke="white"
-                        strokeWidth="3"
-                        strokeDasharray="28"
-                        strokeDashoffset="10"
-                      />
-                    </svg>
-                  ) : (
-                    <>
-                      <IoCameraOutline size={22} color="white" />
-                      <span
+      <div className="flex gap-5 items-start mb-10">
+        <aside
+          className="shrink-0 rounded-2xl overflow-hidden"
+          style={{
+            width: 210,
+            backgroundColor: "#ffffff",
+            border: "1.5px solid #e5e7eb",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+          }}
+        >
+          {SIDEBAR_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.key;
+            return (
+              <button
+                key={item.key}
+                onClick={() => setActiveTab(item.key)}
+                className="w-full flex items-center gap-3 px-4 py-3.5 text-left transition-all cursor-pointer"
+                style={{
+                  backgroundColor: isActive ? "#eff6ff" : "transparent",
+                  borderLeft: isActive
+                    ? `3px solid ${BLUE}`
+                    : "3px solid transparent",
+                  color: isActive ? BLUE : "#6b7280",
+                  fontSize: 13,
+                  fontWeight: isActive ? 700 : 500,
+                }}
+              >
+                <Icon size={16} />
+                {item.label}
+              </button>
+            );
+          })}
+        </aside>
+
+        <main
+          className="flex-1 rounded-2xl overflow-hidden"
+          style={{
+            backgroundColor: "#ffffff",
+            border: "1.5px solid #e5e7eb",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+          }}
+        >
+          <div className="px-6 py-6">
+            {activeTab === "profile" && (
+              <div>
+                <SectionTitle title="Profile Settings" />
+
+                <div className="flex items-center gap-5 mb-6">
+                  <div className="relative shrink-0">
+                    {form.photoURL ? (
+                      <img
+                        src={form.photoURL}
+                        alt="avatar"
+                        className="rounded-full object-cover"
                         style={{
-                          color: "white",
-                          fontSize: 9,
-                          fontWeight: 700,
-                          letterSpacing: "0.03em",
+                          width: 88,
+                          height: 88,
+                          border: "3px solid #e5e7eb",
+                        }}
+                      />
+                    ) : (
+                      <div
+                        className="rounded-full flex items-center justify-center font-extrabold text-white"
+                        style={{
+                          width: 88,
+                          height: 88,
+                          fontSize: 32,
+                          backgroundColor: BLUE,
+                          border: "3px solid #e5e7eb",
                         }}
                       >
-                        CHANGE
-                      </span>
-                    </>
-                  )}
-                </button>
-              </>
-            </div>
-
-            <div className="flex-1 min-w-0 pt-1">
-              <p
-                className="text-sm font-extrabold"
-                style={{ color: "#0f172a" }}
-              >
-                {form.name || (
-                  <span
-                    className="italic font-normal text-xs"
-                    style={{ color: "#94a3b8" }}
-                  >
-                    Your name here
-                  </span>
-                )}
-              </p>
-              {form.title && (
-                <p
-                  className="text-xs font-semibold mt-0.5"
-                  style={{ color: BLUE }}
-                >
-                  {form.title}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <p className="text-xs font-bold" style={{ color: "#64748b" }}>
-              📷 Profile Photo
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="flex flex-col items-center gap-1.5 py-3 rounded-xl text-center transition-all"
-                style={{
-                  border: "1.5px dashed #bfdbfe",
-                  backgroundColor: "#eff6ff",
-                }}
-              >
-                <IoImageOutline size={20} color={BLUE} />
-                <span className="text-[11px] font-bold" style={{ color: BLUE }}>
-                  Browse
-                  <br />
-                  Phone
-                </span>
-              </button>
-
-              <div
-                onDragOver={onDragOver}
-                onDragLeave={onDragLeave}
-                onDrop={onDrop}
-                className="flex flex-col items-center gap-1.5 py-3 rounded-xl text-center transition-all cursor-pointer"
-                style={{
-                  border: `1.5px dashed ${dragOver ? BLUE : "#e2e8f0"}`,
-                  backgroundColor: dragOver ? "#eff6ff" : "#f8fafc",
-                }}
-              >
-                <IoCloudUploadOutline
-                  size={20}
-                  color={dragOver ? BLUE : "#94a3b8"}
-                />
-                <span
-                  className="text-[11px] font-bold"
-                  style={{ color: dragOver ? BLUE : "#94a3b8" }}
-                >
-                  Drag &<br />
-                  Drop
-                </span>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setShowURLModal(true)}
-                className="flex flex-col items-center gap-1.5 py-3 rounded-xl text-center transition-all"
-                style={{
-                  border: "1.5px dashed #e2e8f0",
-                  backgroundColor: "#f8fafc",
-                }}
-              >
-                <IoGlobeOutline size={20} color="#94a3b8" />
-                <span
-                  className="text-[11px] font-bold"
-                  style={{ color: "#94a3b8" }}
-                >
-                  Paste
-                  <br />
-                  URL
-                </span>
-              </button>
-            </div>
-
-            {uploading && (
-              <p className="text-xs font-bold" style={{ color: BLUE }}>
-                ⏳ Uploading… please wait
-              </p>
-            )}
-            {error && (
-              <p className="text-xs font-bold" style={{ color: "#ef4444" }}>
-                ⚠ {error}
-              </p>
-            )}
-          </div>
-
-          <div
-            className="rounded-xl px-3 py-2 text-xs font-semibold"
-            style={{ backgroundColor: "#eff6ff", color: "#3b82f6" }}
-          >
-            ✎ Fill in the fields below. Each field has a label telling you what
-            to write.
-          </div>
-
-          <SectionLabel title="Your Basic Info" />
-          <Field
-            label="Your Full Name"
-            value={form.name || ""}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            placeholder="e.g. Ravi Kumar"
-          />
-          <Field
-            label="Your Job Title or What You Do"
-            value={form.title || ""}
-            onChange={(e) => setForm({ ...form, title: e.target.value })}
-            placeholder="e.g. Sales Executive, Driver, Tailor, Student…"
-          />
-          <Field
-            as="textarea"
-            label="Short Bio — tell employers a little about yourself"
-            value={form.bio || ""}
-            onChange={(e) => setForm({ ...form, bio: e.target.value })}
-            placeholder="e.g. I have 2 years of experience in retail sales and I am looking for a full-time job in Mumbai."
-            rows={3}
-          />
-
-          <div className="flex gap-2">
-            <Field
-              label="Your City / Location"
-              value={form.location || ""}
-              onChange={(e) => setForm({ ...form, location: e.target.value })}
-              placeholder="e.g. Mumbai"
-            />
-            <NativeSelect
-              label="Gender"
-              value={form.gender || ""}
-              onChange={(e) => setForm({ ...form, gender: e.target.value })}
-              options={GENDERS}
-            />
-          </div>
-          <div className="flex gap-2">
-            <Field
-              label="Email Address"
-              value={form.email || ""}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              placeholder="yourname@gmail.com"
-            />
-            <Field
-              label="Mobile Number"
-              value={form.phone || ""}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              placeholder="+91 9876543210"
-            />
-          </div>
-          <label className="flex items-center gap-2 text-xs font-semibold text-gray-600 cursor-pointer w-fit">
-            <input
-              type="checkbox"
-              checked={!!form.openToWork}
-              onChange={(e) =>
-                setForm({ ...form, openToWork: e.target.checked })
-              }
-              className="accent-blue-400 w-3.5 h-3.5"
-            />
-            I am looking for a job right now (Open to Work)
-          </label>
-
-          <SectionLabel title="Social & Portfolio Links (optional)" />
-          <Field
-            label="LinkedIn Profile Link"
-            value={form.linkedin || ""}
-            onChange={(e) => setForm({ ...form, linkedin: e.target.value })}
-            placeholder="https://linkedin.com/in/your-name"
-          />
-          <Field
-            label="GitHub Profile Link"
-            value={form.github || ""}
-            onChange={(e) => setForm({ ...form, github: e.target.value })}
-            placeholder="https://github.com/your-name"
-          />
-          <Field
-            label="Portfolio / Website Link"
-            value={form.portfolio || ""}
-            onChange={(e) => setForm({ ...form, portfolio: e.target.value })}
-            placeholder="https://yourwebsite.com"
-          />
-          <Field
-            label="Twitter Profile Link"
-            value={form.twitter || ""}
-            onChange={(e) => setForm({ ...form, twitter: e.target.value })}
-            placeholder="https://twitter.com/your-name"
-          />
-
-          <SectionLabel title="Career Details" />
-          <Field
-            as="textarea"
-            label="About You — more detail for employers"
-            value={aboutForm.description || ""}
-            onChange={(e) =>
-              setAboutForm({ ...aboutForm, description: e.target.value })
-            }
-            placeholder="Write more about your skills, work style, what kind of job you want, etc."
-            rows={3}
-          />
-          <div className="flex gap-2">
-            <NativeSelect
-              label="Years of work experience?"
-              value={aboutForm.experience || ""}
-              onChange={(e) =>
-                setAboutForm({ ...aboutForm, experience: e.target.value })
-              }
-              options={EXPERIENCE_OPTIONS}
-            />
-            <Field
-              label="Current or Last Job Title"
-              value={aboutForm.currentRole || ""}
-              onChange={(e) =>
-                setAboutForm({ ...aboutForm, currentRole: e.target.value })
-              }
-              placeholder="e.g. Cashier, Driver…"
-            />
-          </div>
-          <NativeSelect
-            label="Expected Yearly Salary"
-            value={aboutForm.expectedSalary || ""}
-            onChange={(e) =>
-              setAboutForm({ ...aboutForm, expectedSalary: e.target.value })
-            }
-            options={SALARY_OPTIONS}
-          />
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold" style={{ color: "#475569" }}>
-              Languages You Speak
-            </label>
-            {langList.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mb-1">
-                {langList.map((lang) => (
-                  <span
-                    key={lang}
-                    className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold"
-                    style={{
-                      backgroundColor: "#eff6ff",
-                      color: "#3b82f6",
-                      border: "1px solid #dbeafe",
-                    }}
-                  >
-                    {lang}
+                        {form.name?.slice(0, 1).toUpperCase() || "?"}
+                      </div>
+                    )}
                     <button
                       type="button"
-                      onClick={() => removeLanguage(lang)}
-                      className="ml-0.5 font-bold leading-none"
-                      style={{ color: "#93c5fd", fontSize: 14 }}
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center shadow-md cursor-pointer"
+                      style={{
+                        backgroundColor: BLUE,
+                        border: "2px solid #fff",
+                      }}
                     >
-                      ×
+                      <IoCameraOutline size={14} color="white" />
                     </button>
-                  </span>
-                ))}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => upload(e.target.files?.[0])}
+                    />
+                  </div>
+
+                  <div className="flex gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      className="px-4 py-2 rounded-xl text-sm font-bold text-white cursor-pointer"
+                      style={{ backgroundColor: BLUE }}
+                    >
+                      {uploading ? "Uploading…" : "Upload New"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowURLModal(true)}
+                      className="px-4 py-2 rounded-xl text-sm font-bold cursor-pointer"
+                      style={{
+                        backgroundColor: "#f3f4f6",
+                        color: "#374151",
+                        border: "1.5px solid #e5e7eb",
+                      }}
+                    >
+                      Paste URL
+                    </button>
+                    {form.photoURL && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setForm((prev) => ({ ...prev, photoURL: "" }))
+                        }
+                        className="px-4 py-2 rounded-xl text-sm font-bold cursor-pointer"
+                        style={{
+                          backgroundColor: "#fef2f2",
+                          color: "#ef4444",
+                          border: "1.5px solid #fee2e2",
+                        }}
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {error && (
+                  <p
+                    className="text-xs font-bold mb-3"
+                    style={{ color: "#ef4444" }}
+                  >
+                    ⚠ {error}
+                  </p>
+                )}
+
+                <div
+                  onDragOver={onDragOver}
+                  onDragLeave={onDragLeave}
+                  onDrop={onDrop}
+                  className="flex flex-col items-center gap-2 py-4 rounded-xl mb-6 cursor-pointer transition-all"
+                  style={{
+                    border: `1.5px dashed ${dragOver ? BLUE : "#d1d5db"}`,
+                    backgroundColor: dragOver ? "#eff6ff" : "#f9fafb",
+                  }}
+                >
+                  <IoCloudUploadOutline
+                    size={22}
+                    color={dragOver ? BLUE : "#9ca3af"}
+                  />
+                  <p
+                    className="text-xs font-semibold"
+                    style={{ color: dragOver ? BLUE : "#9ca3af" }}
+                  >
+                    Drag & drop a photo here
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <FormLabel required>First Name</FormLabel>
+                    <StyledInput
+                      value={form.name?.split(" ")[0] || ""}
+                      onChange={(e) => {
+                        const parts = (form.name || "").split(" ");
+                        parts[0] = e.target.value;
+                        setForm({ ...form, name: parts.join(" ") });
+                      }}
+                      placeholder="First name"
+                    />
+                  </div>
+                  <div>
+                    <FormLabel>Last Name</FormLabel>
+                    <StyledInput
+                      value={form.name?.split(" ").slice(1).join(" ") || ""}
+                      onChange={(e) => {
+                        const firstName = (form.name || "").split(" ")[0] || "";
+                        setForm({
+                          ...form,
+                          name: `${firstName} ${e.target.value}`.trim(),
+                        });
+                      }}
+                      placeholder="Last name"
+                    />
+                  </div>
+                  <div>
+                    <FormLabel>Email</FormLabel>
+                    <StyledInput
+                      value={form.email || ""}
+                      onChange={(e) =>
+                        setForm({ ...form, email: e.target.value })
+                      }
+                      placeholder="examples@gmail.com"
+                      type="email"
+                    />
+                  </div>
+                  <div>
+                    <FormLabel required>Mobile Number</FormLabel>
+                    <StyledInput
+                      value={form.phone || ""}
+                      onChange={(e) =>
+                        setForm({ ...form, phone: e.target.value })
+                      }
+                      placeholder="+91 9876543210"
+                      type="tel"
+                    />
+                  </div>
+                </div>
+
+                <Divider />
+
+                <div className="mb-4">
+                  <FormLabel>Gender</FormLabel>
+                  <GenderRadio
+                    value={form.gender || ""}
+                    onChange={(v) => setForm({ ...form, gender: v })}
+                  />
+                </div>
+
+                <Divider />
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <FormLabel>Your Job Title</FormLabel>
+                    <StyledInput
+                      value={form.title || ""}
+                      onChange={(e) =>
+                        setForm({ ...form, title: e.target.value })
+                      }
+                      placeholder="e.g. Sales Executive"
+                    />
+                  </div>
+                  <div>
+                    <FormLabel>City / Location</FormLabel>
+                    <StyledInput
+                      value={form.location || ""}
+                      onChange={(e) =>
+                        setForm({ ...form, location: e.target.value })
+                      }
+                      placeholder="e.g. Mumbai"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <FormLabel>Short Bio</FormLabel>
+                  <StyledTextarea
+                    value={form.bio || ""}
+                    onChange={(e) => setForm({ ...form, bio: e.target.value })}
+                    placeholder="Tell employers a little about yourself…"
+                    rows={3}
+                  />
+                </div>
+
+                <Divider />
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <FormLabel>LinkedIn</FormLabel>
+                    <StyledInput
+                      value={form.linkedin || ""}
+                      onChange={(e) =>
+                        setForm({ ...form, linkedin: e.target.value })
+                      }
+                      placeholder="https://linkedin.com/in/your-name"
+                    />
+                  </div>
+                  <div>
+                    <FormLabel>GitHub</FormLabel>
+                    <StyledInput
+                      value={form.github || ""}
+                      onChange={(e) =>
+                        setForm({ ...form, github: e.target.value })
+                      }
+                      placeholder="https://github.com/your-name"
+                    />
+                  </div>
+                  <div>
+                    <FormLabel>Portfolio / Website</FormLabel>
+                    <StyledInput
+                      value={form.portfolio || ""}
+                      onChange={(e) =>
+                        setForm({ ...form, portfolio: e.target.value })
+                      }
+                      placeholder="https://yourwebsite.com"
+                    />
+                  </div>
+                  <div>
+                    <FormLabel>Twitter</FormLabel>
+                    <StyledInput
+                      value={form.twitter || ""}
+                      onChange={(e) =>
+                        setForm({ ...form, twitter: e.target.value })
+                      }
+                      placeholder="https://twitter.com/your-name"
+                    />
+                  </div>
+                </div>
+
+                <Divider />
+
+                <label className="flex items-center gap-2.5 text-sm font-semibold text-gray-700 cursor-pointer w-fit mb-4">
+                  <input
+                    type="checkbox"
+                    checked={!!form.openToWork}
+                    onChange={(e) =>
+                      setForm({ ...form, openToWork: e.target.checked })
+                    }
+                    className="accent-blue-500 w-4 h-4"
+                  />
+                  I am looking for a job right now (Open to Work)
+                </label>
+
+                <div className="flex justify-start">
+                  <SaveButton />
+                </div>
               </div>
             )}
-            <input
-              type="text"
-              placeholder="Type a language and press Enter…"
-              value={langInput}
-              onChange={(e) => {
-                const v = e.target.value;
-                if (v.endsWith(",")) addLanguage(v.slice(0, -1));
-                else setLangInput(v);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addLanguage(langInput);
-                }
-                if (e.key === "Backspace" && !langInput && langList.length > 0)
-                  removeLanguage(langList[langList.length - 1]);
-              }}
-              onBlur={() => {
-                if (langInput.trim()) addLanguage(langInput);
-              }}
-              className="w-full rounded-xl px-3 py-2 text-sm font-medium outline-none"
-              style={{
-                border: "1.5px solid #e2e8f0",
-                backgroundColor: "#f8fafc",
-                color: "#0f172a",
-              }}
-              onFocus={(e) => (e.target.style.borderColor = "#3b82f6")}
-            />
-            <p
-              className="text-[10px] font-semibold"
-              style={{ color: "#94a3b8" }}
-            >
-              Press Enter or comma to add · Backspace to remove last
-            </p>
-          </div>
 
-          <NativeSelect
-            label="When can you start a new job?"
-            value={aboutForm.availability || ""}
-            onChange={(e) =>
-              setAboutForm({ ...aboutForm, availability: e.target.value })
-            }
-            options={AVAILABILITY_OPTIONS}
-          />
-          <KeywordPicker
-            label="Job Type & Location Preferences (tap to select)"
-            value={aboutForm.jobPreferences || ""}
-            onChange={(e) =>
-              setAboutForm({ ...aboutForm, jobPreferences: e.target.value })
-            }
-          />
+            {activeTab === "experience" && (
+              <div>
+                <SectionTitle title="Work Experience" />
 
-          {isGraduate && (
-            <>
-              <SectionLabel
-                title="Work Experience"
-                action={
-                  editSection !== "exp-new" && (
-                    <button
-                      onClick={() => {
-                        setExpForm({
-                          title: "",
-                          company: "",
-                          location: "",
-                          startDate: "",
-                          endDate: "",
-                          current: false,
-                          description: "",
-                        });
-                        setEditSection("exp-new");
+                <div className="mb-4">
+                  <label className="flex items-center gap-2.5 text-sm font-semibold text-gray-700 cursor-pointer w-fit">
+                    <input
+                      type="checkbox"
+                      checked={isFresher}
+                      onChange={(e) =>
+                        setAboutForm({
+                          ...aboutForm,
+                          isFresher: e.target.checked,
+                        })
+                      }
+                      className="accent-blue-500 w-4 h-4"
+                    />
+                    I am a Fresher / Student (no work experience yet)
+                  </label>
+                  {isFresher && (
+                    <div
+                      className="mt-2 rounded-xl px-3 py-2 text-xs font-semibold"
+                      style={{
+                        backgroundColor: "#f0fdf4",
+                        color: "#16a34a",
+                        border: "1px solid #bbf7d0",
                       }}
-                      className="text-xs font-semibold flex items-center gap-1 px-2 py-1 rounded-lg"
-                      style={{ color: BLUE, backgroundColor: "#eff6ff" }}
                     >
-                      <IoAddOutline size={12} /> Add Job
-                    </button>
-                  )
-                }
-              />
-              {editSection === "exp-new" && (
-                <ExpForm
-                  value={expForm}
-                  onChange={setExpForm}
-                  onSave={handleSaveExp}
-                  onCancel={() => {
-                    setExpForm({});
-                    setEditSection(null);
-                  }}
-                />
-              )}
-              {experiences.length === 0 && editSection !== "exp-new" && (
-                <p
-                  className="text-xs font-semibold italic"
-                  style={{ color: "#94a3b8" }}
-                >
-                  No jobs added yet. Tap "Add Job" above.
-                </p>
-              )}
-              {experiences.map((exp, i) =>
-                editSection === `exp-${i}` ? (
-                  <ExpForm
-                    key={i}
-                    value={expForm}
-                    onChange={setExpForm}
-                    onSave={handleSaveExp}
-                    onCancel={() => {
-                      setExpForm({});
-                      setEditSection(null);
-                    }}
+                      ✓ Marked as Fresher
+                    </div>
+                  )}
+                </div>
+
+                {!isFresher && (
+                  <>
+                    <div className="flex items-center justify-between mb-3">
+                      <p
+                        className="text-sm font-bold"
+                        style={{ color: "#374151" }}
+                      >
+                        Your Jobs
+                      </p>
+                      {editSection !== "exp-new" && (
+                        <button
+                          onClick={() => {
+                            setExpForm({
+                              title: "",
+                              company: "",
+                              location: "",
+                              startDate: "",
+                              endDate: "",
+                              current: false,
+                              description: "",
+                            });
+                            setEditSection("exp-new");
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer"
+                          style={{ color: BLUE, backgroundColor: "#eff6ff" }}
+                        >
+                          <IoAddOutline size={13} /> Add Job
+                        </button>
+                      )}
+                    </div>
+
+                    {editSection === "exp-new" && (
+                      <ExpForm
+                        value={expForm}
+                        onChange={setExpForm}
+                        onSave={handleSaveExp}
+                        onCancel={() => {
+                          setExpForm({});
+                          setEditSection(null);
+                        }}
+                      />
+                    )}
+
+                    {experiences.length === 0 && editSection !== "exp-new" && (
+                      <div
+                        className="flex flex-col items-center py-10 rounded-xl"
+                        style={{
+                          backgroundColor: "#f9fafb",
+                          border: "1.5px dashed #e5e7eb",
+                        }}
+                      >
+                        <IoBriefcaseOutline size={32} color="#d1d5db" />
+                        <p
+                          className="text-sm font-semibold mt-2"
+                          style={{ color: "#9ca3af" }}
+                        >
+                          No jobs added yet
+                        </p>
+                        <p
+                          className="text-xs mt-1"
+                          style={{ color: "#d1d5db" }}
+                        >
+                          Tap "Add Job" above to get started
+                        </p>
+                      </div>
+                    )}
+
+                    {experiences.map((exp, i) =>
+                      editSection === `exp-${i}` ? (
+                        <ExpForm
+                          key={i}
+                          value={expForm}
+                          onChange={setExpForm}
+                          onSave={handleSaveExp}
+                          onCancel={() => {
+                            setExpForm({});
+                            setEditSection(null);
+                          }}
+                        />
+                      ) : (
+                        <MiniExpRow
+                          key={i}
+                          exp={exp}
+                          onEdit={() => {
+                            setExpForm(exp);
+                            setEditSection(`exp-${i}`);
+                          }}
+                          onDelete={() =>
+                            saveExpToFirebase(
+                              experiences.filter((_, idx) => idx !== i),
+                            )
+                          }
+                        />
+                      ),
+                    )}
+                  </>
+                )}
+
+                <Divider />
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-4">
+                  <div>
+                    <FormLabel>Years of Experience</FormLabel>
+                    <NativeSelect
+                      value={aboutForm.experience || ""}
+                      onChange={(e) =>
+                        setAboutForm({
+                          ...aboutForm,
+                          experience: e.target.value,
+                        })
+                      }
+                      options={EXPERIENCE_OPTIONS}
+                    />
+                  </div>
+                  <div>
+                    <FormLabel>Current or Last Job Title</FormLabel>
+                    <StyledInput
+                      value={aboutForm.currentRole || ""}
+                      onChange={(e) =>
+                        setAboutForm({
+                          ...aboutForm,
+                          currentRole: e.target.value,
+                        })
+                      }
+                      placeholder="e.g. Cashier, Driver…"
+                    />
+                  </div>
+                </div>
+
+                <div className="mb-4">
+                  <FormLabel>About You — for employers</FormLabel>
+                  <StyledTextarea
+                    value={aboutForm.description || ""}
+                    onChange={(e) =>
+                      setAboutForm({
+                        ...aboutForm,
+                        description: e.target.value,
+                      })
+                    }
+                    placeholder="Write more about your skills, work style, what kind of job you want, etc."
+                    rows={3}
                   />
-                ) : (
-                  <MiniExpRow
-                    key={i}
-                    exp={exp}
-                    onEdit={() => {
-                      setExpForm(exp);
-                      setEditSection(`exp-${i}`);
-                    }}
-                    onDelete={() =>
-                      saveExpToFirebase(
-                        experiences.filter((_, idx) => idx !== i),
-                      )
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-4">
+                  <div>
+                    <FormLabel>Expected Yearly Salary</FormLabel>
+                    <NativeSelect
+                      value={aboutForm.expectedSalary || ""}
+                      onChange={(e) =>
+                        setAboutForm({
+                          ...aboutForm,
+                          expectedSalary: e.target.value,
+                        })
+                      }
+                      options={SALARY_OPTIONS}
+                    />
+                  </div>
+                  <div>
+                    <FormLabel>When can you start?</FormLabel>
+                    <NativeSelect
+                      value={aboutForm.availability || ""}
+                      onChange={(e) =>
+                        setAboutForm({
+                          ...aboutForm,
+                          availability: e.target.value,
+                        })
+                      }
+                      options={AVAILABILITY_OPTIONS}
+                    />
+                  </div>
+                </div>
+
+                <div className="mb-4">
+                  <FormLabel>Job Type & Location Preferences</FormLabel>
+                  <KeywordPicker
+                    value={aboutForm.jobPreferences || ""}
+                    onChange={(e) =>
+                      setAboutForm({
+                        ...aboutForm,
+                        jobPreferences: e.target.value,
+                      })
                     }
                   />
-                ),
-              )}
-            </>
-          )}
+                </div>
 
-          {isGraduate && (
-            <>
-              <SectionLabel
-                title="Education"
-                action={
-                  editSection !== "edu-new" && (
-                    <button
-                      onClick={() => {
-                        setEduForm({
-                          type: "",
-                          institution: "",
-                          stream: "",
-                          startYear: "",
-                          endYear: "",
-                          percentage: "",
-                        });
-                        setEditSection("edu-new");
-                      }}
-                      className="text-xs font-semibold flex items-center gap-1 px-2 py-1 rounded-lg"
-                      style={{ color: "#8b5cf6", backgroundColor: "#f5f3ff" }}
-                    >
-                      <IoAddOutline size={12} /> Add Education
-                    </button>
-                  )
-                }
-              />
-              {editSection === "edu-new" && (
-                <EduForm
-                  value={eduForm}
-                  onChange={setEduForm}
-                  onSave={handleSaveEdu}
-                  onCancel={() => {
-                    setEduForm({});
-                    setEditSection(null);
-                  }}
-                />
-              )}
-              {educations.length === 0 && editSection !== "edu-new" && (
-                <p
-                  className="text-xs font-semibold italic"
-                  style={{ color: "#94a3b8" }}
-                >
-                  No education added yet. Tap "Add Education" above.
-                </p>
-              )}
-              {educations.map((edu, i) =>
-                editSection === `edu-${i}` ? (
-                  <EduForm
-                    key={i}
-                    value={eduForm}
-                    onChange={setEduForm}
-                    onSave={handleSaveEdu}
-                    onCancel={() => {
-                      setEduForm({});
-                      setEditSection(null);
-                    }}
-                  />
-                ) : (
-                  <MiniEduRow
-                    key={i}
-                    edu={edu}
-                    onEdit={() => {
-                      setEduForm(edu);
-                      setEditSection(`edu-${i}`);
-                    }}
-                    onDelete={() =>
-                      saveEduToFirebase(
-                        educations.filter((_, idx) => idx !== i),
-                      )
-                    }
-                  />
-                ),
-              )}
-            </>
-          )}
-
-          <SectionLabel title="Skills (what are you good at? Atleast three!)" />
-          <p
-            className="text-[11px] font-semibold -mt-1"
-            style={{ color: "#94a3b8" }}
-          >
-            Type a skill and tap Add. E.g. MS Excel, Driving, Cooking,
-            Tailoring, React.js…
-          </p>
-          <div className="flex flex-wrap gap-1.5 mb-1">
-            {skills.length === 0 && (
-              <p
-                className="text-xs font-semibold italic"
-                style={{ color: "#94a3b8" }}
-              >
-                No skills added yet.
-              </p>
+                <div className="flex justify-start">
+                  <SaveButton />
+                </div>
+              </div>
             )}
-            {skills.map((skill) => (
-              <span
-                key={skill}
-                className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-semibold"
-                style={{
-                  backgroundColor: "#f8fafc",
-                  border: "1.5px solid #e2e8f0",
-                  color: "#334155",
-                }}
-              >
-                {skill}
-                <button
-                  onClick={() => onDeleteSkill(skill)}
-                  style={{ color: "#94a3b8", lineHeight: 1 }}
-                >
-                  <IoCloseOutline size={11} />
-                </button>
-              </span>
-            ))}
+
+            {activeTab === "education" && (
+              <div>
+                <SectionTitle title="Education" />
+
+                {isGraduate ? (
+                  <>
+                    <div className="flex items-center justify-between mb-3">
+                      <p
+                        className="text-sm font-bold"
+                        style={{ color: "#374151" }}
+                      >
+                        Your Qualifications
+                      </p>
+                      {editSection !== "edu-new" && (
+                        <button
+                          onClick={() => {
+                            setEduForm({
+                              type: "",
+                              institution: "",
+                              stream: "",
+                              startYear: "",
+                              endYear: "",
+                              percentage: "",
+                            });
+                            setEditSection("edu-new");
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer"
+                          style={{
+                            color: "#8b5cf6",
+                            backgroundColor: "#f5f3ff",
+                          }}
+                        >
+                          <IoAddOutline size={13} /> Add Education
+                        </button>
+                      )}
+                    </div>
+
+                    {editSection === "edu-new" && (
+                      <EduForm
+                        value={eduForm}
+                        onChange={setEduForm}
+                        onSave={handleSaveEdu}
+                        onCancel={() => {
+                          setEduForm({});
+                          setEditSection(null);
+                        }}
+                      />
+                    )}
+
+                    {educations.length === 0 && editSection !== "edu-new" && (
+                      <div
+                        className="flex flex-col items-center py-10 rounded-xl"
+                        style={{
+                          backgroundColor: "#f9fafb",
+                          border: "1.5px dashed #e5e7eb",
+                        }}
+                      >
+                        <IoSchoolOutline size={32} color="#d1d5db" />
+                        <p
+                          className="text-sm font-semibold mt-2"
+                          style={{ color: "#9ca3af" }}
+                        >
+                          No education added yet
+                        </p>
+                        <p
+                          className="text-xs mt-1"
+                          style={{ color: "#d1d5db" }}
+                        >
+                          Tap "Add Education" above to get started
+                        </p>
+                      </div>
+                    )}
+
+                    {educations.map((edu, i) =>
+                      editSection === `edu-${i}` ? (
+                        <EduForm
+                          key={i}
+                          value={eduForm}
+                          onChange={setEduForm}
+                          onSave={handleSaveEdu}
+                          onCancel={() => {
+                            setEduForm({});
+                            setEditSection(null);
+                          }}
+                        />
+                      ) : (
+                        <MiniEduRow
+                          key={i}
+                          edu={edu}
+                          onEdit={() => {
+                            setEduForm(edu);
+                            setEditSection(`edu-${i}`);
+                          }}
+                          onDelete={() =>
+                            saveEduToFirebase(
+                              educations.filter((_, idx) => idx !== i),
+                            )
+                          }
+                        />
+                      ),
+                    )}
+                  </>
+                ) : (
+                  <div
+                    className="flex flex-col items-center py-10 rounded-xl"
+                    style={{
+                      backgroundColor: "#f9fafb",
+                      border: "1.5px dashed #e5e7eb",
+                    }}
+                  >
+                    <IoSchoolOutline size={32} color="#d1d5db" />
+                    <p
+                      className="text-sm font-semibold mt-2"
+                      style={{ color: "#9ca3af" }}
+                    >
+                      Education section not available
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex justify-start mt-4">
+                  <SaveButton />
+                </div>
+              </div>
+            )}
+
+            {activeTab === "skills" && (
+              <div>
+                <SectionTitle title="Skills" />
+                <p className="text-sm mb-4" style={{ color: "#6b7280" }}>
+                  Add at least 3 skills. E.g. MS Excel, Driving, Cooking,
+                  React.js…
+                </p>
+
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {skills.length === 0 && (
+                    <p
+                      className="text-sm font-semibold italic"
+                      style={{ color: "#9ca3af" }}
+                    >
+                      No skills added yet.
+                    </p>
+                  )}
+                  {skills.map((skill) => (
+                    <span
+                      key={skill}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold"
+                      style={{
+                        backgroundColor: "#eff6ff",
+                        border: "1.5px solid #bfdbfe",
+                        color: BLUE,
+                      }}
+                    >
+                      {skill}
+                      <button
+                        onClick={() => onDeleteSkill(skill)}
+                        className="cursor-pointer"
+                        style={{ color: "#93c5fd", lineHeight: 1 }}
+                      >
+                        <IoCloseOutline size={13} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+
+                <div className="flex gap-2 mb-6">
+                  <StyledInput
+                    value={skillInput}
+                    onChange={(e) => setSkillInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && onAddSkill()}
+                    placeholder="Type a skill and press Enter…"
+                  />
+                  <button
+                    onClick={onAddSkill}
+                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-white shrink-0 cursor-pointer"
+                    style={{ backgroundColor: BLUE }}
+                  >
+                    <IoAddOutline size={15} /> Add
+                  </button>
+                </div>
+
+                <Divider />
+
+                <div className="mb-4">
+                  <FormLabel>Languages You Speak</FormLabel>
+                  {langList.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {langList.map((lang) => (
+                        <span
+                          key={lang}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold"
+                          style={{
+                            backgroundColor: "#f0fdf4",
+                            border: "1.5px solid #bbf7d0",
+                            color: "#16a34a",
+                          }}
+                        >
+                          {lang}
+                          <button
+                            type="button"
+                            onClick={() => removeLanguage(lang)}
+                            className="cursor-pointer"
+                            style={{ color: "#86efac", lineHeight: 1 }}
+                          >
+                            <IoCloseOutline size={13} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <StyledInput
+                      value={langInput}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (v.endsWith(",")) addLanguage(v.slice(0, -1));
+                        else setLangInput(v);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          addLanguage(langInput);
+                        }
+                        if (
+                          e.key === "Backspace" &&
+                          !langInput &&
+                          langList.length > 0
+                        )
+                          removeLanguage(langList[langList.length - 1]);
+                      }}
+                      placeholder="Type a language and press Enter…"
+                    />
+                    <button
+                      onClick={() => addLanguage(langInput)}
+                      className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-white shrink-0 cursor-pointer"
+                      style={{ backgroundColor: "#16a34a" }}
+                    >
+                      <IoAddOutline size={15} /> Add
+                    </button>
+                  </div>
+                  <p
+                    className="text-[11px] font-semibold mt-1.5"
+                    style={{ color: "#9ca3af" }}
+                  >
+                    Press Enter or comma to add · Backspace to remove last
+                  </p>
+                </div>
+
+                <div className="flex justify-start">
+                  <SaveButton />
+                </div>
+              </div>
+            )}
           </div>
-          <div className="flex gap-2">
-            <input
-              value={skillInput}
-              onChange={(e) => setSkillInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && onAddSkill()}
-              placeholder="Type a skill…"
-              className="rounded-xl px-3 py-2 text-xs font-medium outline-none flex-1 min-w-0"
-              style={{ border: "1.5px solid #e2e8f0", color: "#0f172a" }}
-            />
-            <BtnPrimary small onClick={onAddSkill}>
-              <IoAddOutline size={12} /> Add
-            </BtnPrimary>
-          </div>
-        </div>
+        </main>
       </div>
     </>
   );
