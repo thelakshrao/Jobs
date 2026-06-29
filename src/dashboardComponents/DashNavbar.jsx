@@ -1,10 +1,20 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  doc,
+  getDoc,
+  updateDoc,
+  orderBy,
+} from "firebase/firestore";
 import logo from "@/images/logo.png";
 import {
   IoBriefcaseOutline,
@@ -17,13 +27,18 @@ import {
   IoHomeOutline,
   IoBookmarkOutline,
   IoSearchOutline,
+  IoMailOutline,
 } from "react-icons/io5";
 
 const navItems = [
   { href: "/dashboard", icon: IoHomeOutline, label: "Home" },
   { href: "/dashboard/profile", icon: IoPersonCircleOutline, label: "Profile" },
   { href: "/dashboard/jobs", icon: IoBriefcaseOutline, label: "Jobs" },
-  { href: "/dashboard/saved-jobs", icon: IoBookmarkOutline, label: "Saved / Applied" },
+  {
+    href: "/dashboard/saved-jobs",
+    icon: IoBookmarkOutline,
+    label: "Saved / Applied",
+  },
   { href: "/dashboard/projects", icon: IoFolderOpenOutline, label: "Projects" },
   {
     href: "/dashboard/notifications",
@@ -33,10 +48,195 @@ const navItems = [
   { href: "/dashboard/messages", icon: IoChatbubbleOutline, label: "Messages" },
 ];
 
+function timeAgo(ts) {
+  if (!ts) return "";
+  const date = ts?.toDate ? ts.toDate() : new Date(ts);
+  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (diff < 60) return "just now";
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
+function AlertsPanel({ notifications, onClose, onNotifClick }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) onClose();
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [onClose]);
+
+  return (
+    <div
+      ref={ref}
+      className="absolute left-18 top-0 w-75 bg-white rounded-2xl shadow-2xl border border-slate-100 z-9999 overflow-hidden"
+      style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.13)" }}
+    >
+      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+        <span className="text-[14px] font-bold text-slate-900">Alerts</span>
+        {notifications.length > 0 && (
+          <span className="text-[11px] text-slate-400 font-medium">
+            {notifications.length} unread
+          </span>
+        )}
+      </div>
+      <div className="max-h-100 overflow-y-auto">
+        {notifications.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 gap-2">
+            <IoNotificationsOutline size={28} className="text-slate-200" />
+            <p className="text-[12px] text-slate-400">No new alerts</p>
+          </div>
+        ) : (
+          notifications.map((n) => (
+            <button
+              key={n.convId}
+              onClick={() => {
+                onNotifClick(n.convId);
+                onClose();
+              }}
+              className="w-full flex items-start gap-3 px-4 py-3 hover:bg-blue-50 border-none bg-transparent cursor-pointer text-left border-b border-slate-50 transition-colors"
+            >
+              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
+                <IoMailOutline size={15} className="text-blue-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-semibold text-slate-900 truncate">
+                  {n.senderName || "Employer"}
+                  {n.company ? (
+                    <span className="text-[11px] font-normal text-emerald-600 ml-1">
+                      · {n.company}
+                    </span>
+                  ) : null}
+                </p>
+                <p className="text-[12px] text-slate-500 truncate mt-0.5">
+                  {n.lastMessage || "Sent you a message"}
+                </p>
+                <p className="text-[10px] text-slate-400 mt-0.5">
+                  {timeAgo(n.lastMessageAt)}
+                </p>
+              </div>
+              {n.unread > 0 && (
+                <span className="shrink-0 min-w-4.5 h-4.5 px-1 rounded-full bg-blue-400 text-white text-[9px] font-bold flex items-center justify-center mt-0.5">
+                  {n.unread > 9 ? "9+" : n.unread}
+                </span>
+              )}
+            </button>
+          ))
+        )}
+      </div>
+      {notifications.length > 0 && (
+        <div className="px-4 py-2.5 border-t border-slate-100">
+          <Link
+            href="/dashboard/messages"
+            onClick={onClose}
+            className="text-[12px] font-semibold text-blue-500 hover:text-blue-600"
+          >
+            View all messages →
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function DashNavbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [alertsOpen, setAlertsOpen] = useState(false);
+  const [alertsRef, setAlertsRef] = useState(null);
+  const [msgNotifs, setMsgNotifs] = useState([]);
+  const [totalUnread, setTotalUnread] = useState(0);
+  const senderCache = useRef({});
+
+  useEffect(() => {
+    const unsub = auth.onAuthStateChanged((user) => {
+      if (!user) return;
+
+      const q = query(
+        collection(db, "conversations"),
+        where("participants", "array-contains", user.uid),
+      );
+
+      const unsubConvs = onSnapshot(q, async (snap) => {
+        const convs = snap.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .filter(
+            (c) =>
+              c.participantRoles?.[user.uid] === "applicant" ||
+              !c.participantRoles,
+          );
+
+        const unreadConvs = convs.filter(
+          (c) => (c.unreadCount?.[user.uid] || 0) > 0,
+        );
+
+        const notifs = await Promise.all(
+          unreadConvs.map(async (c) => {
+            const otherUid = c.participants?.find((p) => p !== user.uid);
+            if (!otherUid) return null;
+
+            if (!senderCache.current[otherUid]) {
+              try {
+                const empSnap = await getDoc(doc(db, "employers", otherUid));
+                if (empSnap.exists()) {
+                  const d = empSnap.data();
+                  senderCache.current[otherUid] = {
+                    name:
+                      `${d.firstName || ""} ${d.lastName || ""}`.trim() ||
+                      d.companyName ||
+                      "Employer",
+                    company: d.company || d.companyName || "",
+                  };
+                } else {
+                  const userSnap = await getDoc(doc(db, "users", otherUid));
+                  if (userSnap.exists()) {
+                    const d = userSnap.data();
+                    senderCache.current[otherUid] = {
+                      name:
+                        `${d.firstName || ""} ${d.lastName || ""}`.trim() ||
+                        "User",
+                      company: "",
+                    };
+                  }
+                }
+              } catch (e) {}
+            }
+
+            const sender = senderCache.current[otherUid] || {};
+            return {
+              convId: c.id,
+              senderName: sender.name || "Employer",
+              company: sender.company || "",
+              lastMessage: c.lastMessage || "",
+              lastMessageAt: c.lastMessageAt,
+              unread: c.unreadCount?.[user.uid] || 0,
+            };
+          }),
+        );
+
+        const validNotifs = notifs.filter(Boolean).sort((a, b) => {
+          const aTime = a.lastMessageAt?.toDate?.() || new Date(0);
+          const bTime = b.lastMessageAt?.toDate?.() || new Date(0);
+          return bTime - aTime;
+        });
+
+        setMsgNotifs(validNotifs);
+        setTotalUnread(validNotifs.reduce((s, n) => s + n.unread, 0));
+      });
+
+      return unsubConvs;
+    });
+
+    return () => unsub();
+  }, []);
+
+  const handleNotifClick = (convId) => {
+    router.push(`/dashboard/messages?conv=${convId}`);
+  };
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -83,40 +283,90 @@ export default function DashNavbar() {
         </Link>
 
         <nav className="flex flex-col items-center gap-3 flex-1">
-          {navItems.map(({ href, icon: Icon, label }) => (
-            <Link
-              key={href}
-              href={href}
-              className="group relative flex items-center justify-center w-11 h-11 rounded-2xl transition-all duration-200"
-              style={{
-                backgroundColor: isActive(href) ? "#EFF6FF" : "transparent",
-                color: isActive(href) ? "#60a5fa" : "#0f172a",
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive(href)) {
-                  e.currentTarget.style.backgroundColor = "#EFF6FF";
-                  e.currentTarget.style.color = "#60a5fa";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive(href)) {
-                  e.currentTarget.style.backgroundColor = "transparent";
-                  e.currentTarget.style.color = "#0f172a";
-                }
-              }}
-            >
-              <Icon size={23} />
-              <span className="pointer-events-none absolute left-13 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs font-medium px-2.5 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-md">
-                {label}
-              </span>
-            </Link>
-          ))}
+          {navItems.map(({ href, icon: Icon, label }) => {
+            const isAlerts = label === "Alerts";
+            const active = isActive(href);
+            return (
+              <div key={href} className="relative">
+                {isAlerts ? (
+                  <button
+                    ref={(el) => {
+                      if (el && !alertsRef) setAlertsRef(el);
+                    }}
+                    onClick={() => setAlertsOpen((p) => !p)}
+                    className="group relative flex items-center justify-center w-11 h-11 rounded-2xl transition-all duration-200 border-none cursor-pointer"
+                    style={{
+                      backgroundColor:
+                        alertsOpen || active ? "#EFF6FF" : "transparent",
+                      color: alertsOpen || active ? "#60a5fa" : "#0f172a",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!alertsOpen && !active) {
+                        e.currentTarget.style.backgroundColor = "#EFF6FF";
+                        e.currentTarget.style.color = "#60a5fa";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!alertsOpen && !active) {
+                        e.currentTarget.style.backgroundColor = "transparent";
+                        e.currentTarget.style.color = "#0f172a";
+                      }
+                    }}
+                  >
+                    <Icon size={23} />
+                    {totalUnread > 0 && (
+                      <span className="absolute top-1.5 right-1.5 min-w-4 h-4 px-0.5 rounded-full bg-red-500 text-white text-[8px] font-bold flex items-center justify-center border-2 border-white">
+                        {totalUnread > 9 ? "9+" : totalUnread}
+                      </span>
+                    )}
+                    <span className="pointer-events-none absolute left-13 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs font-medium px-2.5 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-md">
+                      {label}
+                    </span>
+                  </button>
+                ) : (
+                  <Link
+                    href={href}
+                    className="group relative flex items-center justify-center w-11 h-11 rounded-2xl transition-all duration-200"
+                    style={{
+                      backgroundColor: active ? "#EFF6FF" : "transparent",
+                      color: active ? "#60a5fa" : "#0f172a",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!active) {
+                        e.currentTarget.style.backgroundColor = "#EFF6FF";
+                        e.currentTarget.style.color = "#60a5fa";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!active) {
+                        e.currentTarget.style.backgroundColor = "transparent";
+                        e.currentTarget.style.color = "#0f172a";
+                      }
+                    }}
+                  >
+                    <Icon size={23} />
+                    <span className="pointer-events-none absolute left-13 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs font-medium px-2.5 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-md">
+                      {label}
+                    </span>
+                  </Link>
+                )}
+
+                {isAlerts && alertsOpen && (
+                  <AlertsPanel
+                    notifications={msgNotifs}
+                    onClose={() => setAlertsOpen(false)}
+                    onNotifClick={handleNotifClick}
+                  />
+                )}
+              </div>
+            );
+          })}
         </nav>
 
         <div className="relative">
           <button
             onClick={() => setSettingsOpen((p) => !p)}
-            className="flex items-center justify-center w-11 h-11 rounded-2xl transition-all duration-200"
+            className="flex items-center justify-center w-11 h-11 rounded-2xl transition-all duration-200 border-none cursor-pointer"
             style={{
               backgroundColor: settingsOpen ? "#EFF6FF" : "transparent",
               color: "#0f172a",
@@ -144,7 +394,7 @@ export default function DashNavbar() {
             >
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-2.5 w-full px-3 py-2.5 rounded-lg text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors"
+                className="flex items-center gap-2.5 w-full px-3 py-2.5 rounded-lg text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors border-none bg-transparent cursor-pointer"
               >
                 <IoLogOutOutline size={17} /> Logout
               </button>
@@ -183,7 +433,7 @@ export default function DashNavbar() {
           </button>
           <Link
             href="/dashboard/notifications"
-            className="flex items-center justify-center w-9 h-9 rounded-xl"
+            className="relative flex items-center justify-center w-9 h-9 rounded-xl"
             style={{
               color: isActive("/dashboard/notifications")
                 ? "#60a5fa"
@@ -191,6 +441,11 @@ export default function DashNavbar() {
             }}
           >
             <IoNotificationsOutline size={22} />
+            {totalUnread > 0 && (
+              <span className="absolute top-1 right-1 min-w-3.5 h-3.5 px-0.5 rounded-full bg-red-500 text-white text-[8px] font-bold flex items-center justify-center border-2 border-white">
+                {totalUnread > 9 ? "9+" : totalUnread}
+              </span>
+            )}
           </Link>
           <Link
             href="/dashboard/messages"

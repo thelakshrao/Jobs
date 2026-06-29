@@ -1,20 +1,22 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { auth, db } from "@/lib/firebase";
 import {
   listenToConversations,
   listenToMessages,
   sendMessage,
-  getOrCreateConversation,
   markConversationRead,
 } from "@/lib/messaging";
-import { doc, getDoc, collection, getDocs } from "firebase/firestore";
+import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
 import {
   IoChatbubbleOutline,
   IoSendOutline,
-  IoSearchOutline,
-  IoCloseOutline,
   IoArrowBackOutline,
+  IoMailOutline,
+  IoArchiveOutline,
+  IoWarningOutline,
+  IoEllipsisVertical,
+  IoTrashOutline,
 } from "react-icons/io5";
 
 function timeAgo(ts) {
@@ -34,18 +36,18 @@ function formatTime(ts) {
 }
 
 function getColorClass(uid) {
-  if (!uid) return { bg: "bg-blue-50", text: "text-blue-400" };
+  if (!uid) return { bg: "bg-emerald-50", text: "text-emerald-500" };
   const classes = [
-    { bg: "bg-blue-50", text: "text-blue-400" },
-    { bg: "bg-violet-50", text: "text-violet-400" },
     { bg: "bg-emerald-50", text: "text-emerald-500" },
+    { bg: "bg-violet-50", text: "text-violet-400" },
+    { bg: "bg-blue-50", text: "text-blue-400" },
     { bg: "bg-rose-50", text: "text-rose-400" },
     { bg: "bg-amber-50", text: "text-amber-500" },
   ];
   return classes[uid.charCodeAt(0) % classes.length];
 }
 
-function Avatar({ name, photoURL, uid, slug, size = 40 }) {
+function Avatar({ name, photoURL, uid, size = 40 }) {
   const [imgErr, setImgErr] = useState(false);
   const initials = name
     ? name
@@ -54,11 +56,9 @@ function Avatar({ name, photoURL, uid, slug, size = 40 }) {
         .join("")
         .toUpperCase()
         .slice(0, 2)
-    : slug
-      ? slug[0].toUpperCase()
-      : uid
-        ? uid[0].toUpperCase()
-        : "U";
+    : uid
+      ? uid[0].toUpperCase()
+      : "U";
   const color = getColorClass(uid);
   const px = `${size}px`;
   if (photoURL && !imgErr) {
@@ -82,65 +82,184 @@ function Avatar({ name, photoURL, uid, slug, size = 40 }) {
   );
 }
 
-function RoleBadge({ role }) {
-  if (!role) return null;
-  const isEmployer = role !== "Applicant";
-  return (
-    <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
-        isEmployer
-          ? "bg-emerald-50 text-emerald-600 border-emerald-200"
-          : "bg-blue-50 text-blue-500 border-blue-200"
-      }`}
-    >
-      {role}
-    </span>
-  );
-}
-
-async function fetchUserInfo(uid) {
+async function fetchSenderInfo(uid) {
   let name = "",
-    role = "",
-    slug = "",
-    photoURL = "";
+    photoURL = "",
+    company = "";
   try {
-    const userSnap = await getDoc(doc(db, "users", uid));
-    if (userSnap.exists()) {
-      const d = userSnap.data();
-      name = `${d.firstName || ""} ${d.lastName || ""}`.trim();
-      role = "Applicant";
-      slug = d.slug || "";
+    const empSnap = await getDoc(doc(db, "employers", uid));
+    if (empSnap.exists()) {
+      const d = empSnap.data();
+      name =
+        `${d.firstName || ""} ${d.lastName || ""}`.trim() ||
+        d.name ||
+        d.displayName ||
+        d.companyName ||
+        "";
+      company = d.company || d.companyName || "";
       photoURL =
         d.profilePicture ||
         d.profilePhoto ||
+        d.logo ||
         d.photo ||
-        d.avatar ||
-        d.image ||
         d.photoURL ||
         "";
-    } else {
-      const empSnap = await getDoc(doc(db, "employers", uid));
-      if (empSnap.exists()) {
-        const d = empSnap.data();
-        name = `${d.firstName || ""} ${d.lastName || ""}`.trim();
-        role = d.company || "Employer";
-        slug = d.slug || "";
-        photoURL =
-          d.profilePicture ||
-          d.profilePhoto ||
-          d.logo ||
-          d.photo ||
-          d.photoURL ||
-          "";
-      }
+      return { name, photoURL, company };
+    }
+    const userSnap = await getDoc(doc(db, "users", uid));
+    if (userSnap.exists()) {
+      const d = userSnap.data();
+      name =
+        `${d.firstName || ""} ${d.lastName || ""}`.trim() ||
+        d.name ||
+        d.displayName ||
+        "";
+      photoURL =
+        d.profilePicture || d.profilePhoto || d.photo || d.photoURL || "";
+      return { name, photoURL, company: "" };
     }
   } catch (e) {
-    console.error("fetchUserInfo error:", e);
+    console.error("fetchSenderInfo error:", e);
   }
-  return { name, role, slug, photoURL };
+  return { name, photoURL, company };
 }
 
-export default function MessagesPage() {
+async function updateConversationFolder(convId, folder) {
+  try {
+    await updateDoc(doc(db, "conversations", convId), { folder });
+  } catch (e) {
+    console.error("updateConversationFolder error:", e);
+  }
+}
+
+const TABS = [
+  { id: "inbox", label: "Inbox", icon: IoMailOutline },
+  { id: "archive", label: "Archive", icon: IoArchiveOutline },
+  { id: "spam", label: "Spam", icon: IoWarningOutline },
+];
+
+function ContextMenu({ x, y, convFolder, onMove, onDelete, onClose }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) onClose();
+    };
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("touchstart", handler);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("touchstart", handler);
+    };
+  }, [onClose]);
+  const moveOptions = TABS.filter((t) => t.id !== convFolder);
+  return (
+    <div
+      ref={ref}
+      className="fixed z-9999 bg-white rounded-xl shadow-xl border border-slate-200 py-1 min-w-40"
+      style={{ top: y, left: x }}
+    >
+      {moveOptions.map(({ id, label, icon: Icon }) => (
+        <button
+          key={id}
+          onClick={() => {
+            onMove(id);
+            onClose();
+          }}
+          className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] font-medium text-slate-700 hover:bg-slate-50 transition-colors border-none bg-transparent cursor-pointer text-left"
+        >
+          <Icon size={14} className="text-slate-400" />
+          Move to {label}
+        </button>
+      ))}
+      <div className="my-1 border-t border-slate-100" />
+      <button
+        onClick={() => {
+          onDelete();
+          onClose();
+        }}
+        className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] font-medium text-rose-500 hover:bg-rose-50 transition-colors border-none bg-transparent cursor-pointer text-left"
+      >
+        <IoTrashOutline size={14} />
+        Delete chat
+      </button>
+    </div>
+  );
+}
+
+function MobileActionSheet({ convFolder, onMove, onDelete, onClose }) {
+  const moveOptions = TABS.filter((t) => t.id !== convFolder);
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/40 z-9998" onClick={onClose} />
+      <div className="fixed bottom-0 left-0 right-0 z-9999 bg-white rounded-t-2xl pb-8 pt-2">
+        <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-4" />
+        <p className="text-[13px] font-semibold text-slate-500 px-5 mb-2">
+          Move conversation
+        </p>
+        {moveOptions.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            onClick={() => {
+              onMove(id);
+              onClose();
+            }}
+            className="w-full flex items-center gap-3 px-5 py-3.5 text-[15px] font-medium text-slate-800 hover:bg-slate-50 border-none bg-transparent cursor-pointer text-left"
+          >
+            <Icon size={18} className="text-slate-500" />
+            Move to {label}
+          </button>
+        ))}
+        <div className="mx-5 my-2 border-t border-slate-100" />
+        <button
+          onClick={() => {
+            onDelete();
+            onClose();
+          }}
+          className="w-full flex items-center gap-3 px-5 py-3.5 text-[15px] font-medium text-rose-500 hover:bg-rose-50 border-none bg-transparent cursor-pointer text-left"
+        >
+          <IoTrashOutline size={18} />
+          Delete chat
+        </button>
+      </div>
+    </>
+  );
+}
+
+function DeleteConfirmModal({ onConfirm, onCancel }) {
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/40 z-9998" onClick={onCancel} />
+      <div className="fixed z-9999 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl p-6 w-75">
+        <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center mb-3 mx-auto">
+          <IoTrashOutline size={20} className="text-rose-400" />
+        </div>
+        <h3 className="text-[15px] font-bold text-slate-900 text-center mb-1">
+          Delete conversation?
+        </h3>
+        <p className="text-[12px] text-slate-400 text-center mb-5">
+          This will permanently delete the chat for both sides.
+        </p>
+        <div className="flex gap-2">
+          <button
+            onClick={onCancel}
+            className="flex-1 py-2 rounded-xl border border-slate-200 text-[13px] font-semibold text-slate-600 bg-transparent cursor-pointer hover:bg-slate-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 py-2 rounded-xl bg-rose-500 text-white text-[13px] font-semibold border-none cursor-pointer hover:bg-rose-600"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default function ApplicantMessagesPage() {
+  const [tab, setTab] = useState("inbox");
   const [conversations, setConversations] = useState([]);
   const [selectedConv, setSelectedConv] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -149,25 +268,35 @@ export default function MessagesPage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [currentUserData, setCurrentUserData] = useState(null);
   const [otherUserData, setOtherUserData] = useState({});
-  const [search, setSearch] = useState("");
-  const [searchMode, setSearchMode] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [peopleResults, setPeopleResults] = useState([]);
-  const [searching, setSearching] = useState(false);
+  const [contextMenu, setContextMenu] = useState(null);
+  const [mobileSheet, setMobileSheet] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const bottomRef = useRef(null);
   const textareaRef = useRef(null);
   const fetchedUids = useRef(new Set());
-  const searchInputRef = useRef(null);
+  const longPressTimer = useRef(null);
 
   useEffect(() => {
     const unsub = auth.onAuthStateChanged(async (user) => {
       setCurrentUser(user);
       if (user) {
-        const info = await fetchUserInfo(user.uid);
-        setCurrentUserData({
-          ...info,
-          photoURL: info.photoURL || user.photoURL || "",
-        });
+        try {
+          const snap = await getDoc(doc(db, "users", user.uid));
+          if (snap.exists()) {
+            const d = snap.data();
+            setCurrentUserData({
+              name: `${d.firstName || ""} ${d.lastName || ""}`.trim(),
+              photoURL:
+                d.profilePicture ||
+                d.profilePhoto ||
+                d.photo ||
+                d.photoURL ||
+                user.photoURL ||
+                "",
+            });
+          }
+        } catch (e) {}
       }
     });
     return () => unsub();
@@ -176,16 +305,21 @@ export default function MessagesPage() {
   useEffect(() => {
     if (!currentUser) return;
     const unsub = listenToConversations(currentUser.uid, async (convs) => {
-      setConversations(convs);
+      const applicantConvs = convs.filter(
+        (c) =>
+          c.participantRoles?.[currentUser.uid] === "applicant" ||
+          !c.participantRoles,
+      );
+      setConversations(applicantConvs);
       setLoading(false);
-      const uidsToFetch = convs
-        .map((conv) => conv.participants.find((p) => p !== currentUser.uid))
+      const uidsToFetch = applicantConvs
+        .map((c) => c.participants.find((p) => p !== currentUser.uid))
         .filter((uid) => uid && !fetchedUids.current.has(uid));
-      if (uidsToFetch.length === 0) return;
+      if (!uidsToFetch.length) return;
       uidsToFetch.forEach((uid) => fetchedUids.current.add(uid));
       const results = await Promise.all(
         uidsToFetch.map((uid) =>
-          fetchUserInfo(uid).then((info) => [uid, info]),
+          fetchSenderInfo(uid).then((info) => [uid, info]),
         ),
       );
       setOtherUserData((prev) => ({ ...prev, ...Object.fromEntries(results) }));
@@ -215,73 +349,6 @@ export default function MessagesPage() {
     );
     return () => unsub();
   }, [selectedConv?.id, currentUser]);
-
-  useEffect(() => {
-    if (!search.trim() || !searchMode) {
-      setPeopleResults([]);
-      return;
-    }
-    const t = setTimeout(async () => {
-      setSearching(true);
-      try {
-        const results = [];
-        const q = search.toLowerCase();
-        const usersSnap = await getDocs(collection(db, "users"));
-        usersSnap.forEach((d) => {
-          if (d.id === currentUser?.uid) return;
-          const data = d.data();
-          const name = `${data.firstName || ""} ${data.lastName || ""}`.trim();
-          const slug = (data.slug || "").toLowerCase();
-          if (name.toLowerCase().includes(q) || slug.includes(q)) {
-            results.push({
-              uid: d.id,
-              name,
-              role: "Applicant",
-              slug: data.slug || "",
-              photoURL:
-                data.profilePicture ||
-                data.profilePhoto ||
-                data.photo ||
-                data.avatar ||
-                data.photoURL ||
-                "",
-            });
-          }
-        });
-        try {
-          const empSnap = await getDocs(collection(db, "employers"));
-          empSnap.forEach((d) => {
-            if (d.id === currentUser?.uid) return;
-            const data = d.data();
-            const name =
-              `${data.firstName || ""} ${data.lastName || ""}`.trim();
-            const slug = (data.slug || "").toLowerCase();
-            if (name.toLowerCase().includes(q) || slug.includes(q)) {
-              results.push({
-                uid: d.id,
-                name,
-                role: data.company || "Employer",
-                slug: data.slug || "",
-                photoURL:
-                  data.profilePicture ||
-                  data.logo ||
-                  data.photo ||
-                  data.photoURL ||
-                  "",
-              });
-            }
-          });
-        } catch (empErr) {
-          console.warn("Employer search skipped:", empErr);
-        }
-        setPeopleResults(results.slice(0, 6));
-      } catch (e) {
-        console.error("Search error:", e);
-      }
-      setSearching(false);
-    }, 350);
-    return () => clearTimeout(t);
-  }, [search, currentUser, searchMode]);
 
   const handleSend = async () => {
     if (!inputText.trim() || !selectedConv || sending) return;
@@ -315,9 +382,6 @@ export default function MessagesPage() {
 
   const handleSelectConv = (conv) => {
     setSelectedConv(conv);
-    setSearch("");
-    setSearchMode(false);
-    setPeopleResults([]);
     if (currentUser) {
       markConversationRead(conv.id, currentUser.uid).catch(() => {});
       setConversations((prev) =>
@@ -333,194 +397,190 @@ export default function MessagesPage() {
     }
   };
 
-  const handleBack = () => {
-    setSelectedConv(null);
-    setMessages([]);
-  };
-
-  const startConversation = async (result) => {
-    try {
-      const convId = await getOrCreateConversation(
-        currentUser.uid,
-        "applicant",
-        result.uid,
-        "applicant",
-      );
-      setOtherUserData((prev) => ({
-        ...prev,
-        [result.uid]: {
-          name: result.name,
-          role: result.role,
-          slug: result.slug,
-          photoURL: result.photoURL,
-        },
-      }));
-      setSelectedConv({
-        id: convId,
-        participants: [currentUser.uid, result.uid],
-        unreadCount: {},
-        lastMessage: "",
-      });
-      setSearch("");
-      setSearchMode(false);
-      setPeopleResults([]);
-    } catch (e) {
-      console.error(e);
+  const handleMoveConv = async (convId, folder) => {
+    await updateConversationFolder(convId, folder);
+    setConversations((prev) =>
+      prev.map((c) => (c.id === convId ? { ...c, folder } : c)),
+    );
+    if (selectedConv?.id === convId) {
+      setSelectedConv(null);
+      setMessages([]);
     }
   };
 
-  const filteredConvs = conversations.filter((conv) => {
-    if (!search.trim() || searchMode) return true;
-    const otherUid = conv.participants.find((p) => p !== currentUser?.uid);
-    const other = otherUserData[otherUid] || {};
-    const q = search.toLowerCase();
-    return (
-      (other.name || "").toLowerCase().includes(q) ||
-      (other.slug || "").toLowerCase().includes(q)
+  const handleDeleteConv = async (convId) => {
+    try {
+      await deleteDoc(doc(db, "conversations", convId));
+      setConversations((prev) => prev.filter((c) => c.id !== convId));
+      if (selectedConv?.id === convId) {
+        setSelectedConv(null);
+        setMessages([]);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setDeleteTarget(null);
+  };
+
+  const openContextMenu = useCallback((e, conv) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const x = Math.min(
+      e.clientX ?? e.touches?.[0]?.clientX ?? 0,
+      window.innerWidth - 170,
     );
-  });
+    const y = Math.min(
+      e.clientY ?? e.touches?.[0]?.clientY ?? 0,
+      window.innerHeight - 160,
+    );
+    setContextMenu({ x, y, conv });
+  }, []);
+
+  const handleTouchStart = useCallback(
+    (e, conv) => {
+      longPressTimer.current = setTimeout(() => openContextMenu(e, conv), 500);
+    },
+    [openContextMenu],
+  );
+
+  const handleTouchEnd = useCallback(() => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+  }, []);
 
   const getOtherUid = (conv) =>
     conv?.participants?.find((p) => p !== currentUser?.uid);
+
+  const tabConvs = conversations.filter((c) => (c.folder || "inbox") === tab);
 
   const myName =
     currentUserData?.name ||
     currentUser?.displayName ||
     currentUser?.email?.split("@")[0] ||
     "You";
-  const mySlug = currentUserData?.slug || "";
+  const otherUidForPanel = selectedConv ? getOtherUid(selectedConv) : null;
 
-  const Sidebar = (
+  const InputBar = (isMobile = false) => (
+    <div
+      className={`${isMobile ? "px-3 py-2" : "px-2 md:px-4 py-2"} border-t border-slate-100 bg-white flex items-end gap-2 shrink-0`}
+    >
+      <div className="flex-1 flex items-end rounded-xl px-3 py-1.5 border-[1.5px] border-slate-200 bg-slate-50 focus-within:border-blue-400 transition-colors">
+        <textarea
+          ref={textareaRef}
+          value={inputText}
+          onChange={handleTextareaChange}
+          onKeyDown={handleKey}
+          placeholder="Write a message..."
+          className="flex-1 bg-transparent text-[13px] text-slate-800 outline-none resize-none placeholder:text-slate-400 font-[inherit]"
+          style={{ height: 36, maxHeight: 100, paddingTop: 4 }}
+        />
+      </div>
+      <button
+        onClick={handleSend}
+        disabled={!inputText.trim() || sending}
+        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border-none transition-all ${
+          inputText.trim()
+            ? "bg-blue-400 text-white cursor-pointer hover:bg-blue-500"
+            : "bg-slate-100 text-slate-400 cursor-default"
+        }`}
+      >
+        {sending ? (
+          <div className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+        ) : (
+          <IoSendOutline size={15} />
+        )}
+      </button>
+    </div>
+  );
+
+  const SidebarContent = (
     <div className="flex flex-col h-full">
-      <div className="px-4 pt-4 pb-3 border-b border-slate-100">
-        <div className="flex items-center gap-3 mb-3">
+      <div className="px-4 pt-4 pb-0 shrink-0">
+        <div className="flex items-center gap-3 mb-4">
           <Avatar
-            key={currentUser?.uid}
             name={myName}
             photoURL={currentUserData?.photoURL}
             uid={currentUser?.uid}
-            slug={mySlug}
-            size={44}
+            size={42}
           />
           <div className="flex-1 min-w-0">
             <p className="text-[14px] font-bold text-slate-900 truncate leading-tight">
               {myName}
             </p>
-            {mySlug ? (
-              <p className="text-[12px] text-slate-400 truncate">@{mySlug}</p>
-            ) : (
-              <p className="text-[12px] text-slate-400">Job Seeker</p>
-            )}
+            <p className="text-[12px] text-slate-400">Job Seeker</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 focus-within:border-blue-300 transition-colors">
-          <IoSearchOutline size={14} className="text-slate-400 shrink-0" />
-          <input
-            ref={searchInputRef}
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              if (e.target.value.trim()) setSearchMode(true);
-              else setSearchMode(false);
-            }}
-            onFocus={() => {
-              if (search.trim()) setSearchMode(true);
-            }}
-            placeholder="Search by username"
-            className="flex-1 bg-transparent text-[13px] text-slate-700 outline-none placeholder:text-slate-400"
-          />
-          {search && (
-            <button
-              onClick={() => {
-                setSearch("");
-                setSearchMode(false);
-                setPeopleResults([]);
-              }}
-              className="text-slate-400 hover:text-slate-600 bg-transparent border-none cursor-pointer flex"
-            >
-              <IoCloseOutline size={13} />
-            </button>
-          )}
+        <div className="flex gap-0.5 bg-slate-100 rounded-xl p-1 mb-3">
+          {TABS.map(({ id, label, icon: Icon }) => {
+            const unread = conversations.filter(
+              (c) =>
+                (c.folder || "inbox") === id &&
+                (c.unreadCount?.[currentUser?.uid] || 0) > 0,
+            ).length;
+            return (
+              <button
+                key={id}
+                onClick={() => setTab(id)}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[12px] font-semibold transition-all border-none cursor-pointer relative ${
+                  tab === id
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "bg-transparent text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                <Icon size={13} />
+                {label}
+                {unread > 0 && (
+                  <span className="absolute top-0.5 right-1 min-w-3.5 h-3.5 px-0.5 rounded-full bg-blue-400 text-white text-[8px] font-bold flex items-center justify-center">
+                    {unread > 9 ? "9+" : unread}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
-        {searchMode && search && (
-          <div className="mt-2 flex flex-col gap-1">
-            {searching ? (
-              <div className="flex justify-center py-3">
-                <div className="w-4 h-4 rounded-full border-2 border-blue-200 border-t-blue-400 animate-spin" />
-              </div>
-            ) : peopleResults.length > 0 ? (
-              peopleResults.map((r) => (
-                <button
-                  key={r.uid}
-                  onClick={() => startConversation(r)}
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl border border-slate-100 bg-white hover:bg-blue-50 hover:border-blue-100 transition-all cursor-pointer text-left w-full"
-                >
-                  <Avatar
-                    key={r.uid}
-                    name={r.name}
-                    photoURL={r.photoURL}
-                    uid={r.uid}
-                    slug={r.slug}
-                    size={32}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-semibold text-slate-800 truncate">
-                      {r.name}
-                    </p>
-                    {r.slug && (
-                      <p className="text-[11px] text-slate-400 truncate">
-                        @{r.slug}
-                      </p>
-                    )}
-                  </div>
-                  <RoleBadge role={r.role} />
-                </button>
-              ))
-            ) : (
-              <p className="text-[12px] text-slate-400 text-center py-2">
-                No users found
-              </p>
-            )}
-          </div>
-        )}
       </div>
-
-      {!searchMode && (
-        <div className="flex-1 overflow-y-auto">
-          <p className="px-4 pt-3 pb-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-            Last chats
-          </p>
-          {loading ? (
-            <div className="flex justify-center items-center h-16">
-              <div className="w-5 h-5 rounded-full border-2 border-blue-200 border-t-blue-400 animate-spin" />
-            </div>
-          ) : filteredConvs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-28 gap-2">
-              <IoChatbubbleOutline size={20} className="text-slate-300" />
-              <p className="text-[12px] text-slate-400">No conversations yet</p>
-            </div>
-          ) : (
-            filteredConvs.map((conv) => {
-              const otherUid = getOtherUid(conv);
-              const other = otherUserData[otherUid] || {};
-              const unread = conv.unreadCount?.[currentUser?.uid] || 0;
-              const isSelected = selectedConv?.id === conv.id;
-              return (
+      <div className="flex-1 overflow-y-auto">
+        {loading ? (
+          <div className="flex justify-center items-center h-16">
+            <div className="w-5 h-5 rounded-full border-2 border-blue-200 border-t-blue-400 animate-spin" />
+          </div>
+        ) : tabConvs.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-32 gap-2 px-4">
+            <IoChatbubbleOutline size={20} className="text-slate-300" />
+            <p className="text-[12px] text-slate-400 text-center">
+              {tab === "inbox"
+                ? "No messages yet. Employers will reach out here."
+                : tab === "archive"
+                  ? "No archived conversations."
+                  : "No spam."}
+            </p>
+          </div>
+        ) : (
+          tabConvs.map((conv) => {
+            const otherUid = getOtherUid(conv);
+            const other = otherUserData[otherUid] || {};
+            const unread = conv.unreadCount?.[currentUser?.uid] || 0;
+            const isSelected = selectedConv?.id === conv.id;
+            return (
+              <div
+                key={conv.id}
+                className="relative group"
+                onContextMenu={(e) => openContextMenu(e, conv)}
+                onTouchStart={(e) => handleTouchStart(e, conv)}
+                onTouchEnd={handleTouchEnd}
+                onTouchMove={handleTouchEnd}
+              >
                 <button
-                  key={conv.id}
                   onClick={() => handleSelectConv(conv)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 text-left border-none cursor-pointer transition-all border-b border-slate-50 border-l-2 ${
+                  className={`w-full flex items-center gap-3 px-4 py-3 pr-12 text-left border-none cursor-pointer transition-all border-b border-slate-50 border-l-2 ${
                     isSelected
                       ? "bg-blue-50 border-l-blue-400"
                       : "bg-transparent hover:bg-slate-50 border-l-transparent"
                   }`}
                 >
                   <Avatar
-                    key={otherUid}
                     name={other.name}
                     photoURL={other.photoURL}
                     uid={otherUid}
-                    slug={other.slug}
                     size={42}
                   />
                   <div className="flex-1 min-w-0">
@@ -528,15 +588,15 @@ export default function MessagesPage() {
                       <span
                         className={`text-[13px] truncate ${unread > 0 ? "font-bold text-slate-900" : "font-semibold text-slate-700"}`}
                       >
-                        {other.name || other.slug || "User"}
+                        {other.name || "Employer"}
                       </span>
-                      <span className="text-[10px] text-slate-400 shrink-0 ml-1">
+                      <span className="text-[10px] text-slate-400 shrink-0 ml-2">
                         {timeAgo(conv.lastMessageAt)}
                       </span>
                     </div>
-                    {other.slug && (
-                      <p className="text-[11px] text-slate-400 truncate mb-0.5">
-                        @{other.slug}
+                    {other.company && (
+                      <p className="text-[11px] text-emerald-600 font-medium truncate mb-0.5">
+                        {other.company}
                       </p>
                     )}
                     <div className="flex items-center justify-between gap-1">
@@ -553,211 +613,342 @@ export default function MessagesPage() {
                     </div>
                   </div>
                 </button>
-              );
-            })
-          )}
-        </div>
-      )}
-    </div>
-  );
-
-  const otherUidForPanel = selectedConv ? getOtherUid(selectedConv) : null;
-
-  const ChatPanel = selectedConv ? (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center gap-3 px-3 md:px-6 py-2.5 border-b border-slate-100 shrink-0 bg-white z-20 sticky top-0">
-        <button
-          onClick={handleBack}
-          className="md:hidden w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 border-none cursor-pointer text-slate-600 shrink-0"
-        >
-          <IoArrowBackOutline size={18} />
-        </button>
-        <Avatar
-          key={otherUidForPanel}
-          name={otherUserData[otherUidForPanel]?.name}
-          photoURL={otherUserData[otherUidForPanel]?.photoURL}
-          uid={otherUidForPanel}
-          slug={otherUserData[otherUidForPanel]?.slug}
-          size={36}
-        />
-        <div className="flex-1 min-w-0">
-          <p className="text-[14px] font-bold text-slate-900 leading-tight truncate">
-            {otherUserData[otherUidForPanel]?.name ||
-              otherUserData[otherUidForPanel]?.slug ||
-              "User"}
-          </p>
-          <div className="flex items-center gap-2">
-            {otherUserData[otherUidForPanel]?.slug && (
-              <span className="text-[11px] text-slate-400">
-                @{otherUserData[otherUidForPanel]?.slug}
-              </span>
-            )}
-            <RoleBadge role={otherUserData[otherUidForPanel]?.role} />
-          </div>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-0 md:px-6 py-3 flex flex-col gap-2 bg-slate-50">
-        {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full gap-3">
-            <IoChatbubbleOutline size={32} className="text-slate-200" />
-            <p className="text-[13px] text-slate-400">
-              No messages yet — say hello!
-            </p>
-          </div>
-        ) : (
-          messages.map((msg, i) => {
-            const isMe = msg.senderId === currentUser?.uid;
-            const isFirstInGroup = messages[i - 1]?.senderId !== msg.senderId;
-            const senderName = isMe
-              ? myName
-              : otherUserData[otherUidForPanel]?.name || "User";
-            return (
-              <div
-                key={msg.id}
-                className={`flex gap-2 items-end px-2 md:px-0 ${isMe ? "flex-row-reverse" : "flex-row"}`}
-              >
-                <div className="shrink-0" style={{ width: 30 }}>
-                  {!isMe && isFirstInGroup && (
-                    <Avatar
-                      key={otherUidForPanel}
-                      name={otherUserData[otherUidForPanel]?.name}
-                      photoURL={otherUserData[otherUidForPanel]?.photoURL}
-                      uid={otherUidForPanel}
-                      slug={otherUserData[otherUidForPanel]?.slug}
-                      size={30}
-                    />
-                  )}
-                </div>
-                <div
-                  className={`flex flex-col max-w-[80%] md:max-w-[60%] gap-0.5 ${isMe ? "items-end" : "items-start"}`}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const isMobile = window.innerWidth < 768;
+                    if (isMobile) setMobileSheet(conv);
+                    else openContextMenu(e, conv);
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 md:opacity-0 md:group-hover:opacity-100 opacity-100 w-7 h-7 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 border-none cursor-pointer transition-all text-slate-500"
                 >
-                  {isFirstInGroup && (
-                    <p className="text-[11px] font-semibold text-slate-500 px-1 mb-0.5">
-                      {isMe ? "You" : senderName}
-                      <span className="font-normal text-slate-400 ml-2">
-                        {formatTime(msg.createdAt)}
-                      </span>
-                    </p>
-                  )}
-                  <div
-                    className={`px-3 py-2 text-[13px] leading-relaxed ${
-                      isMe
-                        ? "bg-blue-400 text-white shadow-sm shadow-blue-200"
-                        : "bg-white text-slate-800 border border-slate-200 shadow-sm"
-                    }`}
-                    style={{
-                      borderRadius: isMe
-                        ? isFirstInGroup
-                          ? "18px 18px 4px 18px"
-                          : "18px 4px 4px 18px"
-                        : isFirstInGroup
-                          ? "18px 18px 18px 4px"
-                          : "4px 18px 18px 4px",
-                    }}
-                  >
-                    {msg.text}
-                  </div>
-                </div>
+                  <IoEllipsisVertical size={13} />
+                </button>
               </div>
             );
           })
         )}
-        <div ref={bottomRef} />
-      </div>
-
-      <div className="px-2 md:px-5 py-1.5 md:py-2 pb-2 border-t border-slate-100 bg-white flex items-end gap-2 shrink-0">
-        <div className="flex-1 flex items-end rounded-xl px-3 py-1.5 border-[1.5px] border-slate-200 bg-slate-50 focus-within:border-blue-400 transition-colors">
-          <textarea
-            ref={textareaRef}
-            value={inputText}
-            onChange={handleTextareaChange}
-            onKeyDown={handleKey}
-            placeholder="Write a message..."
-            className="flex-1 bg-transparent text-[13px] text-slate-800 outline-none resize-none placeholder:text-slate-400 font-[inherit]"
-            style={{ height: 36, maxHeight: 100, paddingTop: 4 }}
-          />
-        </div>
-        <button
-          onClick={handleSend}
-          disabled={!inputText.trim() || sending}
-          className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border-none transition-all ${
-            inputText.trim()
-              ? "bg-blue-400 text-white cursor-pointer hover:bg-blue-500"
-              : "bg-slate-100 text-slate-400 cursor-default"
-          }`}
-        >
-          {sending ? (
-            <div className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
-          ) : (
-            <IoSendOutline size={15} />
-          )}
-        </button>
-      </div>
-    </div>
-  ) : (
-    <div className="flex-1 flex flex-col items-center justify-center gap-4 bg-slate-50 h-full">
-      <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center">
-        <IoChatbubbleOutline size={30} className="text-blue-400" />
-      </div>
-      <div className="text-center">
-        <p className="text-[15px] font-bold text-slate-800 mb-1">
-          Your messages
-        </p>
-        <p className="text-[13px] text-slate-400">
-          Search for someone or select a conversation
-        </p>
       </div>
     </div>
   );
 
   return (
-    <div
-      className="flex flex-col md:h-screen md:pr-3"
-      style={{ marginLeft: "0px", height: "calc(100dvh - 150px)" }}
-    >
+    <>
       <div
-        className="hidden md:block mb-3"
-        style={{ padding: "16px 0px 0px 15px" }}
+        className="hidden md:flex flex-col pr-3"
+        style={{ height: "calc(100dvh - 80px)" }}
       >
-        <h1 className="text-[22px] font-bold text-slate-900">Messages</h1>
-        <p className="text-[13px] text-slate-400 mt-0.5">
-          Chat with employers and applicants in real time
-        </p>
-      </div>
-
-      {!selectedConv && (
-        <div className="md:hidden px-4 pt-3 pb-2 bg-white border-b border-slate-100">
-          <h1 className="text-[18px] font-bold text-slate-900">Messages</h1>
-          <p className="text-[12px] text-slate-400 mt-0.5">
-            Chat with employers and applicants
+        <div className="shrink-0" style={{ padding: "12px 0 8px 15px" }}>
+          <h1 className="text-[22px] font-bold text-slate-900">Messages</h1>
+          <p className="text-[13px] text-slate-400 mt-0.5">
+            Employers will reach out to you here
           </p>
         </div>
-      )}
-
-      <div
-        className="flex flex-1 overflow-hidden md:rounded-2xl md:border md:border-slate-200 bg-white md:shadow-sm md:mb-4"
-        style={{ minHeight: 0 }}
-      >
         <div
-          className={`
-            ${selectedConv ? "hidden md:flex" : "flex"}
-            flex-col w-full md:w-72.5 md:shrink-0 md:border-r md:border-slate-100
-            overflow-hidden
-          `}
+          className="flex flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm mb-4"
+          style={{ minHeight: 0 }}
         >
-          {Sidebar}
-        </div>
-
-        <div
-          className={`
-            ${selectedConv ? "flex" : "hidden md:flex"}
-            flex-1 flex-col min-w-0 overflow-hidden
-          `}
-        >
-          {ChatPanel}
+          <div className="flex flex-col w-72.5 shrink-0 border-r border-slate-100 overflow-hidden">
+            {SidebarContent}
+          </div>
+          <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
+            {selectedConv ? (
+              <>
+                <div className="flex items-center gap-3 px-6 py-3 border-b border-slate-100 shrink-0">
+                  <Avatar
+                    name={otherUserData[otherUidForPanel]?.name}
+                    photoURL={otherUserData[otherUidForPanel]?.photoURL}
+                    uid={otherUidForPanel}
+                    size={40}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[15px] font-bold text-slate-900 leading-tight truncate">
+                      {otherUserData[otherUidForPanel]?.name || "Employer"}
+                    </p>
+                    {otherUserData[otherUidForPanel]?.company && (
+                      <span className="text-[12px] text-emerald-600 font-medium">
+                        {otherUserData[otherUidForPanel].company}
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={(e) => openContextMenu(e, selectedConv)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 border-none cursor-pointer text-slate-500 bg-transparent"
+                  >
+                    <IoEllipsisVertical size={16} />
+                  </button>
+                </div>
+                <div
+                  className="flex-1 overflow-y-auto bg-slate-50"
+                  style={{ minHeight: 0 }}
+                >
+                  <div className="flex flex-col gap-2 px-6 py-3">
+                    {messages.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-40 gap-3">
+                        <IoChatbubbleOutline
+                          size={32}
+                          className="text-slate-200"
+                        />
+                        <p className="text-[13px] text-slate-400">
+                          No messages yet — say hello!
+                        </p>
+                      </div>
+                    ) : (
+                      messages.map((msg, i) => {
+                        const isMe = msg.senderId === currentUser?.uid;
+                        const isFirstInGroup =
+                          messages[i - 1]?.senderId !== msg.senderId;
+                        const senderName = isMe
+                          ? myName
+                          : otherUserData[otherUidForPanel]?.name || "Employer";
+                        return (
+                          <div
+                            key={msg.id}
+                            className={`flex gap-2 items-end ${isMe ? "flex-row-reverse" : "flex-row"}`}
+                          >
+                            <div className="shrink-0" style={{ width: 28 }}>
+                              {!isMe && isFirstInGroup && (
+                                <Avatar
+                                  name={otherUserData[otherUidForPanel]?.name}
+                                  photoURL={
+                                    otherUserData[otherUidForPanel]?.photoURL
+                                  }
+                                  uid={otherUidForPanel}
+                                  size={28}
+                                />
+                              )}
+                            </div>
+                            <div
+                              className={`flex flex-col max-w-[60%] gap-0.5 ${isMe ? "items-end" : "items-start"}`}
+                            >
+                              {isFirstInGroup && (
+                                <p className="text-[10px] font-semibold text-slate-500 px-1 mb-0.5">
+                                  {isMe ? "You" : senderName}
+                                  <span className="font-normal text-slate-400 ml-1.5">
+                                    {formatTime(msg.createdAt)}
+                                  </span>
+                                </p>
+                              )}
+                              <div
+                                className={`px-3 py-2 text-[13px] leading-relaxed ${isMe ? "bg-blue-400 text-white shadow-sm shadow-blue-200" : "bg-white text-slate-800 border border-slate-200 shadow-sm"}`}
+                                style={{
+                                  borderRadius: isMe
+                                    ? isFirstInGroup
+                                      ? "16px 16px 4px 16px"
+                                      : "16px 4px 4px 16px"
+                                    : isFirstInGroup
+                                      ? "16px 16px 16px 4px"
+                                      : "4px 16px 16px 4px",
+                                }}
+                              >
+                                {msg.text}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                    <div ref={bottomRef} />
+                  </div>
+                </div>
+                {InputBar(false)}
+              </>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center gap-4 bg-slate-50 h-full">
+                <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center">
+                  <IoChatbubbleOutline size={30} className="text-blue-400" />
+                </div>
+                <div className="text-center">
+                  <p className="text-[15px] font-bold text-slate-800 mb-1">
+                    Your messages
+                  </p>
+                  <p className="text-[13px] text-slate-400">
+                    Select a conversation to read it
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+
+      <div
+        className="md:hidden flex flex-col bg-white"
+        style={{
+          position: "fixed",
+          top: "56px",
+          left: 0,
+          right: 0,
+          bottom: "56px",
+          overflow: "hidden",
+          contain: "strict",
+        }}
+      >
+        {!selectedConv ? (
+          <>
+            <div className="px-4 pt-3 pb-2 bg-white border-b border-slate-100 shrink-0">
+              <h1 className="text-[18px] font-bold text-slate-900">Messages</h1>
+              <p className="text-[12px] text-slate-400 mt-0.5">
+                Employers will reach out to you here
+              </p>
+            </div>
+            <div
+              className="flex-1 overflow-hidden bg-white"
+              style={{ minHeight: 0 }}
+            >
+              {SidebarContent}
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col h-135 bg-white">
+            <div className="flex items-center gap-3 px-3 py-2.5 bg-white border-b border-slate-100 shrink-0">
+              <button
+                onClick={() => {
+                  setSelectedConv(null);
+                  setMessages([]);
+                }}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 border-none cursor-pointer text-slate-600 shrink-0"
+              >
+                <IoArrowBackOutline size={18} />
+              </button>
+              <Avatar
+                name={otherUserData[otherUidForPanel]?.name}
+                photoURL={otherUserData[otherUidForPanel]?.photoURL}
+                uid={otherUidForPanel}
+                size={36}
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-[14px] font-bold text-slate-900 leading-tight truncate">
+                  {otherUserData[otherUidForPanel]?.name || "Employer"}
+                </p>
+                {otherUserData[otherUidForPanel]?.company && (
+                  <span className="text-[11px] text-emerald-600 font-medium">
+                    {otherUserData[otherUidForPanel].company}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => setMobileSheet(selectedConv)}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 border-none cursor-pointer text-slate-600 shrink-0"
+              >
+                <IoEllipsisVertical size={16} />
+              </button>
+            </div>
+
+            <div
+              className="flex-1 overflow-y-auto bg-slate-50"
+              style={{ minHeight: 0 }}
+            >
+              <div className="flex flex-col gap-2 px-3 py-3">
+                {messages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-40 gap-3">
+                    <IoChatbubbleOutline size={32} className="text-slate-200" />
+                    <p className="text-[13px] text-slate-400">
+                      No messages yet — say hello!
+                    </p>
+                  </div>
+                ) : (
+                  messages.map((msg, i) => {
+                    const isMe = msg.senderId === currentUser?.uid;
+                    const isFirstInGroup =
+                      messages[i - 1]?.senderId !== msg.senderId;
+                    const senderName = isMe
+                      ? myName
+                      : otherUserData[otherUidForPanel]?.name || "Employer";
+                    return (
+                      <div
+                        key={msg.id}
+                        className={`flex gap-2 items-end ${isMe ? "flex-row-reverse" : "flex-row"}`}
+                      >
+                        <div className="shrink-0" style={{ width: 26 }}>
+                          {!isMe && isFirstInGroup && (
+                            <Avatar
+                              name={otherUserData[otherUidForPanel]?.name}
+                              photoURL={
+                                otherUserData[otherUidForPanel]?.photoURL
+                              }
+                              uid={otherUidForPanel}
+                              size={26}
+                            />
+                          )}
+                        </div>
+                        <div
+                          className={`flex flex-col max-w-[82%] gap-0.5 ${isMe ? "items-end" : "items-start"}`}
+                        >
+                          {isFirstInGroup && (
+                            <p className="text-[10px] font-semibold text-slate-500 px-1 mb-0.5">
+                              {isMe ? "You" : senderName}
+                              <span className="font-normal text-slate-400 ml-1.5">
+                                {formatTime(msg.createdAt)}
+                              </span>
+                            </p>
+                          )}
+                          <div
+                            className={`px-3 py-2 text-[13px] leading-relaxed ${isMe ? "bg-blue-400 text-white shadow-sm shadow-blue-200" : "bg-white text-slate-800 border border-slate-200 shadow-sm"}`}
+                            style={{
+                              borderRadius: isMe
+                                ? isFirstInGroup
+                                  ? "16px 16px 4px 16px"
+                                  : "16px 4px 4px 16px"
+                                : isFirstInGroup
+                                  ? "16px 16px 16px 4px"
+                                  : "4px 16px 16px 4px",
+                            }}
+                          >
+                            {msg.text}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+                <div ref={bottomRef} />
+              </div>
+            </div>
+
+            {InputBar(true)}
+          </div>
+        )}
+      </div>
+
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          convFolder={contextMenu.conv.folder || "inbox"}
+          onMove={(folder) => {
+            handleMoveConv(contextMenu.conv.id, folder);
+            setContextMenu(null);
+          }}
+          onDelete={() => {
+            setDeleteTarget(contextMenu.conv);
+            setContextMenu(null);
+          }}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
+
+      {mobileSheet && (
+        <MobileActionSheet
+          convFolder={mobileSheet.folder || "inbox"}
+          onMove={(folder) => {
+            handleMoveConv(mobileSheet.id, folder);
+            setMobileSheet(null);
+          }}
+          onDelete={() => {
+            setDeleteTarget(mobileSheet);
+            setMobileSheet(null);
+          }}
+          onClose={() => setMobileSheet(null)}
+        />
+      )}
+
+      {deleteTarget && (
+        <DeleteConfirmModal
+          onConfirm={() => handleDeleteConv(deleteTarget.id)}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+    </>
   );
 }

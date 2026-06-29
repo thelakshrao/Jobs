@@ -34,7 +34,7 @@ const navItems = [
     label: "Shortlisted",
   },
   {
-    href: "/employer/dashboard/messages",
+    href: "/employer/dashboard/empmessages",
     icon: MessageSquare,
     label: "Messages",
   },
