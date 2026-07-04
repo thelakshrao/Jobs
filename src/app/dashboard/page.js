@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import ProfileStrength from "@/profileComponents/ProfileStrength";
 import { computeCompletedItems } from "@/lib/Computecompleteditems";
+import PromoBannerCarousel from "@/components/PromoBannerCarousel";
 
 function timeAgo(dateStr) {
   if (!dateStr) return null;
@@ -51,7 +52,6 @@ function timeAgo(dateStr) {
   if (months === 1) return "1 month ago";
   return `${months} months ago`;
 }
-
 const CURRENCY_SYMBOLS = {
   INR: "₹",
   USD: "$",
@@ -72,7 +72,6 @@ const CURRENCY_SYMBOLS = {
   BHD: "BD",
   OMR: "ر.ع.",
 };
-
 function formatSalary(job) {
   const code = job.currencies?.[0] || "INR";
   const sym = CURRENCY_SYMBOLS[code] || code;
@@ -85,14 +84,12 @@ function formatSalary(job) {
     return `${sym}${job.hourlyRate} / hr`;
   return null;
 }
-
 function formatRate(project) {
   if (project.rateType === "On Discussion") return "On Discussion";
   if (project.rateAmount)
     return `₹${Number(project.rateAmount).toLocaleString()} ${project.rateType || ""}`.trim();
   return null;
 }
-
 function JobCardHorizontal({
   job,
   isSaved,
@@ -103,7 +100,6 @@ function JobCardHorizontal({
   const location = [job.location, job.targetCountry].filter(Boolean).join(", ");
   const posted = timeAgo(job.publishedAt || job.createdAt);
   const salary = formatSalary(job);
-
   const handleSave = async (e) => {
     e.stopPropagation();
     const { auth: fbAuth, db: fbDb } = await import("@/lib/firebase");
@@ -124,17 +120,16 @@ function JobCardHorizontal({
     }
     onSaveToggle(job.id);
   };
-
   return (
     <div
       onClick={onClick}
-      className="rounded-2xl border border-slate-200 p-5 cursor-pointer hover:border-blue-300 hover:shadow-md transition-all flex flex-col justify-between gap-3"
+      className="rounded-2xl border-2 border-gray-200 p-5 cursor-pointer hover:border-[#004AAC]/50 hover:shadow-md transition-all flex flex-col justify-between gap-3"
       style={{
         minWidth: 280,
         width: 280,
         minHeight: 190,
         flexShrink: 0,
-        backgroundColor: "#f8fafc",
+        backgroundColor: "#F7F8FA",
       }}
     >
       <div className="flex items-start justify-between gap-2">
@@ -142,27 +137,27 @@ function JobCardHorizontal({
           {job.urgency === "High" && (
             <span
               className="inline-block mb-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full"
-              style={{ backgroundColor: "#dbeafe", color: "#2563eb" }}
+              style={{ backgroundColor: "#D6E3F7", color: "#004AAC" }}
             >
               Easily apply
             </span>
           )}
           <h3
             className="text-[15px] leading-snug"
-            style={{ fontWeight: 800, color: "#0f172a" }}
+            style={{ fontWeight: 800, color: "#0A0E17" }}
           >
             {job.title}
           </h3>
           <p
             className="text-[13px] truncate"
-            style={{ fontWeight: 700, color: "#334155" }}
+            style={{ fontWeight: 700, color: "#374151" }}
           >
             {job.companyName || "Company"}
           </p>
           {salary && (
             <p
               className="text-[13px] mt-1"
-              style={{ fontWeight: 800, color: "#60A5FA" }}
+              style={{ fontWeight: 800, color: "#004AAC" }}
             >
               {salary}
             </p>
@@ -170,21 +165,21 @@ function JobCardHorizontal({
           {location && (
             <p
               className="text-xs truncate flex items-center gap-1 mt-0.5"
-              style={{ fontWeight: 600, color: "#64748b" }}
+              style={{ fontWeight: 600, color: "#6B7280" }}
             >
-              <MapPin size={10} className="shrink-0 text-slate-400" />
+              <MapPin size={10} className="shrink-0 text-gray-400" />
               {location}
             </p>
           )}
         </div>
         <button
           onClick={handleSave}
-          className="w-8 h-8 flex items-center justify-center rounded-xl border border-slate-200 hover:bg-slate-100 transition-colors shrink-0 bg-white"
+          className="w-8 h-8 flex items-center justify-center rounded-xl border border-gray-200 hover:bg-gray-100 transition-colors shrink-0 bg-white"
         >
           {isSaved ? (
-            <BookmarkCheck size={14} style={{ color: "#60a5fa" }} />
+            <BookmarkCheck size={14} style={{ color: "#004AAC" }} />
           ) : (
-            <Bookmark size={14} className="text-slate-400" />
+            <Bookmark size={14} className="text-gray-400" />
           )}
         </button>
       </div>
@@ -196,8 +191,8 @@ function JobCardHorizontal({
                 key={p}
                 className="text-[11px] px-2.5 py-0.5 rounded-full border bg-white"
                 style={{
-                  borderColor: "#cbd5e1",
-                  color: "#1e293b",
+                  borderColor: "#D1D5DB",
+                  color: "#0A0E17",
                   fontWeight: 700,
                 }}
               >
@@ -210,8 +205,8 @@ function JobCardHorizontal({
           <span
             className="text-[11px] font-bold px-2 py-0.5 rounded-full inline-block"
             style={{
-              color: "#60a5fa",
-              backgroundColor: "#eff6ff",
+              color: "#004AAC",
+              backgroundColor: "#EAF1FC",
               fontWeight: 700,
             }}
           >
@@ -222,7 +217,6 @@ function JobCardHorizontal({
     </div>
   );
 }
-
 function ProjectCardHorizontal({
   project,
   isSaved,
@@ -233,7 +227,6 @@ function ProjectCardHorizontal({
   const location = [project.location, project.state].filter(Boolean).join(", ");
   const posted = timeAgo(project.publishedAt || project.createdAt);
   const rate = formatRate(project);
-
   const handleSave = async (e) => {
     e.stopPropagation();
     const { auth: fbAuth, db: fbDb } = await import("@/lib/firebase");
@@ -254,17 +247,16 @@ function ProjectCardHorizontal({
     }
     onSaveToggle(project.id);
   };
-
   return (
     <div
       onClick={onClick}
-      className="rounded-2xl border border-slate-200 p-5 cursor-pointer hover:border-blue-300 hover:shadow-md transition-all flex flex-col justify-between gap-3"
+      className="rounded-2xl border-2 border-gray-200 p-5 cursor-pointer hover:border-[#004AAC]/50 hover:shadow-md transition-all flex flex-col justify-between gap-3"
       style={{
         minWidth: 280,
         width: 280,
         minHeight: 190,
         flexShrink: 0,
-        backgroundColor: "#f8fafc",
+        backgroundColor: "#F7F8FA",
       }}
     >
       <div className="flex items-start justify-between gap-2">
@@ -272,27 +264,27 @@ function ProjectCardHorizontal({
           {project.urgent && (
             <span
               className="inline-block mb-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full"
-              style={{ backgroundColor: "#dbeafe", color: "#2563eb" }}
+              style={{ backgroundColor: "#D6E3F7", color: "#004AAC" }}
             >
               Urgent hiring
             </span>
           )}
           <h3
             className="text-[15px] leading-snug"
-            style={{ fontWeight: 800, color: "#0f172a" }}
+            style={{ fontWeight: 800, color: "#0A0E17" }}
           >
             {project.title}
           </h3>
           <p
             className="text-[13px] truncate"
-            style={{ fontWeight: 700, color: "#334155" }}
+            style={{ fontWeight: 700, color: "#374151" }}
           >
             {project.company || "Company"}
           </p>
           {rate && (
             <p
               className="text-[13px] mt-1"
-              style={{ fontWeight: 800, color: "#60A5FA" }}
+              style={{ fontWeight: 800, color: "#004AAC" }}
             >
               {rate}
             </p>
@@ -300,21 +292,21 @@ function ProjectCardHorizontal({
           {location && (
             <p
               className="text-xs truncate flex items-center gap-1 mt-0.5"
-              style={{ fontWeight: 600, color: "#64748b" }}
+              style={{ fontWeight: 600, color: "#6B7280" }}
             >
-              <MapPin size={10} className="shrink-0 text-slate-400" />
+              <MapPin size={10} className="shrink-0 text-gray-400" />
               {location}
             </p>
           )}
         </div>
         <button
           onClick={handleSave}
-          className="w-8 h-8 flex items-center justify-center rounded-xl border border-slate-200 hover:bg-slate-100 transition-colors shrink-0 bg-white"
+          className="w-8 h-8 flex items-center justify-center rounded-xl border border-gray-200 hover:bg-gray-100 transition-colors shrink-0 bg-white"
         >
           {isSaved ? (
-            <BookmarkCheck size={14} style={{ color: "#60a5fa" }} />
+            <BookmarkCheck size={14} style={{ color: "#004AAC" }} />
           ) : (
-            <Bookmark size={14} className="text-slate-400" />
+            <Bookmark size={14} className="text-gray-400" />
           )}
         </button>
       </div>
@@ -325,8 +317,8 @@ function ProjectCardHorizontal({
               <span
                 className="text-[11px] px-2.5 py-0.5 rounded-full border bg-white"
                 style={{
-                  borderColor: "#cbd5e1",
-                  color: "#1e293b",
+                  borderColor: "#D1D5DB",
+                  color: "#0A0E17",
                   fontWeight: 700,
                 }}
               >
@@ -337,8 +329,8 @@ function ProjectCardHorizontal({
               <span
                 className="text-[11px] px-2.5 py-0.5 rounded-full border bg-white"
                 style={{
-                  borderColor: "#cbd5e1",
-                  color: "#1e293b",
+                  borderColor: "#D1D5DB",
+                  color: "#0A0E17",
                   fontWeight: 700,
                 }}
               >
@@ -351,8 +343,8 @@ function ProjectCardHorizontal({
           <span
             className="text-[11px] font-bold px-2 py-0.5 rounded-full inline-block"
             style={{
-              color: "#60a5fa",
-              backgroundColor: "#eff6ff",
+              color: "#004AAC",
+              backgroundColor: "#EAF1FC",
               fontWeight: 700,
             }}
           >
@@ -363,7 +355,6 @@ function ProjectCardHorizontal({
     </div>
   );
 }
-
 function LoginPromptModal({ onClose, router }) {
   return (
     <div
@@ -377,14 +368,14 @@ function LoginPromptModal({ onClose, router }) {
       >
         <div
           className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
-          style={{ backgroundColor: "#eff6ff" }}
+          style={{ backgroundColor: "#EAF1FC" }}
         >
-          <Briefcase size={22} style={{ color: "#60a5fa" }} />
+          <Briefcase size={22} style={{ color: "#004AAC" }} />
         </div>
-        <h2 className="text-lg font-black text-slate-900 mb-1">
+        <h2 className="text-lg font-black text-gray-900 mb-1">
           Sign in to continue
         </h2>
-        <p className="text-sm font-medium text-slate-500 mb-5">
+        <p className="text-sm font-medium text-gray-500 mb-5">
           Create an account or sign in to save jobs, apply, and track your
           applications.
         </p>
@@ -392,13 +383,13 @@ function LoginPromptModal({ onClose, router }) {
           <button
             onClick={() => router.push("/login")}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90"
-            style={{ backgroundColor: "#60a5fa" }}
+            style={{ backgroundColor: "#004AAC" }}
           >
             Sign in
           </button>
           <button
             onClick={() => router.push("/signup")}
-            className="flex-1 py-2.5 rounded-xl text-sm font-bold border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
           >
             Sign up
           </button>
@@ -407,7 +398,6 @@ function LoginPromptModal({ onClose, router }) {
     </div>
   );
 }
-
 export default function DashboardHome() {
   const router = useRouter();
   const scrollRef = useRef(null);
@@ -429,7 +419,6 @@ export default function DashboardHome() {
   const [canProjScrollLeft, setCanProjScrollLeft] = useState(false);
   const [canProjScrollRight, setCanProjScrollRight] = useState(false);
   const projectsToday = new Date().toISOString().split("T")[0];
-
   const checkScroll = () => {
     const el = scrollRef.current;
     if (!el) return;
@@ -441,7 +430,6 @@ export default function DashboardHome() {
       left: dir === "left" ? -260 : 260,
       behavior: "smooth",
     });
-
   const checkProjScroll = () => {
     const el = projScrollRef.current;
     if (!el) return;
@@ -453,7 +441,6 @@ export default function DashboardHome() {
       left: dir === "left" ? -260 : 260,
       behavior: "smooth",
     });
-
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -464,7 +451,6 @@ export default function DashboardHome() {
       clearTimeout(t);
     };
   }, [jobs]);
-
   useEffect(() => {
     const el = projScrollRef.current;
     if (!el) return;
@@ -475,7 +461,6 @@ export default function DashboardHome() {
       clearTimeout(t);
     };
   }, [projects]);
-
   useEffect(() => {
     const unsub = auth.onAuthStateChanged(async (user) => {
       if (!user) {
@@ -512,7 +497,6 @@ export default function DashboardHome() {
         }
         return;
       }
-
       setAuthed(true);
       try {
         const [jobsSnap, savedSnap, userSnap] = await Promise.all([
@@ -538,7 +522,6 @@ export default function DashboardHome() {
             }),
         );
         setSavedJobs(savedSnap.docs.map((d) => d.data().jobId));
-
         if (userSnap.exists()) {
           const data = userSnap.data();
           const about = data.about || {};
@@ -546,15 +529,12 @@ export default function DashboardHome() {
             data.firstName || about.firstName || data.name?.split(" ")[0] || "";
           setUserName(name);
           setIsNewUser(!name);
-
           const profileType = data.profileType || "";
           const eduLevel = about.educationLevel || data.educationLevel || "";
           const simple = profileType === "simple" || eduLevel === "simple";
           setIsSimple(simple);
-
           const isFresher = about.isFresher === true;
           setIsGraduate(!simple && eduLevel === "graduate" && !isFresher);
-
           if (!simple) {
             const profile = {
               name: data.name || data.firstName || "",
@@ -571,7 +551,6 @@ export default function DashboardHome() {
             const educations = data.educations || [];
             const resumeURL =
               data.resumeURL || data.resume?.url || data.resumeUrl || "";
-
             setCompletedItems(
               computeCompletedItems({
                 profile,
@@ -590,7 +569,6 @@ export default function DashboardHome() {
       } finally {
         setLoading(false);
       }
-
       try {
         const projectsSnap = await getDocs(
           query(collection(db, "projects"), orderBy("createdAt", "desc")),
@@ -603,7 +581,6 @@ export default function DashboardHome() {
       } catch (err) {
         console.error("Failed to load projects:", err);
       }
-
       try {
         const savedProjSnap = await getDocs(
           query(
@@ -618,26 +595,24 @@ export default function DashboardHome() {
     });
     return () => unsub();
   }, []);
-
   if (loading)
     return (
       <div className="flex items-center justify-center h-screen">
         <div
           className="w-7 h-7 border-[3px] border-t-transparent rounded-full animate-spin"
-          style={{ borderColor: "#60a5fa", borderTopColor: "transparent" }}
+          style={{ borderColor: "#004AAC", borderTopColor: "transparent" }}
         />
       </div>
     );
-
   const handleAuthRequired = () => setShowLoginPrompt(true);
-
   return (
     <div
       className="min-h-screen pb-20 md:pb-6 px-4 sm:px-6"
       style={{
-        backgroundColor: "#f8fafc",
-        fontFamily: "'Inter','DM Sans',system-ui,sans-serif",
+        backgroundColor: "#F7F8FA",
+        fontFamily: "'Inter','Outfit',system-ui,sans-serif",
         paddingTop: "12px",
+        scrollPaddingTop: "80px",
       }}
     >
       {showLoginPrompt && (
@@ -646,20 +621,19 @@ export default function DashboardHome() {
           router={router}
         />
       )}
-
       {authed === false && (
         <div
           className="rounded-2xl mt-5 p-6 mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
           style={{
-            background: "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)",
-            border: "1px solid #bfdbfe",
+            background: "linear-gradient(135deg, #EAF1FC 0%, #D6E3F7 100%)",
+            border: "1px solid #B7C9F5",
           }}
         >
           <div>
-            <h1 className="text-xl font-black text-slate-900 mb-1">
+            <h1 className="text-xl font-black text-gray-900 mb-1">
               Find your next opportunity 🚀
             </h1>
-            <p className="text-sm font-semibold text-slate-500 max-w-md">
+            <p className="text-sm font-semibold text-gray-500 max-w-md">
               Discover jobs and projects matched to your skills. Sign in to
               apply, save, and track your applications.
             </p>
@@ -668,33 +642,32 @@ export default function DashboardHome() {
             <button
               onClick={() => router.push("/login")}
               className="px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90"
-              style={{ backgroundColor: "#60a5fa" }}
+              style={{ backgroundColor: "#004AAC" }}
             >
               Sign in
             </button>
             <button
               onClick={() => router.push("/signup")}
-              className="px-5 py-2.5 rounded-xl text-sm font-bold border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-colors"
+              className="px-5 py-2.5 rounded-xl text-sm font-bold border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
             >
               Sign up
             </button>
           </div>
         </div>
       )}
-
       {authed === true && isNewUser && (
         <div
           className="rounded-2xl mt-5 p-5 mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
           style={{
-            background: "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)",
-            border: "1px solid #bfdbfe",
+            background: "linear-gradient(135deg, #EAF1FC 0%, #D6E3F7 100%)",
+            border: "1px solid #B7C9F5",
           }}
         >
           <div>
-            <h1 className="text-lg font-black text-slate-900 mb-1">
+            <h1 className="text-lg font-black text-gray-900 mb-1">
               Welcome to JobsAbroad! 👋
             </h1>
-            <p className="text-sm font-semibold text-slate-500">
+            <p className="text-sm font-semibold text-gray-500">
               Complete your profile to get noticed by employers and start
               applying to jobs.
             </p>
@@ -702,49 +675,46 @@ export default function DashboardHome() {
           <button
             onClick={() => router.push("/dashboard/profile")}
             className="px-5 py-2.5 rounded-xl text-sm font-bold text-white shrink-0 transition-opacity hover:opacity-90"
-            style={{ backgroundColor: "#60a5fa" }}
+            style={{ backgroundColor: "#004AAC" }}
           >
             Complete profile
           </button>
         </div>
       )}
-
-      {authed === true && !isNewUser && userName && (
-        <p className="text-xl font-bold text-slate-900 mb-3 md:mb-5 md:mt-2">
-          Welcome back, {userName}
-        </p>
-      )}
-
-      {authed === true && !isSimple && (
-        <div className="xl:hidden mb-3">
-          <ProfileStrength
-            completedItems={completedItems}
-            isGraduate={isGraduate}
-            mobileOnly={true}
-            onImprove={() => router.push("/dashboard/profile")}
-          />
-        </div>
-      )}
-
-      <div className="flex gap-5 items-start">
+      <div className="flex gap-5 items-start mt-4">
         <div className="flex-1 min-w-0 flex flex-col gap-4">
+          {authed === true && !isNewUser && (
+            <PromoBannerCarousel router={router} userName={userName} />
+          )}
+
+          {authed === true && !isSimple && (
+            <div className="xl:hidden">
+              <ProfileStrength
+                completedItems={completedItems}
+                isGraduate={isGraduate}
+                mobileOnly={true}
+                onImprove={() => router.push("/dashboard/profile")}
+              />
+            </div>
+          )}
+
           {jobs.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-slate-100 flex flex-col items-center justify-center py-16 px-6 text-center shadow-sm">
+            <div className="bg-white rounded-2xl border-2 border-gray-200 flex flex-col items-center justify-center py-16 px-6 text-center shadow-sm">
               <span style={{ fontSize: 32 }}>☞</span>
-              <p className="text-base font-bold text-slate-700 mt-3 mb-1">
+              <p className="text-base font-bold text-gray-700 mt-3 mb-1">
                 No jobs available right now
               </p>
-              <p className="text-sm text-slate-400">Check back soon!</p>
+              <p className="text-sm text-gray-400">Check back soon!</p>
             </div>
           ) : (
             <div
-              className="bg-white rounded-2xl border border-slate-200 p-4"
+              className="bg-white rounded-2xl border-2 border-gray-200 p-4"
               style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}
             >
               <div className="flex items-center justify-between mb-4">
                 <h2
                   className="text-sm font-bold uppercase tracking-wide"
-                  style={{ color: "#60a5fa" }}
+                  style={{ color: "#004AAC" }}
                 >
                   Jobs for you
                 </h2>
@@ -754,23 +724,23 @@ export default function DashboardHome() {
                       <button
                         onClick={() => scroll("left")}
                         disabled={!canScrollLeft}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center border border-slate-200 disabled:opacity-25 hover:bg-slate-50"
+                        className="w-7 h-7 rounded-lg flex items-center justify-center border border-gray-200 disabled:opacity-25 hover:bg-gray-50"
                       >
-                        <ChevronLeft size={14} className="text-slate-500" />
+                        <ChevronLeft size={14} className="text-gray-500" />
                       </button>
                       <button
                         onClick={() => scroll("right")}
                         disabled={!canScrollRight}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center border border-slate-200 disabled:opacity-25 hover:bg-slate-50"
+                        className="w-7 h-7 rounded-lg flex items-center justify-center border border-gray-200 disabled:opacity-25 hover:bg-gray-50"
                       >
-                        <ChevronRight size={14} className="text-slate-500" />
+                        <ChevronRight size={14} className="text-gray-500" />
                       </button>
                     </div>
                   )}
                   <button
                     onClick={() => router.push("/dashboard/jobs")}
                     className="flex items-center gap-1 text-xs font-semibold hover:opacity-75 transition-opacity"
-                    style={{ color: "#60a5fa" }}
+                    style={{ color: "#004AAC" }}
                   >
                     View all <ArrowRight size={13} />
                   </button>
@@ -800,16 +770,15 @@ export default function DashboardHome() {
               </div>
             </div>
           )}
-
           {projects.length > 0 && (
             <div
-              className="bg-white rounded-2xl border border-slate-200 p-4"
+              className="bg-white rounded-2xl border-2 border-gray-200 p-4"
               style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}
             >
               <div className="flex items-center justify-between mb-4">
                 <h2
                   className="text-sm font-bold uppercase tracking-wide flex items-center gap-1.5"
-                  style={{ color: "#60a5fa" }}
+                  style={{ color: "#004AAC" }}
                 >
                   <HardHat size={14} /> Projects for you
                 </h2>
@@ -819,23 +788,23 @@ export default function DashboardHome() {
                       <button
                         onClick={() => scrollProj("left")}
                         disabled={!canProjScrollLeft}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center border border-slate-200 disabled:opacity-25 hover:bg-slate-50"
+                        className="w-7 h-7 rounded-lg flex items-center justify-center border border-gray-200 disabled:opacity-25 hover:bg-gray-50"
                       >
-                        <ChevronLeft size={14} className="text-slate-500" />
+                        <ChevronLeft size={14} className="text-gray-500" />
                       </button>
                       <button
                         onClick={() => scrollProj("right")}
                         disabled={!canProjScrollRight}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center border border-slate-200 disabled:opacity-25 hover:bg-slate-50"
+                        className="w-7 h-7 rounded-lg flex items-center justify-center border border-gray-200 disabled:opacity-25 hover:bg-gray-50"
                       >
-                        <ChevronRight size={14} className="text-slate-500" />
+                        <ChevronRight size={14} className="text-gray-500" />
                       </button>
                     </div>
                   )}
                   <button
                     onClick={() => router.push("/dashboard/projects")}
                     className="flex items-center gap-1 text-xs font-semibold hover:opacity-75 transition-opacity"
-                    style={{ color: "#60a5fa" }}
+                    style={{ color: "#004AAC" }}
                   >
                     View all <ArrowRight size={13} />
                   </button>
@@ -866,9 +835,11 @@ export default function DashboardHome() {
             </div>
           )}
         </div>
-
         {authed === true && !isSimple && (
-          <div className="hidden xl:block shrink-0" style={{ width: "280px" }}>
+          <div
+            className="hidden xl:block shrink-0 mt-4"
+            style={{ width: "280px" }}
+          >
             <ProfileStrength
               completedItems={completedItems}
               isGraduate={isGraduate}

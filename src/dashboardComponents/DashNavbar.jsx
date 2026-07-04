@@ -29,7 +29,6 @@ import {
   IoSearchOutline,
   IoMailOutline,
 } from "react-icons/io5";
-
 const navItems = [
   { href: "/dashboard", icon: IoHomeOutline, label: "Home" },
   { href: "/dashboard/profile", icon: IoPersonCircleOutline, label: "Profile" },
@@ -47,7 +46,6 @@ const navItems = [
   },
   { href: "/dashboard/messages", icon: IoChatbubbleOutline, label: "Messages" },
 ];
-
 function timeAgo(ts) {
   if (!ts) return "";
   const date = ts?.toDate ? ts.toDate() : new Date(ts);
@@ -57,7 +55,6 @@ function timeAgo(ts) {
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
   return `${Math.floor(diff / 86400)}d ago`;
 }
-
 function AlertsPanel({ notifications, onClose, onNotifClick }) {
   const ref = useRef(null);
   useEffect(() => {
@@ -67,17 +64,16 @@ function AlertsPanel({ notifications, onClose, onNotifClick }) {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [onClose]);
-
   return (
     <div
       ref={ref}
-      className="absolute left-18 top-0 w-75 bg-white rounded-2xl shadow-2xl border border-slate-100 z-9999 overflow-hidden"
+      className="absolute left-18 top-0 w-75 bg-white rounded-2xl shadow-2xl border border-gray-100 z-9999 overflow-hidden"
       style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.13)" }}
     >
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-        <span className="text-[14px] font-bold text-slate-900">Alerts</span>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+        <span className="text-[14px] font-bold text-gray-900">Alerts</span>
         {notifications.length > 0 && (
-          <span className="text-[11px] text-slate-400 font-medium">
+          <span className="text-[11px] text-gray-400 font-medium">
             {notifications.length} unread
           </span>
         )}
@@ -85,8 +81,8 @@ function AlertsPanel({ notifications, onClose, onNotifClick }) {
       <div className="max-h-100 overflow-y-auto">
         {notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 gap-2">
-            <IoNotificationsOutline size={28} className="text-slate-200" />
-            <p className="text-[12px] text-slate-400">No new alerts</p>
+            <IoNotificationsOutline size={28} className="text-gray-200" />
+            <p className="text-[12px] text-gray-400">No new alerts</p>
           </div>
         ) : (
           notifications.map((n) => (
@@ -96,13 +92,13 @@ function AlertsPanel({ notifications, onClose, onNotifClick }) {
                 onNotifClick(n.convId);
                 onClose();
               }}
-              className="w-full flex items-start gap-3 px-4 py-3 hover:bg-blue-50 border-none bg-transparent cursor-pointer text-left border-b border-slate-50 transition-colors"
+              className="w-full flex items-start gap-3 px-4 py-3 hover:bg-[#EAF1FC] border-none bg-transparent cursor-pointer text-left border-b border-gray-50 transition-colors"
             >
-              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
-                <IoMailOutline size={15} className="text-blue-500" />
+              <div className="w-8 h-8 rounded-full bg-[#D6E3F7] flex items-center justify-center shrink-0 mt-0.5">
+                <IoMailOutline size={15} className="text-[#004AAC]" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-semibold text-slate-900 truncate">
+                <p className="text-[13px] font-semibold text-gray-900 truncate">
                   {n.senderName || "Employer"}
                   {n.company ? (
                     <span className="text-[11px] font-normal text-emerald-600 ml-1">
@@ -110,15 +106,15 @@ function AlertsPanel({ notifications, onClose, onNotifClick }) {
                     </span>
                   ) : null}
                 </p>
-                <p className="text-[12px] text-slate-500 truncate mt-0.5">
+                <p className="text-[12px] text-gray-500 truncate mt-0.5">
                   {n.lastMessage || "Sent you a message"}
                 </p>
-                <p className="text-[10px] text-slate-400 mt-0.5">
+                <p className="text-[10px] text-gray-400 mt-0.5">
                   {timeAgo(n.lastMessageAt)}
                 </p>
               </div>
               {n.unread > 0 && (
-                <span className="shrink-0 min-w-4.5 h-4.5 px-1 rounded-full bg-blue-400 text-white text-[9px] font-bold flex items-center justify-center mt-0.5">
+                <span className="shrink-0 min-w-4.5 h-4.5 px-1 rounded-full bg-[#004AAC] text-white text-[9px] font-bold flex items-center justify-center mt-0.5">
                   {n.unread > 9 ? "9+" : n.unread}
                 </span>
               )}
@@ -127,11 +123,11 @@ function AlertsPanel({ notifications, onClose, onNotifClick }) {
         )}
       </div>
       {notifications.length > 0 && (
-        <div className="px-4 py-2.5 border-t border-slate-100">
+        <div className="px-4 py-2.5 border-t border-gray-100">
           <Link
             href="/dashboard/messages"
             onClick={onClose}
-            className="text-[12px] font-semibold text-blue-500 hover:text-blue-600"
+            className="text-[12px] font-semibold text-[#004AAC] hover:text-[#003785]"
           >
             View all messages →
           </Link>
@@ -140,7 +136,6 @@ function AlertsPanel({ notifications, onClose, onNotifClick }) {
     </div>
   );
 }
-
 export default function DashNavbar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -151,16 +146,13 @@ export default function DashNavbar() {
   const [msgNotifs, setMsgNotifs] = useState([]);
   const [totalUnread, setTotalUnread] = useState(0);
   const senderCache = useRef({});
-
   useEffect(() => {
     const unsub = auth.onAuthStateChanged((user) => {
       if (!user) return;
-
       const q = query(
         collection(db, "conversations"),
         where("participants", "array-contains", user.uid),
       );
-
       const unsubConvs = onSnapshot(q, async (snap) => {
         const convs = snap.docs
           .map((d) => ({ id: d.id, ...d.data() }))
@@ -169,16 +161,13 @@ export default function DashNavbar() {
               c.participantRoles?.[user.uid] === "applicant" ||
               !c.participantRoles,
           );
-
         const unreadConvs = convs.filter(
           (c) => (c.unreadCount?.[user.uid] || 0) > 0,
         );
-
         const notifs = await Promise.all(
           unreadConvs.map(async (c) => {
             const otherUid = c.participants?.find((p) => p !== user.uid);
             if (!otherUid) return null;
-
             if (!senderCache.current[otherUid]) {
               try {
                 const empSnap = await getDoc(doc(db, "employers", otherUid));
@@ -205,7 +194,6 @@ export default function DashNavbar() {
                 }
               } catch (e) {}
             }
-
             const sender = senderCache.current[otherUid] || {};
             return {
               convId: c.id,
@@ -217,41 +205,32 @@ export default function DashNavbar() {
             };
           }),
         );
-
         const validNotifs = notifs.filter(Boolean).sort((a, b) => {
           const aTime = a.lastMessageAt?.toDate?.() || new Date(0);
           const bTime = b.lastMessageAt?.toDate?.() || new Date(0);
           return bTime - aTime;
         });
-
         setMsgNotifs(validNotifs);
         setTotalUnread(validNotifs.reduce((s, n) => s + n.unread, 0));
       });
-
       return unsubConvs;
     });
-
     return () => unsub();
   }, []);
-
   const handleNotifClick = (convId) => {
     router.push(`/dashboard/messages?conv=${convId}`);
   };
-
   const handleLogout = async () => {
     await signOut(auth);
     window.location.href = "/login";
   };
-
   const isActive = (href) =>
     href === "/dashboard" ? pathname === "/dashboard" : pathname === href;
-
   const toggleSearch = () => {
     const next = !searchOpen;
     setSearchOpen(next);
     window.dispatchEvent(new CustomEvent("searchToggle", { detail: next }));
   };
-
   return (
     <>
       {settingsOpen && (
@@ -260,7 +239,6 @@ export default function DashNavbar() {
           onClick={() => setSettingsOpen(false)}
         />
       )}
-
       <aside
         className="hidden md:flex fixed left-4 top-4 bottom-4 w-17 flex-col items-center py-5 z-40"
         style={{
@@ -281,7 +259,6 @@ export default function DashNavbar() {
             className="object-contain"
           />
         </Link>
-
         <nav className="flex flex-col items-center gap-3 flex-1">
           {navItems.map(({ href, icon: Icon, label }) => {
             const isAlerts = label === "Alerts";
@@ -297,19 +274,19 @@ export default function DashNavbar() {
                     className="group relative flex items-center justify-center w-11 h-11 rounded-2xl transition-all duration-200 border-none cursor-pointer"
                     style={{
                       backgroundColor:
-                        alertsOpen || active ? "#EFF6FF" : "transparent",
-                      color: alertsOpen || active ? "#60a5fa" : "#0f172a",
+                        alertsOpen || active ? "#EAF1FC" : "transparent",
+                      color: alertsOpen || active ? "#004AAC" : "#0A0E17",
                     }}
                     onMouseEnter={(e) => {
                       if (!alertsOpen && !active) {
-                        e.currentTarget.style.backgroundColor = "#EFF6FF";
-                        e.currentTarget.style.color = "#60a5fa";
+                        e.currentTarget.style.backgroundColor = "#EAF1FC";
+                        e.currentTarget.style.color = "#004AAC";
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (!alertsOpen && !active) {
                         e.currentTarget.style.backgroundColor = "transparent";
-                        e.currentTarget.style.color = "#0f172a";
+                        e.currentTarget.style.color = "#0A0E17";
                       }
                     }}
                   >
@@ -328,19 +305,19 @@ export default function DashNavbar() {
                     href={href}
                     className="group relative flex items-center justify-center w-11 h-11 rounded-2xl transition-all duration-200"
                     style={{
-                      backgroundColor: active ? "#EFF6FF" : "transparent",
-                      color: active ? "#60a5fa" : "#0f172a",
+                      backgroundColor: active ? "#EAF1FC" : "transparent",
+                      color: active ? "#004AAC" : "#0A0E17",
                     }}
                     onMouseEnter={(e) => {
                       if (!active) {
-                        e.currentTarget.style.backgroundColor = "#EFF6FF";
-                        e.currentTarget.style.color = "#60a5fa";
+                        e.currentTarget.style.backgroundColor = "#EAF1FC";
+                        e.currentTarget.style.color = "#004AAC";
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (!active) {
                         e.currentTarget.style.backgroundColor = "transparent";
-                        e.currentTarget.style.color = "#0f172a";
+                        e.currentTarget.style.color = "#0A0E17";
                       }
                     }}
                   >
@@ -350,7 +327,6 @@ export default function DashNavbar() {
                     </span>
                   </Link>
                 )}
-
                 {isAlerts && alertsOpen && (
                   <AlertsPanel
                     notifications={msgNotifs}
@@ -362,23 +338,22 @@ export default function DashNavbar() {
             );
           })}
         </nav>
-
         <div className="relative">
           <button
             onClick={() => setSettingsOpen((p) => !p)}
             className="flex items-center justify-center w-11 h-11 rounded-2xl transition-all duration-200 border-none cursor-pointer"
             style={{
-              backgroundColor: settingsOpen ? "#EFF6FF" : "transparent",
-              color: "#0f172a",
+              backgroundColor: settingsOpen ? "#EAF1FC" : "transparent",
+              color: "#0A0E17",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#EFF6FF";
-              e.currentTarget.style.color = "#60a5fa";
+              e.currentTarget.style.backgroundColor = "#EAF1FC";
+              e.currentTarget.style.color = "#004AAC";
             }}
             onMouseLeave={(e) => {
               if (!settingsOpen) {
                 e.currentTarget.style.backgroundColor = "transparent";
-                e.currentTarget.style.color = "#0f172a";
+                e.currentTarget.style.color = "#0A0E17";
               }
             }}
           >
@@ -402,7 +377,6 @@ export default function DashNavbar() {
           )}
         </div>
       </aside>
-
       <div
         className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4"
         style={{
@@ -425,8 +399,8 @@ export default function DashNavbar() {
             onClick={toggleSearch}
             className="flex items-center justify-center w-9 h-9 rounded-xl transition-all"
             style={{
-              backgroundColor: searchOpen ? "#EFF6FF" : "transparent",
-              color: searchOpen ? "#60a5fa" : "#0f172a",
+              backgroundColor: searchOpen ? "#EAF1FC" : "transparent",
+              color: searchOpen ? "#004AAC" : "#0A0E17",
             }}
           >
             <IoSearchOutline size={22} />
@@ -436,8 +410,8 @@ export default function DashNavbar() {
             className="relative flex items-center justify-center w-9 h-9 rounded-xl"
             style={{
               color: isActive("/dashboard/notifications")
-                ? "#60a5fa"
-                : "#0f172a",
+                ? "#004AAC"
+                : "#0A0E17",
             }}
           >
             <IoNotificationsOutline size={22} />
@@ -451,14 +425,13 @@ export default function DashNavbar() {
             href="/dashboard/messages"
             className="flex items-center justify-center w-9 h-9 rounded-xl"
             style={{
-              color: isActive("/dashboard/messages") ? "#60a5fa" : "#0f172a",
+              color: isActive("/dashboard/messages") ? "#004AAC" : "#0A0E17",
             }}
           >
             <IoChatbubbleOutline size={22} />
           </Link>
         </div>
       </div>
-
       <nav
         className="md:hidden fixed bottom-0 left-0 right-0 z-40"
         style={{
@@ -497,7 +470,7 @@ export default function DashNavbar() {
               key={href}
               href={href}
               className="flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition-all"
-              style={{ color: isActive(href) ? "#60a5fa" : "#0f172a" }}
+              style={{ color: isActive(href) ? "#004AAC" : "#0A0E17" }}
             >
               <Icon size={22} />
               <span className="text-xs font-semibold">{label}</span>
@@ -508,7 +481,7 @@ export default function DashNavbar() {
           <Link
             href="/employer"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white"
-            style={{ backgroundColor: "#e61212" }}
+            style={{ backgroundColor: "#004AAC" }}
           >
             <IoBriefcaseOutline size={13} /> Post a Job
           </Link>

@@ -5,8 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import heroBg from "@/images/hero.png";
-import logo2 from "@/images/logo2.png";
+import premiumImg from "@/images/premium.jpg";
+import logo3 from "@/images/logo3.png";
 import {
   IoMailOutline,
   IoLockClosedOutline,
@@ -20,6 +20,8 @@ import {
   sendPasswordResetEmail,
 } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
+
+const BRAND_BLUE = "#004AAC";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -49,7 +51,7 @@ const quotes = [
     author: "Jobs Abroad",
   },
   {
-    text: "500+ professionals have already found their opportunity. You're next.",
+    text: "Great careers aren't found by chance — they're built with the right support.",
     author: "Jobs Abroad",
   },
 ];
@@ -59,6 +61,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -103,7 +106,9 @@ const Login = () => {
     setSuccess("");
     try {
       await sendPasswordResetEmail(auth, email);
-      setSuccess("Password reset email sent! Check your inbox (or spam folder).");
+      setSuccess(
+        "Password reset email sent! Check your inbox (or spam folder).",
+      );
     } catch (err) {
       setError("Could not send reset email. Check the address and try again.");
     } finally {
@@ -112,105 +117,172 @@ const Login = () => {
   };
 
   return (
-    <div className="relative w-full min-h-screen overflow-hidden flex">
-      <div className="absolute inset-0 z-0">
-        <Image
-          src={heroBg}
-          alt="Background"
-          fill
-          className="object-cover object-center"
-          priority
-        />
-        <div className="absolute inset-0 bg-black/50" />
-      </div>
-
-      <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white/20 z-10 hidden md:block" />
-
-      <div className="relative z-10 hidden md:flex w-1/2 flex-col justify-between px-10 lg:px-16 py-12">
-        <motion.div
-          custom={0}
-          variants={leftFade}
-          initial="hidden"
-          animate="visible"
-        >
+    <div className="relative w-full min-h-screen bg-white flex flex-col md:flex-row font-sans">
+      <div className="hidden md:block w-1/2 p-4 lg:p-6">
+        <div className="relative w-full h-full rounded-4xl overflow-hidden">
           <Image
-            src={logo2}
-            alt="Jobs Abroad Logo"
-            width={160}
-            height={48}
-            className="object-contain"
+            src={premiumImg}
+            alt="Jobs Abroad"
+            fill
+            className="object-cover"
+            priority
           />
-        </motion.div>
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(to top, rgba(0,74,172,0.88) 0%, rgba(0,74,172,0.4) 45%, rgba(0,74,172,0.08) 70%)",
+            }}
+          />
 
-        <div className="space-y-10">
-          <motion.div
-            custom={1}
-            variants={leftFade}
-            initial="hidden"
-            animate="visible"
-          >
-            <p className="text-white/40 text-xs font-semibold tracking-widest uppercase mb-3">
-              Why Jobs Abroad?
-            </p>
-            <h2 className="text-white text-3xl lg:text-4xl font-bold leading-tight">
-              Stop Struggling. <br />
-              <span className="text-blue-400">Start Working.</span>
-            </h2>
-          </motion.div>
+          <div className="relative z-10 h-full flex flex-col justify-between p-8 lg:p-10">
+            <motion.div
+              custom={0}
+              variants={leftFade}
+              initial="hidden"
+              animate="visible"
+              className="bg-white/95 backdrop-blur-md rounded-2xl px-4 py-2.5 inline-flex self-start"
+            >
+              <Image
+                src={logo3}
+                alt="Jobs Abroad Logo"
+                width={130}
+                height={40}
+                className="object-contain h-8 w-auto"
+              />
+            </motion.div>
 
-          <div className="space-y-6">
-            {quotes.map((q, i) => (
+            <div className="space-y-8">
               <motion.div
-                key={i}
-                custom={2 + i}
+                custom={1}
                 variants={leftFade}
                 initial="hidden"
                 animate="visible"
               >
-                <p className="text-white/85 text-sm leading-relaxed italic">
-                  &ldquo;{q.text}&rdquo;
+                <p className="text-white/60 text-xs font-semibold tracking-widest uppercase mb-3">
+                  Why Jobs Abroad?
                 </p>
-                <p className="text-blue-400 text-xs font-semibold mt-1.5">
-                  — {q.author}
-                </p>
+                <h2 className="font-display text-white text-3xl lg:text-4xl font-semibold leading-tight">
+                  Stop Struggling. <br />
+                  <span className="text-[#004aac]">Start Working.</span>
+                </h2>
               </motion.div>
-            ))}
-          </div>
 
-          <motion.div
-            custom={5}
-            variants={leftFade}
-            initial="hidden"
-            animate="visible"
-            className="flex gap-8"
-          >
-            {[
-              ["500+", "Professionals"],
-              ["30+", "Countries"],
-              ["95%", "Placement"],
-            ].map(([val, label]) => (
-              <div key={label}>
-                <p className="text-white text-2xl font-black">{val}</p>
-                <p className="text-white/40 text-xs">{label}</p>
+              <div className="space-y-5">
+                {quotes.map((q, i) => (
+                  <motion.div
+                    key={i}
+                    custom={2 + i}
+                    variants={leftFade}
+                    initial="hidden"
+                    animate="visible"
+                  >
+                    <p className="text-white/85 text-sm leading-relaxed italic">
+                      &ldquo;{q.text}&rdquo;
+                    </p>
+                    <p className="text-[#004acc] text-xs font-semibold mt-1.5">
+                      — {q.author}
+                    </p>
+                  </motion.div>
+                ))}
               </div>
-            ))}
-          </motion.div>
-        </div>
 
-        <motion.p
-          custom={6}
-          variants={leftFade}
-          initial="hidden"
-          animate="visible"
-          className="text-white/30 text-xs"
-        >
-          © {new Date().getFullYear()} Jobs Abroad. All rights reserved.
-        </motion.p>
+              <motion.div
+                custom={5}
+                variants={leftFade}
+                initial="hidden"
+                animate="visible"
+                className="space-y-3"
+              >
+                {[
+                  "A dedicated 1:1 career consultant",
+                  "Direct interview referrals, not just applications",
+                  "100% money-back guarantee",
+                ].map((item) => (
+                  <div key={item} className="flex items-center gap-3">
+                    <span className="w-5 h-5 rounded-full bg-white/15 flex items-center justify-center shrink-0">
+                      <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                        <path
+                          d="M1 4L3.5 6.5L9 1"
+                          stroke="white"
+                          strokeWidth="1.6"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </span>
+                    <p className="text-white/85 text-sm">{item}</p>
+                  </div>
+                ))}
+              </motion.div>
+            </div>
+
+            <motion.p
+              custom={6}
+              variants={leftFade}
+              initial="hidden"
+              animate="visible"
+              className="text-white/40 text-xs"
+            >
+              © {new Date().getFullYear()} Jobs Abroad. All rights reserved.
+            </motion.p>
+          </div>
+        </div>
       </div>
 
-      <div className="relative z-10 w-full md:w-1/2 flex items-center justify-center px-6 sm:px-10 lg:px-16 py-12">
-        <div className="absolute inset-0 bg-black/35 backdrop-blur-[1.5px]" />
+      <div className="md:hidden relative w-full h-72 sm:h-80 overflow-hidden">
+        <Image
+          src={premiumImg}
+          alt="Jobs Abroad"
+          fill
+          className="object-cover"
+          priority
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(to bottom, rgba(0,74,172,0.55) 0%, rgba(0,74,172,0.55) 55%, rgba(0,74,172,0.92) 100%)",
+          }}
+        />
+        <div className="relative z-10 h-full flex flex-col items-center justify-center px-6 text-center">
+          <motion.div
+            custom={0}
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            className="bg-white/95 backdrop-blur-md rounded-2xl px-4 py-2.5 inline-flex mb-6"
+          >
+            <Image
+              src={logo3}
+              alt="Jobs Abroad"
+              width={120}
+              height={36}
+              className="object-contain h-7 w-auto"
+            />
+          </motion.div>
+          <motion.h1
+            custom={1}
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            className="font-display text-white text-2xl sm:text-3xl font-semibold tracking-tight mb-2"
+          >
+            Login to your account
+          </motion.h1>
+          <motion.p
+            custom={2}
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            className="text-white/85 text-sm max-w-xs"
+          >
+            Welcome back! Enter your details to log in to your account.
+          </motion.p>
+        </div>
+      </div>
 
+      <div className="relative z-10 w-full md:w-1/2 flex items-center justify-center px-6 sm:px-10 lg:px-16 py-10 md:py-12 -mt-8 md:mt-0 rounded-t-3xl md:rounded-none bg-white">
         <motion.div
           initial="hidden"
           animate="visible"
@@ -219,72 +291,79 @@ const Login = () => {
           <motion.div
             custom={0}
             variants={fadeUp}
-            className="md:hidden mb-8 flex justify-center"
+            className="hidden md:flex justify-center mb-8"
           >
-            <Image
-              src={logo2}
-              alt="Jobs Abroad"
-              width={130}
-              height={40}
-              className="object-contain"
-            />
+            <div className="inline-flex">
+              <Image
+                src={logo3}
+                alt="Jobs Abroad"
+                width={120}
+                height={36}
+                className="object-contain h-10 w-auto"
+              />
+            </div>
           </motion.div>
 
           <motion.h1
-            custom={0}
+            custom={1}
             variants={fadeUp}
-            className="text-white text-4xl sm:text-5xl font-bold mb-8 tracking-tight"
+            className="hidden md:block font-display text-[#0A0E17] text-3xl sm:text-4xl font-semibold mb-1.5 tracking-tight text-center"
           >
-            Login
+            Login to your account
           </motion.h1>
+          <motion.p
+            custom={2}
+            variants={fadeUp}
+            className="hidden md:block text-gray-400 text-sm mb-8 text-center"
+          >
+            Welcome back! Enter your details to log in to your account.
+          </motion.p>
 
-          {/* Error message */}
           {error && (
             <motion.p
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-red-400 text-sm mb-4 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2.5"
+              className="text-red-600 text-sm mb-4 bg-red-50 border border-red-100 rounded-xl px-4 py-2.5"
             >
               {error}
             </motion.p>
           )}
 
-          {/* Success message */}
           {success && (
             <motion.p
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-green-400 text-sm mb-4 bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-2.5"
+              className="text-green-700 text-sm mb-4 bg-green-50 border border-green-100 rounded-xl px-4 py-2.5"
             >
               {success}
             </motion.p>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            <motion.div custom={1} variants={fadeUp}>
-              <label className="block text-white/80 text-sm font-medium mb-2">
+            <motion.div custom={3} variants={fadeUp}>
+              <label className="block text-[#0A0E17] text-sm font-medium mb-2">
                 Email
               </label>
-              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/25 rounded-2xl px-4 py-3.5 focus-within:border-blue-400 focus-within:bg-white/15 transition-all">
-                <IoMailOutline className="text-white/50 shrink-0" size={18} />
+              <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-full px-5 py-3.5 focus-within:border-[#004AAC] focus-within:bg-white transition-all">
+                <IoMailOutline className="text-gray-400 shrink-0" size={18} />
                 <input
                   type="email"
-                  placeholder="Enter your Email"
+                  placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="flex-1 bg-transparent text-white placeholder-white/35 text-sm outline-none"
+                  className="flex-1 bg-transparent text-[#0A0E17] placeholder-gray-400 text-sm outline-none"
                 />
               </div>
             </motion.div>
 
-            <motion.div custom={2} variants={fadeUp}>
-              <label className="block text-white/80 text-sm font-medium mb-2">
+            <motion.div custom={4} variants={fadeUp}>
+              <label className="block text-[#0A0E17] text-sm font-medium mb-2">
                 Password
               </label>
-              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/25 rounded-2xl px-4 py-3.5 focus-within:border-blue-400 focus-within:bg-white/15 transition-all">
+              <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-full px-5 py-3.5 focus-within:border-[#004AAC] focus-within:bg-white transition-all">
                 <IoLockClosedOutline
-                  className="text-white/50 shrink-0"
+                  className="text-gray-400 shrink-0"
                   size={18}
                 />
                 <input
@@ -293,12 +372,12 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="flex-1 bg-transparent text-white placeholder-white/35 text-sm outline-none"
+                  className="flex-1 bg-transparent text-[#0A0E17] placeholder-gray-400 text-sm outline-none"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="text-white/40 hover:text-white/70 transition-colors"
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   {showPassword ? (
                     <IoEyeOutline size={18} />
@@ -309,40 +388,65 @@ const Login = () => {
               </div>
             </motion.div>
 
-            <motion.div custom={3} variants={fadeUp}>
+            <motion.div
+              custom={5}
+              variants={fadeUp}
+              className="flex items-center justify-between"
+            >
+              <label className="flex items-center gap-2 text-gray-500 text-xs cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                  className="w-3.5 h-3.5 rounded border-gray-300 text-[#004AAC] focus:ring-[#004AAC]"
+                />
+                Remember login
+              </label>
               <button
                 type="button"
                 onClick={handleForgotPassword}
-                className="text-white/45 text-xs hover:text-white/70 transition-colors"
+                className="text-[#004AAC] text-xs font-medium hover:text-[#003785] transition-colors"
               >
                 Forgot password?
               </button>
             </motion.div>
 
-            <motion.div
-              custom={4}
-              variants={fadeUp}
-              className="flex items-center gap-3"
-            >
-              <div className="flex-1 h-px bg-white/15" />
-              <span className="text-white/35 text-xs whitespace-nowrap">
-                or continue with
-              </span>
-              <div className="flex-1 h-px bg-white/15" />
+            <motion.div custom={6} variants={fadeUp}>
+              <button
+                type="submit"
+                disabled={loading}
+                className="group w-full bg-[#004AAC] hover:bg-[#003785] text-white font-bold text-sm py-4 rounded-full flex items-center justify-center gap-3 transition-all duration-300 shadow-lg shadow-[#004AAC]/20 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:scale-100 cursor-pointer"
+              >
+                {loading ? "Please wait..." : "Login"}
+                {!loading && (
+                  <FiArrowRight
+                    size={18}
+                    className="group-hover:translate-x-1 transition-transform"
+                  />
+                )}
+              </button>
             </motion.div>
 
             <motion.div
-              custom={5}
+              custom={7}
               variants={fadeUp}
-              className="flex justify-center"
+              className="flex items-center gap-3"
             >
+              <div className="flex-1 h-px bg-gray-200" />
+              <span className="text-gray-400 text-xs whitespace-nowrap">
+                or continue with
+              </span>
+              <div className="flex-1 h-px bg-gray-200" />
+            </motion.div>
+
+            <motion.div custom={8} variants={fadeUp}>
               <button
                 type="button"
                 onClick={handleGoogle}
                 disabled={loading}
-                className="w-11 h-11 rounded-full bg-white/10 backdrop-blur-md border border-white/25 flex items-center justify-center hover:bg-white/20 hover:border-blue-400 transition-all disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-full py-3.5 transition-all disabled:opacity-50 cursor-pointer"
               >
-                <svg viewBox="0 0 24 24" width="20" height="20">
+                <svg viewBox="0 0 24 24" width="18" height="18">
                   <path
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                     fill="#4285F4"
@@ -360,38 +464,25 @@ const Login = () => {
                     fill="#EA4335"
                   />
                 </svg>
+                <span className="text-[#0A0E17] text-sm font-semibold">
+                  Sign in with Google
+                </span>
               </button>
             </motion.div>
 
             <motion.p
-              custom={6}
+              custom={9}
               variants={fadeUp}
-              className="text-center text-white/45 text-xs"
+              className="text-center text-gray-400 text-xs"
             >
-              Don&apos;t have an account?{" "}
+              New here?{" "}
               <Link
                 href="/signup"
-                className="text-blue-400 font-semibold hover:text-blue-300 transition-colors"
+                className="text-[#004AAC] font-semibold hover:text-[#003785] transition-colors"
               >
-                Register here
+                Create account
               </Link>
             </motion.p>
-
-            <motion.div custom={7} variants={fadeUp}>
-              <button
-                type="submit"
-                disabled={loading}
-                className="group w-full bg-red-500 hover:bg-red-600 text-white font-bold text-sm py-4 rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 shadow-lg shadow-red-500/30 hover:shadow-red-500/50 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:scale-100"
-              >
-                {loading ? "Please wait..." : "Login"}
-                {!loading && (
-                  <FiArrowRight
-                    size={18}
-                    className="group-hover:translate-x-1 transition-transform"
-                  />
-                )}
-              </button>
-            </motion.div>
           </form>
         </motion.div>
       </div>

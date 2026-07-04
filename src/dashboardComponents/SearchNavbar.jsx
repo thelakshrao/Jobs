@@ -91,7 +91,7 @@ export default function SearchNavbar() {
           className="flex items-center overflow-visible"
           style={{
             flex: "3 1 0",
-            backgroundColor: "#f1f5f9",
+            backgroundColor: "#F0F2F5",
             borderRadius: "12px",
             height: "38px",
           }}
@@ -112,14 +112,14 @@ export default function SearchNavbar() {
               onChange={(e) => setKeyword(e.target.value)}
               onKeyDown={handleKeyDown}
               className="w-full bg-transparent outline-none text-sm"
-              style={{ color: "#0f172a", height: "38px" }}
+              style={{ color: "#0A0E17", height: "38px" }}
             />
           </div>
           <div
             style={{
               width: "1px",
               height: "18px",
-              backgroundColor: "#cbd5e1",
+              backgroundColor: "#D1D5DB",
               flexShrink: 0,
             }}
           />
@@ -142,7 +142,7 @@ export default function SearchNavbar() {
                 onFocus={() => setLocationFocused(true)}
                 onKeyDown={handleKeyDown}
                 className="w-full bg-transparent outline-none text-sm"
-                style={{ color: "#0f172a", height: "38px" }}
+                style={{ color: "#0A0E17", height: "38px" }}
               />
             </div>
             {locationFocused && filteredSuggestions.length > 0 && (
@@ -159,9 +159,9 @@ export default function SearchNavbar() {
                   <button
                     key={s}
                     className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left"
-                    style={{ color: "#0f172a" }}
+                    style={{ color: "#0A0E17" }}
                     onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor = "#f8fafc")
+                      (e.currentTarget.style.backgroundColor = "#F7F8FA")
                     }
                     onMouseLeave={(e) =>
                       (e.currentTarget.style.backgroundColor = "transparent")
@@ -181,17 +181,17 @@ export default function SearchNavbar() {
             onClick={handleSearch}
             className="flex items-center justify-center text-sm font-semibold text-white px-4 cursor-pointer"
             style={{
-              backgroundColor: "#e61212",
+              backgroundColor: "#004AAC",
               height: "38px",
               borderRadius: "0 12px 12px 0",
               whiteSpace: "nowrap",
               flexShrink: 0,
             }}
             onMouseEnter={(e) =>
-              (e.currentTarget.style.backgroundColor = "#d00000")
+              (e.currentTarget.style.backgroundColor = "#003785")
             }
             onMouseLeave={(e) =>
-              (e.currentTarget.style.backgroundColor = "#e61212")
+              (e.currentTarget.style.backgroundColor = "#004AAC")
             }
           >
             Find jobs
@@ -201,14 +201,14 @@ export default function SearchNavbar() {
           <Link
             href="/dashboard/profile"
             className="flex items-center justify-center w-9 h-9 rounded-xl transition-all"
-            style={{ color: "#0f172a" }}
+            style={{ color: "#0A0E17" }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#EFF6FF";
-              e.currentTarget.style.color = "#60a5fa";
+              e.currentTarget.style.backgroundColor = "#EAF1FC";
+              e.currentTarget.style.color = "#004AAC";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = "transparent";
-              e.currentTarget.style.color = "#0f172a";
+              e.currentTarget.style.color = "#0A0E17";
             }}
           >
             <IoPersonCircleOutline size={24} />
@@ -224,14 +224,14 @@ export default function SearchNavbar() {
           <Link
             href="/employer"
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all"
-            style={{ color: "#0f172a", whiteSpace: "nowrap" }}
+            style={{ color: "#0A0E17", whiteSpace: "nowrap" }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#EFF6FF";
-              e.currentTarget.style.color = "#60a5fa";
+              e.currentTarget.style.backgroundColor = "#EAF1FC";
+              e.currentTarget.style.color = "#004AAC";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = "transparent";
-              e.currentTarget.style.color = "#0f172a";
+              e.currentTarget.style.color = "#0A0E17";
             }}
           >
             <IoBriefcaseOutline size={15} /> Employers / Post Job
@@ -266,7 +266,7 @@ export default function SearchNavbar() {
               onChange={(e) => setKeyword(e.target.value)}
               onKeyDown={handleKeyDown}
               className="flex-1 bg-transparent outline-none text-sm"
-              style={{ color: "#0f172a" }}
+              style={{ color: "#0A0E17" }}
             />
           </div>
           <div className="flex gap-2">
@@ -288,7 +288,7 @@ export default function SearchNavbar() {
                 onFocus={() => setLocationFocused(true)}
                 onKeyDown={handleKeyDown}
                 className="flex-1 bg-transparent outline-none text-sm"
-                style={{ color: "#0f172a" }}
+                style={{ color: "#0A0E17" }}
               />
               {locationFocused && filteredSuggestions.length > 0 && (
                 <div
@@ -303,9 +303,9 @@ export default function SearchNavbar() {
                     <button
                       key={s}
                       className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left"
-                      style={{ color: "#0f172a" }}
+                      style={{ color: "#0A0E17" }}
                       onMouseEnter={(e) =>
-                        (e.currentTarget.style.backgroundColor = "#f8fafc")
+                        (e.currentTarget.style.backgroundColor = "#F7F8FA")
                       }
                       onMouseLeave={(e) =>
                         (e.currentTarget.style.backgroundColor = "transparent")
@@ -325,7 +325,7 @@ export default function SearchNavbar() {
               onClick={handleSearch}
               className="flex items-center justify-center text-sm font-semibold text-white px-5 rounded-2xl"
               style={{
-                backgroundColor: "#e61212",
+                backgroundColor: "#004AAC",
                 height: "44px",
                 whiteSpace: "nowrap",
               }}

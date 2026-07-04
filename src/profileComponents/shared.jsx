@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { IoChevronDownOutline, IoCloseOutline } from "react-icons/io5";
 
-export const BLUE = "#60a5fa";
-export const BLUE_DARK = "#3b82f6";
-export const BLUE_BG = "#eff6ff";
-export const BLUE_BG_HOVER = "#dbeafe";
+export const BLUE = "#004AAC";
+export const BLUE_DARK = "#003A87";
+export const BLUE_BG = "#EAF1FC";
+export const BLUE_BG_HOVER = "#D6E3F7";
 
 export const EXPERIENCE_OPTIONS = [
   "Fresher (0 years)",

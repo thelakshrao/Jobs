@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useRef } from "react";
 import {
   IoCheckmarkOutline,
@@ -18,6 +17,7 @@ import {
 } from "react-icons/io5";
 import {
   BLUE,
+  BLUE_BG,
   Field,
   NativeSelect,
   StreamField,
@@ -30,18 +30,15 @@ import {
   EDU_TYPE_GRADUATE,
 } from "./shared";
 import { usePhotoUpload } from "@/hooks/Usephotoupload";
-
 const SIDEBAR_ITEMS = [
   { key: "profile", label: "Profile Settings", icon: IoPersonOutline },
   { key: "experience", label: "Work Experience", icon: IoBriefcaseOutline },
   { key: "education", label: "Education", icon: IoSchoolOutline },
   { key: "skills", label: "Skills", icon: IoStarOutline },
 ];
-
 function PasteURLModal({ onConfirm, onClose }) {
   const [url, setUrl] = useState("");
   const [error, setError] = useState("");
-
   const handleConfirm = () => {
     const trimmed = url.trim();
     if (!trimmed) {
@@ -54,7 +51,6 @@ function PasteURLModal({ onConfirm, onClose }) {
     }
     onConfirm(trimmed);
   };
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -79,7 +75,7 @@ function PasteURLModal({ onConfirm, onClose }) {
           <div className="flex items-center gap-2">
             <div
               className="w-8 h-8 rounded-xl flex items-center justify-center"
-              style={{ backgroundColor: "#eff6ff" }}
+              style={{ backgroundColor: BLUE_BG }}
             >
               <IoLinkOutline size={16} color={BLUE} />
             </div>
@@ -195,7 +191,6 @@ function PasteURLModal({ onConfirm, onClose }) {
     </div>
   );
 }
-
 function SectionTitle({ title }) {
   return (
     <h2 className="text-base font-bold mb-5" style={{ color: "#0f172a" }}>
@@ -203,13 +198,11 @@ function SectionTitle({ title }) {
     </h2>
   );
 }
-
 function Divider() {
   return (
     <div style={{ height: 1, backgroundColor: "#f1f5f9", margin: "24px 0" }} />
   );
 }
-
 function FormLabel({ children, required }) {
   return (
     <label
@@ -221,7 +214,6 @@ function FormLabel({ children, required }) {
     </label>
   );
 }
-
 function StyledInput({
   value,
   onChange,
@@ -248,7 +240,6 @@ function StyledInput({
     />
   );
 }
-
 function StyledTextarea({ value, onChange, placeholder, rows = 3 }) {
   return (
     <textarea
@@ -268,7 +259,6 @@ function StyledTextarea({ value, onChange, placeholder, rows = 3 }) {
     />
   );
 }
-
 function GenderRadio({ value, onChange }) {
   const options = ["Male", "Female", "Other", "Prefer not to say"];
   return (
@@ -281,7 +271,7 @@ function GenderRadio({ value, onChange }) {
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer"
           style={{
             border: `1.5px solid ${value === opt ? BLUE : "#e5e7eb"}`,
-            backgroundColor: value === opt ? "#eff6ff" : "#ffffff",
+            backgroundColor: value === opt ? BLUE_BG : "#ffffff",
             color: value === opt ? BLUE : "#374151",
           }}
         >
@@ -310,7 +300,6 @@ function GenderRadio({ value, onChange }) {
     </div>
   );
 }
-
 function SaveButton({ onClick, loading }) {
   return (
     <button
@@ -327,7 +316,6 @@ function SaveButton({ onClick, loading }) {
     </button>
   );
 }
-
 function MiniExpRow({ exp, onEdit, onDelete }) {
   return (
     <div
@@ -382,7 +370,6 @@ function MiniExpRow({ exp, onEdit, onDelete }) {
     </div>
   );
 }
-
 function MiniEduRow({ edu, onEdit, onDelete }) {
   return (
     <div
@@ -426,7 +413,6 @@ function MiniEduRow({ edu, onEdit, onDelete }) {
     </div>
   );
 }
-
 function ExpForm({ value, onChange, onSave, onCancel }) {
   return (
     <div
@@ -525,7 +511,6 @@ function ExpForm({ value, onChange, onSave, onCancel }) {
     </div>
   );
 }
-
 function EduForm({ value, onChange, onSave, onCancel }) {
   return (
     <div
@@ -600,7 +585,6 @@ function EduForm({ value, onChange, onSave, onCancel }) {
     </div>
   );
 }
-
 export default function ProfileEdit({
   form,
   setForm,
@@ -629,9 +613,7 @@ export default function ProfileEdit({
   const [showURLModal, setShowURLModal] = useState(false);
   const fileInputRef = useRef(null);
   const { uploading, error, upload } = usePhotoUpload(setForm);
-
   const isFresher = !!aboutForm.isFresher;
-
   const onDragOver = (e) => {
     e.preventDefault();
     setDragOver(true);
@@ -642,7 +624,6 @@ export default function ProfileEdit({
     setDragOver(false);
     upload(e.dataTransfer.files?.[0]);
   };
-
   const handleSaveExp = () => {
     if (editSection === "exp-new") saveExpToFirebase([...experiences, expForm]);
     else {
@@ -650,7 +631,6 @@ export default function ProfileEdit({
       saveExpToFirebase(experiences.map((e, i) => (i === idx ? expForm : e)));
     }
   };
-
   const handleSaveEdu = () => {
     if (editSection === "edu-new") saveEduToFirebase([...educations, eduForm]);
     else {
@@ -658,7 +638,6 @@ export default function ProfileEdit({
       saveEduToFirebase(educations.map((e, i) => (i === idx ? eduForm : e)));
     }
   };
-
   const langList = Array.isArray(aboutForm.languages)
     ? aboutForm.languages
     : aboutForm.languages
@@ -667,7 +646,6 @@ export default function ProfileEdit({
           .map((l) => l.trim())
           .filter(Boolean)
       : [];
-
   const addLanguage = (val) => {
     const t = val.trim();
     if (t && !langList.includes(t))
@@ -679,7 +657,6 @@ export default function ProfileEdit({
       ...aboutForm,
       languages: langList.filter((l) => l !== lang),
     });
-
   return (
     <>
       {showURLModal && (
@@ -691,7 +668,6 @@ export default function ProfileEdit({
           onClose={() => setShowURLModal(false)}
         />
       )}
-
       <div className="flex gap-5 items-start mb-10">
         <aside
           className="shrink-0 rounded-2xl overflow-hidden"
@@ -711,7 +687,7 @@ export default function ProfileEdit({
                 onClick={() => setActiveTab(item.key)}
                 className="w-full flex items-center gap-3 px-4 py-3.5 text-left transition-all cursor-pointer"
                 style={{
-                  backgroundColor: isActive ? "#eff6ff" : "transparent",
+                  backgroundColor: isActive ? BLUE_BG : "transparent",
                   borderLeft: isActive
                     ? `3px solid ${BLUE}`
                     : "3px solid transparent",
@@ -726,7 +702,6 @@ export default function ProfileEdit({
             );
           })}
         </aside>
-
         <main
           className="flex-1 rounded-2xl overflow-hidden"
           style={{
@@ -739,7 +714,6 @@ export default function ProfileEdit({
             {activeTab === "profile" && (
               <div>
                 <SectionTitle title="Profile Settings" />
-
                 <div className="flex items-center gap-5 mb-6">
                   <div className="relative shrink-0">
                     {form.photoURL ? (
@@ -787,7 +761,6 @@ export default function ProfileEdit({
                       onChange={(e) => upload(e.target.files?.[0])}
                     />
                   </div>
-
                   <div className="flex gap-2 flex-wrap">
                     <button
                       type="button"
@@ -828,7 +801,6 @@ export default function ProfileEdit({
                     )}
                   </div>
                 </div>
-
                 {error && (
                   <p
                     className="text-xs font-bold mb-3"
@@ -837,7 +809,6 @@ export default function ProfileEdit({
                     ⚠ {error}
                   </p>
                 )}
-
                 <div
                   onDragOver={onDragOver}
                   onDragLeave={onDragLeave}
@@ -845,7 +816,7 @@ export default function ProfileEdit({
                   className="flex flex-col items-center gap-2 py-4 rounded-xl mb-6 cursor-pointer transition-all"
                   style={{
                     border: `1.5px dashed ${dragOver ? BLUE : "#d1d5db"}`,
-                    backgroundColor: dragOver ? "#eff6ff" : "#f9fafb",
+                    backgroundColor: dragOver ? BLUE_BG : "#f9fafb",
                   }}
                 >
                   <IoCloudUploadOutline
@@ -859,7 +830,6 @@ export default function ProfileEdit({
                     Drag & drop a photo here
                   </p>
                 </div>
-
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <FormLabel required>First Name</FormLabel>
@@ -910,9 +880,7 @@ export default function ProfileEdit({
                     />
                   </div>
                 </div>
-
                 <Divider />
-
                 <div className="mb-4">
                   <FormLabel>Gender</FormLabel>
                   <GenderRadio
@@ -920,9 +888,7 @@ export default function ProfileEdit({
                     onChange={(v) => setForm({ ...form, gender: v })}
                   />
                 </div>
-
                 <Divider />
-
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <FormLabel>Your Job Title</FormLabel>
@@ -945,7 +911,6 @@ export default function ProfileEdit({
                     />
                   </div>
                 </div>
-
                 <div className="mt-4">
                   <FormLabel>Short Bio</FormLabel>
                   <StyledTextarea
@@ -955,9 +920,7 @@ export default function ProfileEdit({
                     rows={3}
                   />
                 </div>
-
                 <Divider />
-
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <FormLabel>LinkedIn</FormLabel>
@@ -1000,9 +963,7 @@ export default function ProfileEdit({
                     />
                   </div>
                 </div>
-
                 <Divider />
-
                 <label className="flex items-center gap-2.5 text-sm font-semibold text-gray-700 cursor-pointer w-fit mb-4">
                   <input
                     type="checkbox"
@@ -1014,17 +975,14 @@ export default function ProfileEdit({
                   />
                   I am looking for a job right now (Open to Work)
                 </label>
-
                 <div className="flex justify-start">
                   <SaveButton />
                 </div>
               </div>
             )}
-
             {activeTab === "experience" && (
               <div>
                 <SectionTitle title="Work Experience" />
-
                 <div className="mb-4">
                   <label className="flex items-center gap-2.5 text-sm font-semibold text-gray-700 cursor-pointer w-fit">
                     <input
@@ -1053,7 +1011,6 @@ export default function ProfileEdit({
                     </div>
                   )}
                 </div>
-
                 {!isFresher && (
                   <>
                     <div className="flex items-center justify-between mb-3">
@@ -1078,13 +1035,12 @@ export default function ProfileEdit({
                             setEditSection("exp-new");
                           }}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer"
-                          style={{ color: BLUE, backgroundColor: "#eff6ff" }}
+                          style={{ color: BLUE, backgroundColor: BLUE_BG }}
                         >
                           <IoAddOutline size={13} /> Add Job
                         </button>
                       )}
                     </div>
-
                     {editSection === "exp-new" && (
                       <ExpForm
                         value={expForm}
@@ -1096,7 +1052,6 @@ export default function ProfileEdit({
                         }}
                       />
                     )}
-
                     {experiences.length === 0 && editSection !== "exp-new" && (
                       <div
                         className="flex flex-col items-center py-10 rounded-xl"
@@ -1120,7 +1075,6 @@ export default function ProfileEdit({
                         </p>
                       </div>
                     )}
-
                     {experiences.map((exp, i) =>
                       editSection === `exp-${i}` ? (
                         <ExpForm
@@ -1151,9 +1105,7 @@ export default function ProfileEdit({
                     )}
                   </>
                 )}
-
                 <Divider />
-
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-4">
                   <div>
                     <FormLabel>Years of Experience</FormLabel>
@@ -1182,7 +1134,6 @@ export default function ProfileEdit({
                     />
                   </div>
                 </div>
-
                 <div className="mb-4">
                   <FormLabel>About You — for employers</FormLabel>
                   <StyledTextarea
@@ -1197,7 +1148,6 @@ export default function ProfileEdit({
                     rows={3}
                   />
                 </div>
-
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-4">
                   <div>
                     <FormLabel>Expected Yearly Salary</FormLabel>
@@ -1226,7 +1176,6 @@ export default function ProfileEdit({
                     />
                   </div>
                 </div>
-
                 <div className="mb-4">
                   <FormLabel>Job Type & Location Preferences</FormLabel>
                   <KeywordPicker
@@ -1239,17 +1188,14 @@ export default function ProfileEdit({
                     }
                   />
                 </div>
-
                 <div className="flex justify-start">
                   <SaveButton />
                 </div>
               </div>
             )}
-
             {activeTab === "education" && (
               <div>
                 <SectionTitle title="Education" />
-
                 {isGraduate ? (
                   <>
                     <div className="flex items-center justify-between mb-3">
@@ -1282,7 +1228,6 @@ export default function ProfileEdit({
                         </button>
                       )}
                     </div>
-
                     {editSection === "edu-new" && (
                       <EduForm
                         value={eduForm}
@@ -1294,7 +1239,6 @@ export default function ProfileEdit({
                         }}
                       />
                     )}
-
                     {educations.length === 0 && editSection !== "edu-new" && (
                       <div
                         className="flex flex-col items-center py-10 rounded-xl"
@@ -1318,7 +1262,6 @@ export default function ProfileEdit({
                         </p>
                       </div>
                     )}
-
                     {educations.map((edu, i) =>
                       editSection === `edu-${i}` ? (
                         <EduForm
@@ -1365,13 +1308,11 @@ export default function ProfileEdit({
                     </p>
                   </div>
                 )}
-
                 <div className="flex justify-start mt-4">
                   <SaveButton />
                 </div>
               </div>
             )}
-
             {activeTab === "skills" && (
               <div>
                 <SectionTitle title="Skills" />
@@ -1379,7 +1320,6 @@ export default function ProfileEdit({
                   Add at least 3 skills. E.g. MS Excel, Driving, Cooking,
                   React.js…
                 </p>
-
                 <div className="flex flex-wrap gap-2 mb-4">
                   {skills.length === 0 && (
                     <p
@@ -1394,8 +1334,8 @@ export default function ProfileEdit({
                       key={skill}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold"
                       style={{
-                        backgroundColor: "#eff6ff",
-                        border: "1.5px solid #bfdbfe",
+                        backgroundColor: BLUE_BG,
+                        border: "1.5px solid #D6E3F7",
                         color: BLUE,
                       }}
                     >
@@ -1410,7 +1350,6 @@ export default function ProfileEdit({
                     </span>
                   ))}
                 </div>
-
                 <div className="flex gap-2 mb-6">
                   <StyledInput
                     value={skillInput}
@@ -1426,9 +1365,7 @@ export default function ProfileEdit({
                     <IoAddOutline size={15} /> Add
                   </button>
                 </div>
-
                 <Divider />
-
                 <div className="mb-4">
                   <FormLabel>Languages You Speak</FormLabel>
                   {langList.length > 0 && (
@@ -1493,7 +1430,6 @@ export default function ProfileEdit({
                     Press Enter or comma to add · Backspace to remove last
                   </p>
                 </div>
-
                 <div className="flex justify-start">
                   <SaveButton />
                 </div>

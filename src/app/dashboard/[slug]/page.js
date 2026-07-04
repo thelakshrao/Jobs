@@ -14,6 +14,8 @@ import {
   DEFAULT_ABOUT,
   BtnPrimary,
   BtnGhost,
+  BLUE,
+  BLUE_BG,
 } from "@/profileComponents/shared";
 import ProfileCard from "@/profileComponents/ProfileCard";
 import ProfileEdit from "@/profileComponents/Profileedit";
@@ -38,9 +40,9 @@ function LoginPromptModal({ onClose, router }) {
       >
         <div
           className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
-          style={{ backgroundColor: "#eff6ff" }}
+          style={{ backgroundColor: BLUE_BG }}
         >
-          <Briefcase size={22} style={{ color: "#60a5fa" }} />
+          <Briefcase size={22} style={{ color: BLUE }} />
         </div>
         <h2 className="text-lg font-black text-slate-900 mb-1">
           Sign in to continue
@@ -53,7 +55,7 @@ function LoginPromptModal({ onClose, router }) {
           <button
             onClick={() => router.push("/login")}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90"
-            style={{ backgroundColor: "#60a5fa" }}
+            style={{ backgroundColor: BLUE }}
           >
             Sign in
           </button>
@@ -251,7 +253,7 @@ export default function ProfileSlugPage() {
       >
         <div
           className="w-7 h-7 border-[3px] border-t-transparent rounded-full animate-spin"
-          style={{ borderColor: "#60a5fa", borderTopColor: "transparent" }}
+          style={{ borderColor: BLUE, borderTopColor: "transparent" }}
         />
       </div>
     );
@@ -270,7 +272,7 @@ export default function ProfileSlugPage() {
         <button
           onClick={() => router.push("/")}
           className="mt-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white"
-          style={{ backgroundColor: "#60a5fa" }}
+          style={{ backgroundColor: BLUE }}
         >
           Go Home
         </button>
@@ -314,12 +316,19 @@ export default function ProfileSlugPage() {
         {isOwner &&
           !isSimple &&
           (!editing ? (
-            <BtnPrimary className="cursor-pointer" onClick={() => setEditing(true)}>
+            <BtnPrimary
+              className="cursor-pointer"
+              onClick={() => setEditing(true)}
+            >
               <IoPencilOutline size={15} /> Edit Profile
             </BtnPrimary>
           ) : (
             <div className="flex gap-2 flex-wrap">
-              <BtnPrimary className="cursor-pointer" onClick={handleSave} disabled={saving}>
+              <BtnPrimary
+                className="cursor-pointer"
+                onClick={handleSave}
+                disabled={saving}
+              >
                 <IoCheckmarkOutline size={15} />
                 {saving ? "Saving…" : "Save All"}
               </BtnPrimary>
@@ -339,7 +348,7 @@ export default function ProfileSlugPage() {
             <button
               onClick={() => router.push("/login")}
               className="px-4 py-2 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90"
-              style={{ backgroundColor: "#60a5fa" }}
+              style={{ backgroundColor: BLUE }}
             >
               Sign in
             </button>
