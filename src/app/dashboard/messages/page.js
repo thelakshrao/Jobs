@@ -40,7 +40,7 @@ function getColorClass(uid) {
   const classes = [
     { bg: "bg-emerald-50", text: "text-emerald-500" },
     { bg: "bg-violet-50", text: "text-violet-400" },
-    { bg: "bg-blue-50", text: "text-blue-400" },
+    { bg: "bg-blue-50", text: "text-[#004aac]" },
     { bg: "bg-rose-50", text: "text-rose-400" },
     { bg: "bg-amber-50", text: "text-amber-500" },
   ];
@@ -463,7 +463,7 @@ export default function ApplicantMessagesPage() {
     <div
       className={`${isMobile ? "px-3 py-2" : "px-2 md:px-4 py-2"} border-t border-slate-100 bg-white flex items-end gap-2 shrink-0`}
     >
-      <div className="flex-1 flex items-end rounded-xl px-3 py-1.5 border-[1.5px] border-slate-200 bg-slate-50 focus-within:border-blue-400 transition-colors">
+      <div className="flex-1 flex items-end rounded-xl px-3 py-1.5 border-[1.5px] border-slate-200 bg-slate-50 focus-within:border-[#004aac] transition-colors">
         <textarea
           ref={textareaRef}
           value={inputText}
@@ -479,7 +479,7 @@ export default function ApplicantMessagesPage() {
         disabled={!inputText.trim() || sending}
         className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border-none transition-all ${
           inputText.trim()
-            ? "bg-blue-400 text-white cursor-pointer hover:bg-blue-500"
+            ? "bg-[#004aac] text-white cursor-pointer hover:bg-blue-500"
             : "bg-slate-100 text-slate-400 cursor-default"
         }`}
       >
@@ -529,7 +529,7 @@ export default function ApplicantMessagesPage() {
                 <Icon size={13} />
                 {label}
                 {unread > 0 && (
-                  <span className="absolute top-0.5 right-1 min-w-3.5 h-3.5 px-0.5 rounded-full bg-blue-400 text-white text-[8px] font-bold flex items-center justify-center">
+                  <span className="absolute top-0.5 right-1 min-w-3.5 h-3.5 px-0.5 rounded-full bg-[#004aac] text-white text-[8px] font-bold flex items-center justify-center">
                     {unread > 9 ? "9+" : unread}
                   </span>
                 )}
@@ -541,7 +541,7 @@ export default function ApplicantMessagesPage() {
       <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex justify-center items-center h-16">
-            <div className="w-5 h-5 rounded-full border-2 border-blue-200 border-t-blue-400 animate-spin" />
+            <div className="w-5 h-5 rounded-full border-2 border-blue-200 border-t-[#004aac] animate-spin" />
           </div>
         ) : tabConvs.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-32 gap-2 px-4">
@@ -573,7 +573,7 @@ export default function ApplicantMessagesPage() {
                   onClick={() => handleSelectConv(conv)}
                   className={`w-full flex items-center gap-3 px-4 py-3 pr-12 text-left border-none cursor-pointer transition-all border-b border-slate-50 border-l-2 ${
                     isSelected
-                      ? "bg-blue-50 border-l-blue-400"
+                      ? "bg-blue-50 border-l-[#004aac]"
                       : "bg-transparent hover:bg-slate-50 border-l-transparent"
                   }`}
                 >
@@ -606,7 +606,7 @@ export default function ApplicantMessagesPage() {
                         {conv.lastMessage || "No messages yet"}
                       </p>
                       {unread > 0 && (
-                        <span className="shrink-0 min-w-4.5 h-4.5 px-1 rounded-full bg-blue-400 text-white text-[9px] font-bold flex items-center justify-center">
+                        <span className="shrink-0 min-w-4.5 h-4.5 px-1 rounded-full bg-[#004aac] text-white text-[9px] font-bold flex items-center justify-center">
                           {unread > 9 ? "9+" : unread}
                         </span>
                       )}
@@ -730,7 +730,7 @@ export default function ApplicantMessagesPage() {
                                 </p>
                               )}
                               <div
-                                className={`px-3 py-2 text-[13px] leading-relaxed ${isMe ? "bg-blue-400 text-white shadow-sm shadow-blue-200" : "bg-white text-slate-800 border border-slate-200 shadow-sm"}`}
+                                className={`px-3 py-2 text-[13px] leading-relaxed ${isMe ? "bg-[#004aac] text-white shadow-sm shadow-blue-200" : "bg-white text-slate-800 border border-slate-200 shadow-sm"}`}
                                 style={{
                                   borderRadius: isMe
                                     ? isFirstInGroup
@@ -756,7 +756,7 @@ export default function ApplicantMessagesPage() {
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center gap-4 bg-slate-50 h-full">
                 <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center">
-                  <IoChatbubbleOutline size={30} className="text-blue-400" />
+                  <IoChatbubbleOutline size={30} className="text-[#004aac]" />
                 </div>
                 <div className="text-center">
                   <p className="text-[15px] font-bold text-slate-800 mb-1">
@@ -884,7 +884,7 @@ export default function ApplicantMessagesPage() {
                             </p>
                           )}
                           <div
-                            className={`px-3 py-2 text-[13px] leading-relaxed ${isMe ? "bg-blue-400 text-white shadow-sm shadow-blue-200" : "bg-white text-slate-800 border border-slate-200 shadow-sm"}`}
+                            className={`px-3 py-2 text-[13px] leading-relaxed ${isMe ? "bg-[#004aac] text-white shadow-sm shadow-blue-200" : "bg-white text-slate-800 border border-slate-200 shadow-sm"}`}
                             style={{
                               borderRadius: isMe
                                 ? isFirstInGroup

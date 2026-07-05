@@ -7,7 +7,9 @@ import JobCard from "@/dashboardComponents/jobs/JobCard";
 import JobDetail from "@/dashboardComponents/jobs/JobDetail";
 import { Briefcase, X } from "lucide-react";
 
-export default function JobsPage() {
+const BLUE = "#004aac";
+
+export default function JobsContent() {
   const searchParams = useSearchParams();
   const preselectedId = searchParams.get("jobId");
 
@@ -111,7 +113,7 @@ export default function JobsPage() {
       <div className="flex items-center justify-center h-64">
         <div
           className="w-7 h-7 border-[3px] border-t-transparent rounded-full animate-spin"
-          style={{ borderColor: "#60a5fa", borderTopColor: "transparent" }}
+          style={{ borderColor: BLUE, borderTopColor: "transparent" }}
         />
       </div>
     );
@@ -135,9 +137,9 @@ export default function JobsPage() {
         <div className="bg-white rounded-2xl border border-slate-200 flex flex-col items-center justify-center py-24 px-6 text-center">
           <div
             className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
-            style={{ backgroundColor: "#eff6ff" }}
+            style={{ backgroundColor: "#e8f0fb" }}
           >
-            <Briefcase size={24} style={{ color: "#60a5fa" }} />
+            <Briefcase size={24} style={{ color: BLUE }} />
           </div>
           <h2 className="text-lg font-bold text-slate-900 mb-1">
             No jobs found
@@ -148,7 +150,10 @@ export default function JobsPage() {
         </div>
       ) : (
         <div className="flex gap-4 items-start">
-          <div className="shrink-0 flex flex-col gap-3 w-full lg:w-95">
+          <div
+            className="shrink-0 flex flex-col gap-3 w-full lg:w-95 lg:sticky lg:top-6 overflow-y-auto pr-1"
+            style={{ maxHeight: "calc(100vh - 140px)" }}
+          >
             {filtered.map((job) => (
               <JobCard
                 key={job.id}
@@ -161,7 +166,10 @@ export default function JobsPage() {
             ))}
           </div>
 
-          <div className="hidden lg:block flex-1 min-w-0 sticky top-6">
+          <div
+            className="hidden lg:block flex-1 min-w-0 sticky top-6 overflow-y-auto"
+            style={{ maxHeight: "calc(100vh - 140px)" }}
+          >
             {selectedJob && (
               <JobDetail
                 key={selectedJob.id}

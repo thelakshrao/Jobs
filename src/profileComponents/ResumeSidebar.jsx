@@ -184,7 +184,7 @@ export default function ResumeSidebar() {
                   </a>
                   <button
                     onClick={handleDelete}
-                    className="flex items-center gap-2 px-3 py-2.5 text-xs font-semibold w-full text-left"
+                    className="flex items-center gap-2 px-3 py-2.5 text-xs font-semibold w-full text-left cursor-pointer"
                     style={{ color: "#ef4444" }}
                     onMouseEnter={(e) =>
                       (e.currentTarget.style.backgroundColor = "#fff5f5")
@@ -221,7 +221,7 @@ export default function ResumeSidebar() {
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
-          className="w-full flex items-center justify-center gap-2 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all"
+          className="w-full flex items-center justify-center gap-2 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer"
           style={{
             border: `1.5px solid ${uploading ? "#e2e8f0" : BLUE}`,
             color: uploading ? "#94a3b8" : BLUE,

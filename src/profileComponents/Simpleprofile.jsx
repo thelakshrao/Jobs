@@ -364,7 +364,7 @@ export default function SimpleProfile({ onComplete }) {
                   <button
                     onClick={() => fileRef.current?.click()}
                     disabled={uploading}
-                    className="absolute inset-0 flex flex-col items-center justify-center gap-1 rounded-[40px] transition-all"
+                    className="absolute inset-0 flex flex-col items-center justify-center gap-1 rounded-[40px] transition-all cursor-pointer"
                     style={{ backgroundColor: "rgba(0,0,0,0.42)" }}
                   >
                     {uploading ? (
@@ -528,7 +528,7 @@ export default function SimpleProfile({ onComplete }) {
                     <button
                       key={opt}
                       onClick={() => setEducation(opt)}
-                      className="w-full text-left px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all"
+                      className="w-full text-left px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all cursor-pointer"
                       style={{
                         border: `2px solid ${education === opt ? BLUE : "#e2e8f0"}`,
                         backgroundColor:
@@ -565,7 +565,7 @@ export default function SimpleProfile({ onComplete }) {
                     <button
                       key={opt}
                       onClick={() => setExpYears(opt)}
-                      className="px-3 py-3 rounded-2xl text-sm font-semibold transition-all text-center"
+                      className="px-3 py-3 rounded-2xl text-sm font-semibold transition-all text-center cursor-pointer"
                       style={{
                         border: `2px solid ${expYears === opt ? BLUE : "#e2e8f0"}`,
                         backgroundColor: expYears === opt ? BLUE_BG : "#f8fafc",
@@ -595,7 +595,7 @@ export default function SimpleProfile({ onComplete }) {
                     <button
                       key={opt}
                       onClick={() => setSalary(opt)}
-                      className="w-full text-left px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all"
+                      className="w-full text-left px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all cursor-pointer"
                       style={{
                         border: `2px solid ${salary === opt ? BLUE : "#e2e8f0"}`,
                         backgroundColor: salary === opt ? BLUE_BG : "#f8fafc",
@@ -687,7 +687,7 @@ export default function SimpleProfile({ onComplete }) {
                 ))}
                 <button
                   onClick={addEmployer}
-                  className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-2xl transition-all"
+                  className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-2xl transition-all cursor-pointer"
                   style={{
                     backgroundColor: BLUE_BG,
                     color: BLUE,
@@ -732,7 +732,7 @@ export default function SimpleProfile({ onComplete }) {
             {step > 0 && (
               <button
                 onClick={() => setStep(step - 1)}
-                className="px-5 py-3 rounded-2xl text-sm font-bold transition-all"
+                className="px-5 py-3 rounded-2xl text-sm font-bold transition-all cursor-pointer"
                 style={{ backgroundColor: "#f1f5f9", color: "#64748b" }}
               >
                 Back
@@ -743,7 +743,7 @@ export default function SimpleProfile({ onComplete }) {
                 onClick={() => {
                   if (canNext()) setStep(step + 1);
                 }}
-                className="flex-1 py-3 rounded-2xl text-sm font-bold text-white transition-all"
+                className="flex-1 py-3 rounded-2xl text-sm font-bold text-white transition-all cursor-pointer"
                 style={{
                   backgroundColor: canNext() ? BLUE : "#e2e8f0",
                   color: canNext() ? "white" : "#94a3b8",
@@ -755,7 +755,7 @@ export default function SimpleProfile({ onComplete }) {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex-1 py-3 rounded-2xl text-sm font-bold text-white flex items-center justify-center gap-2"
+                className="flex-1 py-3 rounded-2xl text-sm font-bold text-white flex items-center justify-center gap-2 cursor-pointer"
                 style={{ backgroundColor: BLUE }}
               >
                 <IoCheckmarkOutline size={16} />

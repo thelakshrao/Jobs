@@ -25,9 +25,7 @@ import {
 import ProfileStrength from "@/profileComponents/ProfileStrength";
 import { computeCompletedItems } from "@/lib/Computecompleteditems";
 import { DEFAULT_PROFILE, DEFAULT_ABOUT } from "@/profileComponents/shared";
-
-const BLUE = "#60a5fa";
-
+const BLUE = "#004aac";
 function timeAgo(dateVal) {
   if (!dateVal) return null;
   const date = dateVal?.toDate ? dateVal.toDate() : new Date(dateVal);
@@ -48,9 +46,7 @@ function timeAgo(dateVal) {
   if (months === 1) return "1 month ago";
   return `${months} months ago`;
 }
-
 const TABS = ["Saved", "Applied"];
-
 const PIPELINE_STAGES = [
   { key: "applied", label: "Applied" },
   { key: "viewed", label: "Application\nViewed" },
@@ -58,7 +54,6 @@ const PIPELINE_STAGES = [
   { key: "interview", label: "Hiring\nProcess" },
   { key: "hired", label: "Hired" },
 ];
-
 function computeStageStates(app) {
   const status = app.status || "Applied";
   const hasViewed = !!(
@@ -66,10 +61,8 @@ function computeStageStates(app) {
     app.resumeViewedAt ||
     app.profileViewedAt
   );
-
   let currentIdx = 0;
   let rejectedIdx = null;
-
   if (status === "Hired") {
     currentIdx = 4;
   } else if (status === "Interviewing") {
@@ -77,7 +70,6 @@ function computeStageStates(app) {
   } else if (status === "Shortlisted") {
     currentIdx = 2;
   } else if (status === "Rejected") {
-
     if (app.interviewingAt) {
       currentIdx = 3;
       rejectedIdx = 3;
@@ -91,7 +83,6 @@ function computeStageStates(app) {
   } else {
     currentIdx = hasViewed ? 1 : 0;
   }
-
   return PIPELINE_STAGES.map((stage, i) => {
     if (rejectedIdx !== null && i === rejectedIdx) return "rejected";
     if (i < currentIdx) return "done";
@@ -99,7 +90,6 @@ function computeStageStates(app) {
     return "pending";
   });
 }
-
 function getStageDate(app, key) {
   switch (key) {
     case "applied":
@@ -132,14 +122,12 @@ function getStageDate(app, key) {
       return null;
   }
 }
-
 function getStageLabel(app, key, state) {
   if (key === "shortlist" && state === "rejected") return "Not\nShortlisted";
   if (key === "interview" && state === "rejected") return "Did Not\nAdvance";
   if (key === "hired" && app.status !== "Hired") return "Hired";
   return PIPELINE_STAGES.find((s) => s.key === key)?.label || "";
 }
-
 function fmtDate(dateVal) {
   if (!dateVal) return null;
   const d = dateVal?.toDate ? dateVal.toDate() : new Date(dateVal);
@@ -150,10 +138,8 @@ function fmtDate(dateVal) {
     year: "2-digit",
   });
 }
-
 function PipelineTracker({ app }) {
   const states = computeStageStates(app);
-
   const dotStyle = (state) => ({
     bg:
       state === "done"
@@ -173,7 +159,6 @@ function PipelineTracker({ app }) {
             : "#cbd5e1",
     ring: state === "active",
   });
-
   const lineColor = (i) => {
     const next = states[i + 1];
     if (next === "rejected") return "#ef4444";
@@ -181,18 +166,17 @@ function PipelineTracker({ app }) {
       return "#22c55e";
     return "#e2e8f0";
   };
-
   return (
     <div
       className="w-full overflow-x-auto"
       style={{
-        paddingLeft: 8,
-        paddingRight: 8,
-        paddingTop: 16,
-        paddingBottom: 8,
+        paddingLeft: 6,
+        paddingRight: 6,
+        paddingTop: 10,
+        paddingBottom: 4,
       }}
     >
-      <div style={{ minWidth: 380, display: "flex", alignItems: "flex-start" }}>
+      <div style={{ minWidth: 360, display: "flex", alignItems: "flex-start" }}>
         {PIPELINE_STAGES.map((stage, i) => {
           const state = states[i];
           const d = dotStyle(state);
@@ -205,7 +189,6 @@ function PipelineTracker({ app }) {
               : state === "done" || state === "active"
                 ? "#0f172a"
                 : "#94a3b8";
-
           return (
             <div
               key={stage.key}
@@ -228,14 +211,13 @@ function PipelineTracker({ app }) {
                     borderRadius: 999,
                   }}
                 />
-
                 <div style={{ position: "relative", flexShrink: 0 }}>
                   {d.ring && (
                     <div
                       className="animate-ping"
                       style={{
                         position: "absolute",
-                        inset: -5,
+                        inset: -4,
                         borderRadius: "50%",
                         backgroundColor: "#22c55e",
                         opacity: 0.25,
@@ -244,8 +226,8 @@ function PipelineTracker({ app }) {
                   )}
                   <div
                     style={{
-                      width: 24,
-                      height: 24,
+                      width: 20,
+                      height: 20,
                       borderRadius: "50%",
                       border: `2px solid ${d.border}`,
                       backgroundColor: d.bg,
@@ -258,13 +240,13 @@ function PipelineTracker({ app }) {
                     }}
                   >
                     {state === "done" && (
-                      <Check size={11} color="#fff" strokeWidth={3.5} />
+                      <Check size={10} color="#fff" strokeWidth={3.5} />
                     )}
                     {state === "active" && (
                       <div
                         style={{
-                          width: 8,
-                          height: 8,
+                          width: 7,
+                          height: 7,
                           borderRadius: "50%",
                           backgroundColor: "#22c55e",
                         }}
@@ -272,8 +254,8 @@ function PipelineTracker({ app }) {
                     )}
                     {state === "rejected" && (
                       <svg
-                        width="10"
-                        height="10"
+                        width="9"
+                        height="9"
                         viewBox="0 0 10 10"
                         fill="none"
                       >
@@ -287,7 +269,6 @@ function PipelineTracker({ app }) {
                     )}
                   </div>
                 </div>
-
                 <div
                   style={{
                     flex: 1,
@@ -297,10 +278,9 @@ function PipelineTracker({ app }) {
                   }}
                 />
               </div>
-
               <div
                 style={{
-                  marginTop: 8,
+                  marginTop: 6,
                   textAlign: "center",
                   paddingLeft: 2,
                   paddingRight: 2,
@@ -309,10 +289,10 @@ function PipelineTracker({ app }) {
                 <span
                   style={{
                     display: "block",
-                    fontSize: 10,
+                    fontSize: 9,
                     fontWeight: 900,
                     color: labelColor,
-                    lineHeight: 1.3,
+                    lineHeight: 1.25,
                     whiteSpace: "pre-line",
                   }}
                 >
@@ -322,10 +302,10 @@ function PipelineTracker({ app }) {
                   <span
                     style={{
                       display: "block",
-                      fontSize: 9,
+                      fontSize: 8,
                       fontWeight: 600,
                       color: "#94a3b8",
-                      marginTop: 2,
+                      marginTop: 1,
                     }}
                   >
                     {date}
@@ -339,7 +319,6 @@ function PipelineTracker({ app }) {
     </div>
   );
 }
-
 export default function MyJobsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("Applied");
@@ -353,7 +332,6 @@ export default function MyJobsPage() {
   const [educations, setEducations] = useState([]);
   const [resumeURL, setResumeURL] = useState("");
   const [profileSlug, setProfileSlug] = useState(null);
-
   const isGraduate = about.educationLevel === "graduate";
   const isSimple = profile.profileType === "simple";
   const completedItems = computeCompletedItems({
@@ -364,7 +342,6 @@ export default function MyJobsPage() {
     resumeURL,
   });
   const showStrength = isGraduate && !isSimple;
-
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -382,7 +359,6 @@ export default function MyJobsPage() {
           setResumeURL(data.resumeURL || data.resume?.url || "");
           setProfileSlug(data.slug || null);
         }
-
         const savedSnap = await getDocs(
           query(
             collection(db, "savedJobs"),
@@ -407,7 +383,6 @@ export default function MyJobsPage() {
               (job.applicationDeadline && job.applicationDeadline < today),
           })),
         );
-
         const savedProjSnap = await getDocs(
           query(
             collection(db, "savedProjects"),
@@ -428,7 +403,6 @@ export default function MyJobsPage() {
             isClosed: proj.deadline && proj.deadline < today,
           })),
         );
-
         const appliedSnap = await getDocs(
           query(
             collection(db, "applications"),
@@ -455,12 +429,10 @@ export default function MyJobsPage() {
     });
     return () => unsub();
   }, []);
-
   const counts = {
     Saved: savedJobs.length + savedProjects.length,
     Applied: appliedJobs.length,
   };
-
   const now = new Date();
   const recentApplied = appliedJobs.filter((a) => {
     const d = a.appliedAt?.toDate
@@ -474,28 +446,22 @@ export default function MyJobsPage() {
       : new Date(a.appliedAt);
     return (now - d) / (1000 * 60 * 60 * 24) > 14;
   });
-
   const isEmpty =
     (activeTab === "Saved" &&
       savedJobs.length === 0 &&
       savedProjects.length === 0) ||
     (activeTab === "Applied" && appliedJobs.length === 0);
-
   const goToProfile = () =>
     profileSlug
       ? router.push(`/dashboard/${profileSlug}`)
       : router.push("/dashboard/profile");
-
   return (
     <main className="min-h-screen bg-[#f8fafc] pb-16 md:pb-0">
       <div className="w-full max-w-6xl mx-auto pt-3 md:pt-6">
-        <h1 className="text-2xl md:text-3xl font-black text-slate-900 mb-3 px-3 sm:px-6">
-          My jobs
-        </h1>
         <div className="flex flex-col lg:flex-row gap-6 items-start">
           <div className="flex-1 min-w-0 w-full">
             {showStrength && (
-              <div className="lg:hidden mb-3">
+              <div className="lg:hidden mb-3 px-3 sm:px-6">
                 <ProfileStrength
                   completedItems={completedItems}
                   isGraduate={isGraduate}
@@ -504,8 +470,16 @@ export default function MyJobsPage() {
                 />
               </div>
             )}
-            <div className="px-3 sm:px-6">
-              <div className="flex border-b border-slate-200 mb-6 gap-6">
+
+            {/* Sticky header: title + tabs stay pinned while the list below scrolls */}
+            <div
+              className="sticky top-0 z-20 bg-[#f8fafc] px-3 sm:px-6 pt-1 pb-0"
+              style={{ boxShadow: "0 1px 0 0 rgba(0,0,0,0.02)" }}
+            >
+              <h1 className="text-2xl md:text-3xl font-black text-slate-900 mb-3">
+                My jobs
+              </h1>
+              <div className="flex border-b border-slate-200 gap-6">
                 {TABS.map((tab) => {
                   const active = activeTab === tab;
                   return (
@@ -529,7 +503,9 @@ export default function MyJobsPage() {
                   );
                 })}
               </div>
+            </div>
 
+            <div className="px-3 sm:px-6 pt-4">
               {loading ? (
                 <div className="flex items-center justify-center h-64">
                   <div
@@ -569,18 +545,18 @@ export default function MyJobsPage() {
                   </Link>
                 </div>
               ) : activeTab === "Saved" ? (
-                <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-5">
                   {savedJobs.length > 0 && (
                     <div>
-                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">
+                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
                         Jobs
                       </p>
-                      <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-2">
                         {savedJobs.map((job) => (
                           <Link
                             key={job.id}
                             href={`/dashboard/jobs?jobId=${job.id}`}
-                            className="bg-white rounded-2xl border px-5 py-4 flex items-start gap-4 transition-all group"
+                            className="bg-white rounded-xl border px-4 py-3 flex items-center gap-3 transition-all group"
                             style={{
                               borderColor: "#e2e8f0",
                               boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
@@ -595,7 +571,7 @@ export default function MyJobsPage() {
                             }
                           >
                             <div
-                              className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                              className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
                               style={{
                                 backgroundColor: job.isClosed
                                   ? "#f1f5f9"
@@ -603,28 +579,28 @@ export default function MyJobsPage() {
                               }}
                             >
                               {job.isClosed ? (
-                                <Lock size={18} className="text-slate-400" />
+                                <Lock size={16} className="text-slate-400" />
                               ) : (
-                                <Briefcase size={18} style={{ color: BLUE }} />
+                                <Briefcase size={16} style={{ color: BLUE }} />
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                                <p className="text-lg md:text-xl font-black text-slate-900 leading-tight">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="text-sm md:text-base font-black text-slate-900 leading-tight truncate">
                                   {job.title}
                                 </p>
                                 {job.isClosed && (
-                                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">
+                                  <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 shrink-0">
                                     Closed
                                   </span>
                                 )}
                               </div>
-                              <p className="text-sm font-semibold text-slate-500">
+                              <p className="text-xs font-bold text-slate-500 truncate">
                                 {job.companyName || "Company"}
                               </p>
                               {(job.location || job.targetCountry) && (
-                                <p className="text-xs text-slate-400 flex items-center gap-1 mt-1">
-                                  <MapPin size={10} />
+                                <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5 truncate">
+                                  <MapPin size={9} className="shrink-0" />
                                   {[job.location, job.targetCountry]
                                     .filter(Boolean)
                                     .join(", ")}
@@ -632,8 +608,8 @@ export default function MyJobsPage() {
                               )}
                             </div>
                             <ChevronRight
-                              size={16}
-                              className="shrink-0 mt-1"
+                              size={15}
+                              className="shrink-0"
                               style={{ color: "#bfdbfe" }}
                             />
                           </Link>
@@ -641,19 +617,18 @@ export default function MyJobsPage() {
                       </div>
                     </div>
                   )}
-
                   {savedProjects.length > 0 && (
                     <div>
-                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
                         <HardHat size={12} />
                         Projects
                       </p>
-                      <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-2">
                         {savedProjects.map((proj) => (
                           <Link
                             key={proj.id}
                             href={`/dashboard/projects?projectId=${proj.id}`}
-                            className="bg-white rounded-2xl border px-5 py-4 flex items-start gap-4 transition-all group"
+                            className="bg-white rounded-xl border px-4 py-3 flex items-center gap-3 transition-all group"
                             style={{
                               borderColor: "#e2e8f0",
                               boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
@@ -668,7 +643,7 @@ export default function MyJobsPage() {
                             }
                           >
                             <div
-                              className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                              className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
                               style={{
                                 backgroundColor: proj.isClosed
                                   ? "#f1f5f9"
@@ -676,54 +651,52 @@ export default function MyJobsPage() {
                               }}
                             >
                               {proj.isClosed ? (
-                                <Lock size={18} className="text-slate-400" />
+                                <Lock size={16} className="text-slate-400" />
                               ) : (
                                 <HardHat
-                                  size={18}
+                                  size={16}
                                   style={{ color: "#f97316" }}
                                 />
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                                <p className="text-lg md:text-xl font-black text-slate-900 leading-tight">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="text-sm md:text-base font-black text-slate-900 leading-tight truncate">
                                   {proj.title}
                                 </p>
                                 {proj.isClosed && (
-                                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">
+                                  <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 shrink-0">
                                     Closed
                                   </span>
                                 )}
                               </div>
-                              <p className="text-sm font-semibold text-slate-500">
+                              <p className="text-xs font-bold text-slate-500 truncate">
                                 {proj.company || "Company"}
                               </p>
-                              {(proj.projectType || proj.workType) && (
-                                <div className="flex flex-wrap gap-1.5 mt-2">
-                                  {proj.projectType && (
-                                    <span className="border border-slate-300 text-slate-600 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
-                                      {proj.projectType}
-                                    </span>
-                                  )}
-                                  {proj.workType && (
-                                    <span className="border border-red-300 text-red-500 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
-                                      {proj.workType}
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                              {(proj.location || proj.state) && (
-                                <p className="text-xs text-slate-400 flex items-center gap-1 mt-1.5">
-                                  <MapPin size={10} />
-                                  {[proj.location, proj.state]
-                                    .filter(Boolean)
-                                    .join(", ")}
-                                </p>
-                              )}
+                              <div className="flex items-center gap-2 flex-wrap mt-1">
+                                {proj.projectType && (
+                                  <span className="border border-slate-300 text-slate-600 text-[9px] font-bold px-2 py-0.5 rounded-full">
+                                    {proj.projectType}
+                                  </span>
+                                )}
+                                {proj.workType && (
+                                  <span className="border border-red-300 text-red-500 text-[9px] font-bold px-2 py-0.5 rounded-full">
+                                    {proj.workType}
+                                  </span>
+                                )}
+                                {(proj.location || proj.state) && (
+                                  <p className="text-[11px] text-slate-400 flex items-center gap-1 truncate">
+                                    <MapPin size={9} className="shrink-0" />
+                                    {[proj.location, proj.state]
+                                      .filter(Boolean)
+                                      .join(", ")}
+                                  </p>
+                                )}
+                              </div>
                             </div>
                             <ChevronRight
-                              size={16}
-                              className="shrink-0 mt-1"
+                              size={15}
+                              className="shrink-0"
                               style={{ color: "#bfdbfe" }}
                             />
                           </Link>
@@ -733,10 +706,10 @@ export default function MyJobsPage() {
                   )}
                 </div>
               ) : (
-                <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-5">
                   {recentApplied.length > 0 && (
                     <div>
-                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">
+                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
                         Last 14 days
                       </p>
                       <div className="flex flex-col gap-2">
@@ -748,7 +721,7 @@ export default function MyJobsPage() {
                   )}
                   {olderApplied.length > 0 && (
                     <div>
-                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">
+                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
                         Older
                       </p>
                       <div className="flex flex-col gap-2">
@@ -762,9 +735,8 @@ export default function MyJobsPage() {
               )}
             </div>
           </div>
-
           {showStrength && (
-            <div className="hidden lg:block shrink-0 w-72">
+            <div className="hidden lg:block shrink-0 w-72 sticky top-6 self-start">
               <ProfileStrength
                 completedItems={completedItems}
                 isGraduate={isGraduate}
@@ -777,7 +749,6 @@ export default function MyJobsPage() {
     </main>
   );
 }
-
 function AppliedCard({ app }) {
   const when = timeAgo(app.appliedAt);
   const isProject = app.type === "project";
@@ -786,13 +757,11 @@ function AppliedCard({ app }) {
   const linkHref = isProject
     ? `/dashboard/projects?projectId=${app.projectId}`
     : `/dashboard/jobs?jobId=${app.jobId}`;
-
   const isRejected = app.status === "Rejected";
   const isHired = app.status === "Hired";
-
   return (
     <div
-      className="bg-white rounded-2xl border px-5 py-4"
+      className="bg-white rounded-xl border px-4 py-3"
       style={{
         boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
         borderColor: isRejected ? "#fca5a5" : isHired ? "#86efac" : "#e2e8f0",
@@ -803,41 +772,44 @@ function AppliedCard({ app }) {
             : "#ffffff",
       }}
     >
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-3">
         <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+          className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
           style={{ backgroundColor: isProject ? "#fff7ed" : "#eff6ff" }}
         >
           {isProject ? (
-            <HardHat size={18} style={{ color: "#f97316" }} />
+            <HardHat size={16} style={{ color: "#f97316" }} />
           ) : (
-            <Briefcase size={18} style={{ color: BLUE }} />
+            <Briefcase size={16} style={{ color: BLUE }} />
           )}
         </div>
         <div className="flex-1 min-w-0">
           <Link
             href={linkHref}
-            className="block text-lg md:text-xl font-black text-slate-900 leading-tight hover:underline underline-offset-2"
+            className="block text-sm md:text-base font-black text-slate-900 leading-tight hover:underline underline-offset-2 truncate"
           >
             {title}
           </Link>
-          <p className="text-sm font-semibold text-slate-500 mt-0.5">
-            {company}
-          </p>
-          {app.applicantLocation && (
-            <p className="text-xs text-slate-400 flex items-center gap-1 mt-1">
-              <MapPin size={10} />
-              {app.applicantLocation}
+          <div className="flex items-center gap-2 flex-wrap mt-0.5">
+            <p className="text-xs font-bold text-slate-500 truncate">
+              {company}
             </p>
-          )}
-          {when && (
-            <p className="text-xs text-slate-400 mt-1">Applied {when}</p>
-          )}
+            {app.applicantLocation && (
+              <p className="text-[11px] text-slate-400 flex items-center gap-1 truncate">
+                <MapPin size={9} className="shrink-0" />
+                {app.applicantLocation}
+              </p>
+            )}
+            {when && (
+              <p className="text-[11px] text-slate-400 shrink-0">
+                Applied {when}
+              </p>
+            )}
+          </div>
         </div>
       </div>
-
-      <div className="mt-4 pt-4 border-t border-slate-100">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">
+      <div className="mt-2 pt-2 border-t border-slate-100">
+        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">
           Application status
         </p>
         <PipelineTracker app={app} />

@@ -206,7 +206,7 @@ export default function ProfileStrength({
 
           <button
             onClick={onImprove}
-            className="mt-5 w-full py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-1.5"
+            className="mt-5 w-full py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             style={{ backgroundColor: BLUE_BG, color: BLUE }}
             onMouseEnter={(e) =>
               (e.currentTarget.style.backgroundColor = BLUE_BG_HOVER)
@@ -267,7 +267,7 @@ export default function ProfileStrength({
             <CheckList small />
             <button
               onClick={onImprove}
-              className="mt-2 w-full py-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1"
+              className="mt-2 w-full py-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer"
               style={{ backgroundColor: BLUE_BG, color: BLUE }}
               onMouseEnter={(e) =>
                 (e.currentTarget.style.backgroundColor = BLUE_BG_HOVER)

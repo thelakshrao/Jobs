@@ -106,7 +106,7 @@ function ChipSelect({ label, options, value, onChange }) {
             <button
               key={opt}
               onClick={() => onChange(opt)}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold transition-all"
+              className="px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer"
               style={{
                 border: `1.5px solid ${active ? BLUE : "#e2e8f0"}`,
                 backgroundColor: active ? BLUE_BG : "#f8fafc",
@@ -155,7 +155,7 @@ function EmployerCard({ emp, onEdit, onDelete }) {
           )}
         </div>
       </div>
-      <div className="flex gap-2 shrink-0">
+      <div className="flex gap-2 shrink-0 cursor-pointer">
         <button onClick={onEdit} style={{ color: "#94a3b8" }}>
           <IoPencilOutline size={14} />
         </button>
@@ -196,14 +196,14 @@ function EmployerForm({ value, onChange, onSave, onCancel }) {
       <div className="flex gap-2">
         <button
           onClick={onSave}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white cursor-pointer"
           style={{ backgroundColor: BLUE }}
         >
           <IoCheckmarkOutline size={13} /> Save
         </button>
         <button
           onClick={onCancel}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer"
           style={{ backgroundColor: "#f1f5f9", color: "#64748b" }}
         >
           <IoCloseOutline size={13} /> Cancel
@@ -311,7 +311,7 @@ function SimpleProfileViewCard({
             <button
               onClick={() => fileRef.current?.click()}
               disabled={photoUploading}
-              className="absolute inset-0 flex flex-col items-center justify-center gap-1 transition-all opacity-0 hover:opacity-100"
+              className="absolute inset-0 flex flex-col items-center justify-center gap-1 transition-all opacity-0 hover:opacity-100 cursor-pointer"
               style={{ borderRadius: 36, backgroundColor: "rgba(0,0,0,0.42)" }}
             >
               {photoUploading ? (
@@ -624,7 +624,7 @@ function SimpleProfileEditForm({ profile, employers, onSave, onCancel }) {
             <button
               onClick={() => fileRef.current?.click()}
               disabled={uploading}
-              className="absolute inset-0 flex flex-col items-center justify-center gap-1 opacity-0 hover:opacity-100 transition-all"
+              className="absolute inset-0 flex flex-col items-center justify-center gap-1 opacity-0 hover:opacity-100 transition-all cursor-pointer"
               style={{ borderRadius: 22, backgroundColor: "rgba(0,0,0,0.45)" }}
             >
               {uploading ? (
@@ -737,7 +737,7 @@ function SimpleProfileEditForm({ profile, employers, onSave, onCancel }) {
           {!addingNew && editIdx === null && (
             <button
               onClick={() => setAddingNew(true)}
-              className="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl"
+              className="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl cursor-pointer"
               style={{
                 backgroundColor: BLUE_BG,
                 color: BLUE,
@@ -841,7 +841,7 @@ function SimpleProfileEditForm({ profile, employers, onSave, onCancel }) {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-extrabold text-white"
+          className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-extrabold text-white cursor-pointer"
           style={{ backgroundColor: BLUE }}
         >
           <IoCheckmarkOutline size={16} />
@@ -849,7 +849,7 @@ function SimpleProfileEditForm({ profile, employers, onSave, onCancel }) {
         </button>
         <button
           onClick={onCancel}
-          className="px-5 py-3.5 rounded-2xl text-sm font-bold"
+          className="px-5 py-3.5 rounded-2xl text-sm font-bold cursor-pointer"
           style={{ backgroundColor: "#f1f5f9", color: "#64748b" }}
         >
           Cancel

@@ -54,14 +54,14 @@ function LoginPromptModal({ onClose, router }) {
         <div className="flex gap-2">
           <button
             onClick={() => router.push("/login")}
-            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90"
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90 cursor-pointer"
             style={{ backgroundColor: BLUE }}
           >
             Sign in
           </button>
           <button
             onClick={() => router.push("/signup")}
-            className="flex-1 py-2.5 rounded-xl text-sm font-bold border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
           >
             Sign up
           </button>
@@ -271,7 +271,7 @@ export default function ProfileSlugPage() {
         </p>
         <button
           onClick={() => router.push("/")}
-          className="mt-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white"
+          className="mt-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white cursor-pointer"
           style={{ backgroundColor: BLUE }}
         >
           Go Home
@@ -347,14 +347,14 @@ export default function ProfileSlugPage() {
           <div className="flex gap-2">
             <button
               onClick={() => router.push("/login")}
-              className="px-4 py-2 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90"
+              className="px-4 py-2 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90 cursor-pointer"
               style={{ backgroundColor: BLUE }}
             >
               Sign in
             </button>
             <button
               onClick={() => router.push("/signup")}
-              className="px-4 py-2 rounded-xl text-sm font-bold border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 transition-colors"
+              className="px-4 py-2 rounded-xl text-sm font-bold border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 transition-colors cursor-pointer"
             >
               Sign up
             </button>

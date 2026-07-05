@@ -32,7 +32,7 @@ export default function TabsSection({
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className="px-4 sm:px-5 py-3 text-sm font-semibold transition-all whitespace-nowrap shrink-0"
+              className="px-4 sm:px-5 py-3 text-sm font-semibold transition-all whitespace-nowrap shrink-0 cursor-pointer"
               style={{
                 color: safeTab === tab ? BLUE : "#64748b",
                 borderBottom:

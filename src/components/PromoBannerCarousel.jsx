@@ -90,7 +90,6 @@ export default function PromoBannerCarousel({ router, userName }) {
         minHeight: 200,
       }}
     >
-      {/* decorative blobs */}
       <div
         className="absolute -right-10 -top-10 w-56 h-56 rounded-full"
         style={{ backgroundColor: "rgba(255,255,255,0.08)" }}
@@ -117,7 +116,7 @@ export default function PromoBannerCarousel({ router, userName }) {
           </p>
           <button
             onClick={() => router.push(banner.path)}
-            className="inline-flex items-center gap-2 bg-white text-[#004AAC] font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-white/90 transition-colors"
+            className="inline-flex items-center gap-2 bg-white text-[#004AAC] font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-white/90 transition-colors cursor-pointer"
           >
             {banner.cta}
             <ArrowRight size={15} />

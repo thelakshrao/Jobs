@@ -92,7 +92,7 @@ function EmployerCard({ emp, index, onEdit, onDelete, isOwner }) {
         </div>
       </div>
       {isOwner && (
-        <div className="flex gap-1.5 shrink-0">
+        <div className="flex gap-1.5 shrink-0 cursor-pointer">
           <button onClick={onEdit} style={{ color: "#94a3b8" }}>
             <IoPencilOutline size={13} />
           </button>
@@ -133,14 +133,14 @@ function EmployerForm({ value, onChange, onSave, onCancel }) {
       <div className="flex gap-2">
         <button
           onClick={onSave}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white cursor-pointer"
           style={{ backgroundColor: BLUE }}
         >
           <IoCheckmarkOutline size={13} /> Save
         </button>
         <button
           onClick={onCancel}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer"
           style={{ backgroundColor: "#f1f5f9", color: "#64748b" }}
         >
           <IoCloseOutline size={13} /> Cancel
@@ -274,7 +274,7 @@ export default function SimpleProfileCard({
                 <button
                   onClick={() => fileRef.current?.click()}
                   disabled={photoUploading}
-                  className="absolute inset-0 flex flex-col items-center justify-center gap-1 transition-all opacity-0 hover:opacity-100"
+                  className="absolute inset-0 flex flex-col items-center justify-center gap-1 transition-all opacity-0 hover:opacity-100 cursor-pointer"
                   style={{
                     borderRadius: 36,
                     backgroundColor: "rgba(0,0,0,0.45)",
@@ -414,7 +414,7 @@ export default function SimpleProfileCard({
           {isOwner && !addingNew && editIdx === null && (
             <button
               onClick={() => setAddingNew(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
               style={{
                 backgroundColor: BLUE_BG,
                 color: BLUE,
@@ -481,7 +481,7 @@ export default function SimpleProfileCard({
               {isOwner && (
                 <button
                   onClick={() => setAddingNew(true)}
-                  className="text-xs font-bold px-4 py-2 rounded-xl mt-1"
+                  className="text-xs font-bold px-4 py-2 rounded-xl mt-1 cursor-pointer"
                   style={{ backgroundColor: BLUE_BG, color: BLUE }}
                 >
                   + Add your first job

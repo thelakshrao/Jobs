@@ -16,6 +16,9 @@ import { auth, db } from "@/lib/firebase";
 import { doc, setDoc, deleteDoc } from "firebase/firestore";
 import JobApplyModal from "@/dashboardComponents/jobs/Jobapplymodal";
 
+const BLUE = "#004aac";
+const BLUE_HOVER = "#003a8c";
+
 function formatSalary(job) {
   const sym = job.currencies?.[0] || "₹";
   if (job.payStructure === "Negotiable") return "Negotiable";
@@ -76,13 +79,11 @@ export default function JobDetail({ job, isSaved, onSaveToggle }) {
           target="_blank"
           rel="noopener noreferrer"
           className={`flex items-center justify-center gap-2 rounded-xl text-sm font-bold transition-all cursor-pointer ${fullWidth ? "w-full py-3" : "px-6 py-2.5"}`}
-          style={{ backgroundColor: "#60a5fa", color: "#ffffff" }}
+          style={{ backgroundColor: BLUE, color: "#ffffff" }}
           onMouseEnter={(e) =>
-            (e.currentTarget.style.backgroundColor = "#3b82f6")
+            (e.currentTarget.style.backgroundColor = BLUE_HOVER)
           }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.backgroundColor = "#60a5fa")
-          }
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = BLUE)}
         >
           Apply Now
           <ExternalLink size={14} />
@@ -96,17 +97,15 @@ export default function JobDetail({ job, isSaved, onSaveToggle }) {
         disabled={applied}
         className={`flex items-center justify-center rounded-xl text-sm font-bold transition-all cursor-pointer disabled:opacity-70 ${fullWidth ? "w-full py-3" : "px-6 py-2.5"}`}
         style={{
-          backgroundColor: applied ? "#22c55e" : "#60a5fa",
+          backgroundColor: applied ? "#22c55e" : BLUE,
           color: "#ffffff",
         }}
         onMouseEnter={(e) => {
-          if (!applied) e.currentTarget.style.backgroundColor = "#3b82f6";
+          if (!applied) e.currentTarget.style.backgroundColor = BLUE_HOVER;
         }}
         onMouseLeave={(e) => {
           if (!applied)
-            e.currentTarget.style.backgroundColor = applied
-              ? "#22c55e"
-              : "#60a5fa";
+            e.currentTarget.style.backgroundColor = applied ? "#22c55e" : BLUE;
         }}
       >
         {applied ? "Applied!" : "Apply Now"}
@@ -117,11 +116,7 @@ export default function JobDetail({ job, isSaved, onSaveToggle }) {
   return (
     <div
       className="bg-white rounded-2xl border border-slate-200 overflow-hidden"
-      style={{
-        maxHeight: "calc(100vh - 120px)",
-        overflowY: "auto",
-        boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
-      }}
+      style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}
     >
       <div className="px-6 py-5 border-b border-slate-100">
         <h1 className="text-2xl font-extrabold text-slate-900 leading-tight">
@@ -154,7 +149,7 @@ export default function JobDetail({ job, isSaved, onSaveToggle }) {
             className="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
           >
             {isSaved ? (
-              <BookmarkCheck size={17} style={{ color: "#60a5fa" }} />
+              <BookmarkCheck size={17} style={{ color: BLUE }} />
             ) : (
               <Bookmark size={17} className="text-slate-400" />
             )}

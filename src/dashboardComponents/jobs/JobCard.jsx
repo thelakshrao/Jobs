@@ -3,6 +3,9 @@ import { Bookmark, BookmarkCheck, ThumbsDown, MapPin } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { doc, setDoc, deleteDoc } from "firebase/firestore";
 
+const BLUE = "#004aac";
+const LIGHT_BLUE = "#e8f0fb";
+
 const CURRENCY_SYMBOLS = {
   INR: "₹",
   USD: "$",
@@ -103,9 +106,9 @@ export default function JobCard({
       onClick={onClick}
       className="bg-white rounded-2xl border p-4 cursor-pointer transition-all"
       style={{
-        borderColor: isSelected ? "#60a5fa" : "#e2e8f0",
+        borderColor: isSelected ? BLUE : "#e2e8f0",
         boxShadow: isSelected
-          ? "0 0 0 2px #bfdbfe"
+          ? `0 0 0 2px ${LIGHT_BLUE}`
           : "0 1px 4px rgba(0,0,0,0.04)",
       }}
     >
@@ -114,7 +117,7 @@ export default function JobCard({
           {job.urgency === "High" && (
             <span
               className="inline-block mb-1.5 text-[11px] font-bold px-2.5 py-0.5 rounded-full"
-              style={{ backgroundColor: "#eff6ff", color: "#60a5fa" }}
+              style={{ backgroundColor: LIGHT_BLUE, color: BLUE }}
             >
               Easily apply
             </span>
@@ -126,10 +129,7 @@ export default function JobCard({
             {job.companyName || "Company"}
           </p>
           {salary && (
-            <p
-              className="text-sm font-bold mt-0.5"
-              style={{ color: "#60a5fa" }}
-            >
+            <p className="text-sm font-bold mt-0.5" style={{ color: BLUE }}>
               {salary}
             </p>
           )}
@@ -155,7 +155,7 @@ export default function JobCard({
           {posted && (
             <span
               className="inline-block text-[11px] font-bold px-2 py-0.5 rounded-full mt-2"
-              style={{ color: "#60a5fa", backgroundColor: "#eff6ff" }}
+              style={{ color: BLUE, backgroundColor: LIGHT_BLUE }}
             >
               {posted}
             </span>
@@ -168,7 +168,7 @@ export default function JobCard({
             className="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
           >
             {isSaved ? (
-              <BookmarkCheck size={16} style={{ color: "#60a5fa" }} />
+              <BookmarkCheck size={16} style={{ color: BLUE }} />
             ) : (
               <Bookmark size={16} className="text-slate-400" />
             )}

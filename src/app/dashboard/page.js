@@ -174,7 +174,7 @@ function JobCardHorizontal({
         </div>
         <button
           onClick={handleSave}
-          className="w-8 h-8 flex items-center justify-center rounded-xl border border-gray-200 hover:bg-gray-100 transition-colors shrink-0 bg-white"
+          className="w-8 h-8 flex items-center justify-center rounded-xl border border-gray-200 hover:bg-gray-100 transition-colors shrink-0 bg-white cursor-pointer"
         >
           {isSaved ? (
             <BookmarkCheck size={14} style={{ color: "#004AAC" }} />
@@ -301,7 +301,7 @@ function ProjectCardHorizontal({
         </div>
         <button
           onClick={handleSave}
-          className="w-8 h-8 flex items-center justify-center rounded-xl border border-gray-200 hover:bg-gray-100 transition-colors shrink-0 bg-white"
+          className="w-8 h-8 flex items-center justify-center rounded-xl border border-gray-200 hover:bg-gray-100 transition-colors shrink-0 bg-white cursor-pointer"
         >
           {isSaved ? (
             <BookmarkCheck size={14} style={{ color: "#004AAC" }} />
@@ -382,14 +382,14 @@ function LoginPromptModal({ onClose, router }) {
         <div className="flex gap-2">
           <button
             onClick={() => router.push("/login")}
-            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90"
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90 cursor-pointer"
             style={{ backgroundColor: "#004AAC" }}
           >
             Sign in
           </button>
           <button
             onClick={() => router.push("/signup")}
-            className="flex-1 py-2.5 rounded-xl text-sm font-bold border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
           >
             Sign up
           </button>
@@ -641,14 +641,14 @@ export default function DashboardHome() {
           <div className="flex gap-2 shrink-0">
             <button
               onClick={() => router.push("/login")}
-              className="px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90"
+              className="px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90 cursor-pointer"
               style={{ backgroundColor: "#004AAC" }}
             >
               Sign in
             </button>
             <button
               onClick={() => router.push("/signup")}
-              className="px-5 py-2.5 rounded-xl text-sm font-bold border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+              className="px-5 py-2.5 rounded-xl text-sm font-bold border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
             >
               Sign up
             </button>
@@ -674,7 +674,7 @@ export default function DashboardHome() {
           </div>
           <button
             onClick={() => router.push("/dashboard/profile")}
-            className="px-5 py-2.5 rounded-xl text-sm font-bold text-white shrink-0 transition-opacity hover:opacity-90"
+            className="px-5 py-2.5 rounded-xl text-sm font-bold text-white shrink-0 transition-opacity hover:opacity-90 cursor-pointer"
             style={{ backgroundColor: "#004AAC" }}
           >
             Complete profile
@@ -686,7 +686,6 @@ export default function DashboardHome() {
           {authed === true && !isNewUser && (
             <PromoBannerCarousel router={router} userName={userName} />
           )}
-
           {authed === true && !isSimple && (
             <div className="xl:hidden">
               <ProfileStrength
@@ -697,7 +696,6 @@ export default function DashboardHome() {
               />
             </div>
           )}
-
           {jobs.length === 0 ? (
             <div className="bg-white rounded-2xl border-2 border-gray-200 flex flex-col items-center justify-center py-16 px-6 text-center shadow-sm">
               <span style={{ fontSize: 32 }}>☞</span>
@@ -724,14 +722,14 @@ export default function DashboardHome() {
                       <button
                         onClick={() => scroll("left")}
                         disabled={!canScrollLeft}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center border border-gray-200 disabled:opacity-25 hover:bg-gray-50"
+                        className="w-7 h-7 rounded-lg flex items-center justify-center border border-gray-200 disabled:opacity-25 hover:bg-gray-50 cursor-pointer"
                       >
                         <ChevronLeft size={14} className="text-gray-500" />
                       </button>
                       <button
                         onClick={() => scroll("right")}
                         disabled={!canScrollRight}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center border border-gray-200 disabled:opacity-25 hover:bg-gray-50"
+                        className="w-7 h-7 rounded-lg flex items-center justify-center border border-gray-200 disabled:opacity-25 hover:bg-gray-50 cursor-pointer"
                       >
                         <ChevronRight size={14} className="text-gray-500" />
                       </button>
@@ -739,7 +737,7 @@ export default function DashboardHome() {
                   )}
                   <button
                     onClick={() => router.push("/dashboard/jobs")}
-                    className="flex items-center gap-1 text-xs font-semibold hover:opacity-75 transition-opacity"
+                    className="flex items-center gap-1 text-xs font-semibold hover:opacity-75 transition-opacity cursor-pointer"
                     style={{ color: "#004AAC" }}
                   >
                     View all <ArrowRight size={13} />
@@ -788,14 +786,14 @@ export default function DashboardHome() {
                       <button
                         onClick={() => scrollProj("left")}
                         disabled={!canProjScrollLeft}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center border border-gray-200 disabled:opacity-25 hover:bg-gray-50"
+                        className="w-7 h-7 rounded-lg flex items-center justify-center border border-gray-200 disabled:opacity-25 hover:bg-gray-50 cursor-pointer"
                       >
                         <ChevronLeft size={14} className="text-gray-500" />
                       </button>
                       <button
                         onClick={() => scrollProj("right")}
                         disabled={!canProjScrollRight}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center border border-gray-200 disabled:opacity-25 hover:bg-gray-50"
+                        className="w-7 h-7 rounded-lg flex items-center justify-center border border-gray-200 disabled:opacity-25 hover:bg-gray-50 cursor-pointer"
                       >
                         <ChevronRight size={14} className="text-gray-500" />
                       </button>
@@ -803,7 +801,7 @@ export default function DashboardHome() {
                   )}
                   <button
                     onClick={() => router.push("/dashboard/projects")}
-                    className="flex items-center gap-1 text-xs font-semibold hover:opacity-75 transition-opacity"
+                    className="flex items-center gap-1 text-xs font-semibold hover:opacity-75 transition-opacity cursor-pointer"
                     style={{ color: "#004AAC" }}
                   >
                     View all <ArrowRight size={13} />

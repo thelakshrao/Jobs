@@ -186,7 +186,7 @@ export default function OnboardingModal({ onSelect }) {
                   <button
                     key={opt.id}
                     onClick={() => handleAnswer(opt.id)}
-                    className="flex-1 flex flex-col items-center gap-3 p-5 rounded-2xl text-center transition-all"
+                    className="flex-1 flex flex-col items-center gap-3 p-5 rounded-2xl text-center transition-all cursor-pointer"
                     style={{
                       border: `2px solid ${active ? BLUE : "#f1f5f9"}`,
                       backgroundColor: active ? BLUE_BG : "#fafafa",
@@ -223,7 +223,7 @@ export default function OnboardingModal({ onSelect }) {
                   <button
                     key={opt.id}
                     onClick={() => handleAnswer(opt.id)}
-                    className="w-full flex items-center justify-between px-4 py-4 rounded-2xl transition-all"
+                    className="w-full flex items-center justify-between px-4 py-4 rounded-2xl transition-all cursor-pointer"
                     style={{
                       border: `2px solid ${active ? BLUE : "#f1f5f9"}`,
                       backgroundColor: active ? BLUE_BG : "#fafafa",
@@ -246,7 +246,7 @@ export default function OnboardingModal({ onSelect }) {
             {step > 0 && (
               <button
                 onClick={handleBack}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer"
                 style={{ backgroundColor: "#f1f5f9", color: "#64748b" }}
               >
                 <IoArrowBackOutline size={15} /> Back
@@ -255,7 +255,7 @@ export default function OnboardingModal({ onSelect }) {
             <button
               onClick={handleNext}
               disabled={!selected}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white transition-all"
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white transition-all cursor-pointer"
               style={{
                 backgroundColor: selected ? BLUE : "#e2e8f0",
                 color: selected ? "white" : "#94a3b8",
