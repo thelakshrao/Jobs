@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -18,6 +18,7 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   sendPasswordResetEmail,
+  onAuthStateChanged,
 } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 
@@ -65,6 +66,18 @@ const Login = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        router.replace("/dashboard");
+      } else {
+        setCheckingSession(false);
+      }
+    });
+    return () => unsub();
+  }, [router]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -115,6 +128,14 @@ const Login = () => {
       setLoading(false);
     }
   };
+
+  if (checkingSession) {
+    return (
+      <div className="w-full min-h-screen bg-white flex items-center justify-center">
+        <div className="w-8 h-8 border-[3px] border-gray-200 border-t-[#004AAC] rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full min-h-screen bg-white flex flex-col md:flex-row font-sans">

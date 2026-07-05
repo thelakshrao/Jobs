@@ -1,7 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import heroBg from "@/images/hero.png";
 import About from "@/components/About";
 import Premium from "@/components/Premium";
@@ -33,6 +36,28 @@ const fadeRight = (delay = 0) => ({
 });
 
 export default function Page() {
+  const router = useRouter();
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        router.replace("/dashboard");
+      } else {
+        setCheckingSession(false);
+      }
+    });
+    return () => unsub();
+  }, [router]);
+
+  if (checkingSession) {
+    return (
+      <div className="w-full min-h-screen bg-[#F2F3F5] flex items-center justify-center">
+        <div className="w-8 h-8 border-[3px] border-gray-200 border-t-[#004AAC] rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <>
       <Navbar />
@@ -65,8 +90,8 @@ export default function Page() {
               {...fadeLeft(0.3)}
               className="text-gray-500 text-sm md:text-lg max-w-md mx-auto md:mx-0 mb-9 leading-relaxed"
             >
-              From first jobs to dream careers — we connect every kind of
-              talent with companies that value who you truly are.
+              From first jobs to dream careers — we connect every kind of talent
+              with companies that value who you truly are.
             </motion.p>
 
             <motion.div
@@ -77,8 +102,8 @@ export default function Page() {
                 What kind of work are you looking for?
               </p>
               <p className="text-gray-400 text-[10px] md:text-xs mb-4 text-left">
-                Doctor, driver, cook, engineer, carpenter, designer —
-                everyone is welcome here.
+                Doctor, driver, cook, engineer, carpenter, designer — everyone
+                is welcome here.
               </p>
 
               <input

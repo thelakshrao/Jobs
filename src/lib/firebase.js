@@ -1,5 +1,10 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  setPersistence,
+  browserLocalPersistence,
+} from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
 import { getMessaging } from "firebase/messaging"; // ← NEW
@@ -18,10 +23,17 @@ const firebaseConfig = {
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
+
+if (typeof window !== "undefined") {
+  setPersistence(auth, browserLocalPersistence).catch((err) => {
+    console.error("Failed to set auth persistence:", err);
+  });
+}
+
 export const googleProvider = new GoogleAuthProvider();
 export const db = getFirestore(app);
 export const analytics = typeof window !== "undefined" ? getAnalytics(app) : null;
-export const messaging = typeof window !== "undefined" ? getMessaging(app) : null; 
-export const VAPID_KEY = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;           
+export const messaging = typeof window !== "undefined" ? getMessaging(app) : null;
+export const VAPID_KEY = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
 
 export default app;
