@@ -69,29 +69,43 @@ export default function EmployerHeroBanner() {
         />
 
         <div
-          key={slide.key}
-          className="relative flex items-center px-6 sm:px-10 py-8 sm:py-9 min-h-55 animate-[fadeIn_0.5s_ease]"
+          key={`${slide.key}-mobile-img`}
+          className="block sm:hidden absolute z-0 pointer-events-none select-none right-0 bottom-0 w-28 h-40 opacity-90"
         >
-          <div className="min-w-0 max-w-md pr-40 sm:pr-0">
+          <Image
+            src={slide.image}
+            alt=""
+            fill
+            className="object-contain object-bottom"
+            draggable={false}
+            priority
+          />
+        </div>
+
+        <div
+          key={slide.key}
+          className="relative flex items-center px-4 sm:px-10 py-5 sm:py-9 min-h-40 sm:min-h-55 animate-[fadeIn_0.5s_ease]"
+        >
+          <div className="relative z-10 w-full sm:max-w-md sm:pr-0">
             <span
-              className="inline-block text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full mb-3"
+              className="inline-block text-[9px] sm:text-[11px] font-black uppercase tracking-widest px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full mb-2 sm:mb-3"
               style={{ backgroundColor: "rgba(255,255,255,0.12)", color: "#fff" }}
             >
               {slide.eyebrow}
             </span>
-            <h1 className="text-2xl sm:text-3xl font-black text-white leading-tight mb-2">
+            <h1 className="text-lg sm:text-3xl font-black text-white leading-tight mb-1 sm:mb-2">
               {slide.title}
             </h1>
-            <p className="text-sm sm:text-[15px] font-medium text-blue-100/80 leading-relaxed">
+            <p className="text-xs sm:text-[15px] font-medium text-blue-100/80 leading-snug sm:leading-relaxed">
               {slide.copy}
             </p>
             <Link
               href={slide.href}
-              className="inline-flex items-center gap-1.5 mt-5 px-5 py-2.5 rounded-xl text-sm font-bold transition-opacity hover:opacity-90 no-underline shadow-sm bg-white"
+              className="inline-flex items-center gap-1.5 mt-3 sm:mt-5 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-opacity hover:opacity-90 no-underline shadow-sm bg-white"
               style={{ color: "#004aac" }}
             >
               {slide.cta}
-              <ArrowRight size={15} strokeWidth={2.5} />
+              <ArrowRight size={13} strokeWidth={2.5} />
             </Link>
           </div>
         </div>
