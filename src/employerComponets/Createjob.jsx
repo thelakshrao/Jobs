@@ -34,7 +34,6 @@ import {
   ALL_PERKS,
 } from "@/app/employer/dashboard/create-job/constants";
 
-
 const STEPS = [
   { id: 1, label: "Context", icon: Globe },
   { id: 2, label: "Details", icon: Briefcase },
@@ -96,8 +95,8 @@ function Input({ className, ...props }) {
   return (
     <input
       className={cls(
-        "w-full px-4 py-3 text-sm text-black bg-white border border-slate-200 rounded-xl",
-        "placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent transition-all",
+        "w-full px-4 py-3 text-sm text-slate-900 bg-white border border-slate-200 rounded-xl",
+        "placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#003882]/40 focus:border-transparent transition-all",
         className,
       )}
       {...props}
@@ -109,8 +108,8 @@ function Textarea({ className, ...props }) {
   return (
     <textarea
       className={cls(
-        "w-full px-4 py-3 text-sm text-black bg-white border border-slate-200 rounded-xl resize-none",
-        "placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent transition-all",
+        "w-full px-4 py-3 text-sm text-slate-900 bg-white border border-slate-200 rounded-xl resize-none",
+        "placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#003882]/40 focus:border-transparent transition-all",
         className,
       )}
       {...props}
@@ -129,7 +128,7 @@ function ToggleGroup({ options, value, onChange }) {
           className={cls(
             "px-4 py-2.5 text-sm font-semibold rounded-xl border transition-all",
             value === opt
-              ? "bg-black text-white border-black shadow-sm"
+              ? "bg-[#003882] text-white border-[#003882] shadow-sm"
               : "bg-white text-slate-700 border-slate-200 hover:border-slate-400 hover:bg-slate-50",
           )}
         >
@@ -160,10 +159,10 @@ function SearchableSelect({
   return (
     <div className="relative">
       <div
-        className="w-full px-4 py-3 text-sm text-black bg-white border border-slate-200 rounded-xl cursor-pointer flex items-center justify-between"
+        className="w-full px-4 py-3 text-sm text-slate-900 bg-white border border-slate-200 rounded-xl cursor-pointer flex items-center justify-between"
         onClick={() => setOpen((p) => !p)}
       >
-        <span className={value ? "text-black" : "text-slate-400"}>
+        <span className={value ? "text-slate-900" : "text-slate-400"}>
           {value || placeholder}
         </span>
         <Search size={14} className="text-slate-400" />
@@ -193,7 +192,7 @@ function SearchableSelect({
                 className={cls(
                   "w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 transition-colors",
                   value === opt
-                    ? "bg-slate-100 text-black font-semibold"
+                    ? "bg-[#e8eefb] text-[#003882] font-semibold"
                     : "text-slate-700",
                 )}
               >
@@ -237,7 +236,7 @@ function SearchableSelect({
                         setSearch("");
                       }
                     }}
-                    className="px-3 py-2 bg-black text-white text-sm font-semibold rounded-lg hover:bg-black"
+                    className="px-3 py-2 bg-[#003882] text-white text-sm font-semibold rounded-lg hover:bg-[#002a61]"
                   >
                     Add
                   </button>
@@ -366,7 +365,7 @@ function CurrencySelect({ selected, onChange }) {
                   type="checkbox"
                   checked={selected.includes(c.code)}
                   onChange={() => toggle(c.code)}
-                  className="accent-slate-800"
+                  className="accent-[#003882]"
                 />
                 <span className="text-sm font-semibold text-slate-700 w-10">
                   {c.code}
@@ -382,7 +381,7 @@ function CurrencySelect({ selected, onChange }) {
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="w-full py-2 bg-black hover:bg-black text-white text-sm font-semibold rounded-lg transition-colors"
+              className="w-full py-2 bg-[#003882] hover:bg-[#002a61] text-white text-sm font-semibold rounded-lg transition-colors"
             >
               Done
             </button>
@@ -410,9 +409,9 @@ function StepBar({ current }) {
                 className={cls(
                   "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all",
                   done
-                    ? "bg-black border-black text-white"
+                    ? "bg-[#003882] border-[#003882] text-white"
                     : active
-                      ? "bg-white border-black text-black"
+                      ? "bg-white border-[#003882] text-[#003882]"
                       : "bg-white border-slate-200 text-slate-400",
                 )}
               >
@@ -426,7 +425,7 @@ function StepBar({ current }) {
                 className={cls(
                   "text-xs font-semibold hidden sm:block",
                   active
-                    ? "text-black"
+                    ? "text-[#003882]"
                     : done
                       ? "text-slate-500"
                       : "text-slate-400",
@@ -439,7 +438,7 @@ function StepBar({ current }) {
               <div
                 className={cls(
                   "flex-1 h-0.5 mx-2 mb-5",
-                  done ? "bg-black" : "bg-slate-200",
+                  done ? "bg-[#003882]" : "bg-slate-200",
                 )}
               />
             )}
@@ -471,7 +470,9 @@ function Step1({ form, setForm, employerData }) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-black">Context & Localization</h2>
+        <h2 className="text-xl font-bold text-slate-900">
+          Context & Localization
+        </h2>
         <p className="text-sm text-slate-500 mt-1">
           Set the target market and framing before anything else.
         </p>
@@ -504,14 +505,14 @@ function Step1({ form, setForm, employerData }) {
               className={cls(
                 "text-left px-4 py-4 rounded-xl border-2 transition-all",
                 postingMode === opt.key
-                  ? "border-black bg-black"
+                  ? "border-[#003882] bg-[#003882]"
                   : "border-slate-200 bg-white hover:border-slate-400 hover:bg-slate-50",
               )}
             >
               <p
                 className={cls(
                   "text-sm font-bold",
-                  postingMode === opt.key ? "text-white" : "text-black",
+                  postingMode === opt.key ? "text-white" : "text-slate-900",
                 )}
               >
                 {opt.title}
@@ -534,7 +535,7 @@ function Step1({ form, setForm, employerData }) {
           <Building2 size={16} className="text-slate-500 shrink-0" />
           <div>
             <p className="text-xs text-slate-500 font-semibold">Posting as</p>
-            <p className="text-sm font-bold text-black">
+            <p className="text-sm font-bold text-slate-900">
               {employerData?.company || form.companyName || "Your Company"}
             </p>
           </div>
@@ -643,7 +644,7 @@ function Step1({ form, setForm, employerData }) {
               <p className="text-xs text-slate-500 font-semibold">
                 Referral posted by
               </p>
-              <p className="text-sm font-bold text-black">
+              <p className="text-sm font-bold text-slate-900">
                 {employerData?.firstName} {employerData?.lastName} ·{" "}
                 {employerData?.company}
               </p>
@@ -750,7 +751,7 @@ function Step2({ form, setForm }) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-black">Basic Job Details</h2>
+        <h2 className="text-xl font-bold text-slate-900">Basic Job Details</h2>
         <p className="text-sm text-slate-500 mt-1">
           Core information about the role and location.
         </p>
@@ -873,7 +874,7 @@ function Step3({ form, setForm }) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-black">
+        <h2 className="text-xl font-bold text-slate-900">
           Employment Terms & Urgency
         </h2>
         <p className="text-sm text-slate-500 mt-1">
@@ -886,7 +887,7 @@ function Step3({ form, setForm }) {
           <select
             value={form.jobType}
             onChange={update("jobType")}
-            className="w-full px-4 py-3 text-sm text-black bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-400 appearance-none"
+            className="w-full px-4 py-3 text-sm text-slate-900 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#003882]/40 appearance-none"
           >
             {JOB_TYPES.map((t) => (
               <option key={t}>{t}</option>
@@ -898,7 +899,7 @@ function Step3({ form, setForm }) {
           <select
             value={form.experienceLevel}
             onChange={update("experienceLevel")}
-            className="w-full px-4 py-3 text-sm text-black bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-400 appearance-none"
+            className="w-full px-4 py-3 text-sm text-slate-900 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#003882]/40 appearance-none"
           >
             <option value="">Select level...</option>
             {EXP_LEVELS.map((l) => (
@@ -922,7 +923,7 @@ function Step3({ form, setForm }) {
           <select
             value={form.urgency}
             onChange={update("urgency")}
-            className="w-full px-4 py-3 text-sm text-black bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-400 appearance-none"
+            className="w-full px-4 py-3 text-sm text-slate-900 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#003882]/40 appearance-none"
           >
             {URGENCY_OPTIONS.map((u) => (
               <option key={u}>{u}</option>
@@ -967,7 +968,7 @@ function SalaryUnitToggle({ value, onChange }) {
           className={cls(
             "px-4 py-2 text-xs font-semibold rounded-xl border transition-all",
             value === unit
-              ? "bg-black text-white border-black"
+              ? "bg-[#003882] text-white border-[#003882]"
               : "bg-white text-slate-700 border-slate-200 hover:border-slate-400",
           )}
         >
@@ -997,7 +998,9 @@ function Step4({ form, setForm }) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-black">Compensation & Perks</h2>
+        <h2 className="text-xl font-bold text-slate-900">
+          Compensation & Perks
+        </h2>
         <p className="text-sm text-slate-500 mt-1">
           Tell candidates what they'll earn and enjoy.
         </p>
@@ -1008,7 +1011,7 @@ function Step4({ form, setForm }) {
           <select
             value={form.payStructure}
             onChange={update("payStructure")}
-            className="w-full px-4 py-3 text-sm text-black bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-400 appearance-none"
+            className="w-full px-4 py-3 text-sm text-slate-900 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#003882]/40 appearance-none"
           >
             {PAY_STRUCTURES.map((p) => (
               <option key={p}>{p}</option>
@@ -1117,7 +1120,7 @@ function Step4({ form, setForm }) {
               className={cls(
                 "flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-full border transition-all",
                 form.perks.includes(p)
-                  ? "bg-black text-white border-black"
+                  ? "bg-[#003882] text-white border-[#003882]"
                   : "bg-white text-slate-600 border-slate-200 hover:border-slate-400",
               )}
             >
@@ -1206,7 +1209,7 @@ function Step5({ form, setForm, employerData }) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-black">
+        <h2 className="text-xl font-bold text-slate-900">
           Role Definition & Review
         </h2>
         <p className="text-sm text-slate-500 mt-1">
@@ -1222,7 +1225,7 @@ function Step5({ form, setForm, employerData }) {
           placeholder={`Describe the role, responsibilities, and what a typical day looks like…\n\nExample:\n1. Lead the frontend development team\n2. Collaborate with designers\n• Work in an agile environment`}
           value={form.description}
           onChange={update("description")}
-          className="w-full px-4 py-3 text-sm text-black bg-white border border-slate-200 rounded-xl placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent transition-all font-mono leading-relaxed"
+          className="w-full px-4 py-3 text-sm text-slate-900 bg-white border border-slate-200 rounded-xl placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#003882]/40 focus:border-transparent transition-all font-mono leading-relaxed"
           style={{ resize: "vertical", minHeight: "180px" }}
         />
       </div>
@@ -1235,7 +1238,7 @@ function Step5({ form, setForm, employerData }) {
           placeholder={`List required skills, qualifications, and experience…\n\nExample:\n1. 3+ years of React experience\n2. Strong communication skills\n• Bachelor's degree in CS or related field`}
           value={form.requirements}
           onChange={update("requirements")}
-          className="w-full px-4 py-3 text-sm text-black bg-white border border-slate-200 rounded-xl placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent transition-all font-mono leading-relaxed"
+          className="w-full px-4 py-3 text-sm text-slate-900 bg-white border border-slate-200 rounded-xl placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#003882]/40 focus:border-transparent transition-all font-mono leading-relaxed"
           style={{ resize: "vertical", minHeight: "160px" }}
         />
       </div>
@@ -1248,7 +1251,7 @@ function Step5({ form, setForm, employerData }) {
           placeholder={`List the benefits you offer…\n\nExample:\n• Health insurance\n• Flexible working hours\n1. Annual performance bonus`}
           value={form.benefits || ""}
           onChange={(e) => setForm((f) => ({ ...f, benefits: e.target.value }))}
-          className="w-full px-4 py-3 text-sm text-black bg-white border border-slate-200 rounded-xl placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent transition-all font-mono leading-relaxed"
+          className="w-full px-4 py-3 text-sm text-slate-900 bg-white border border-slate-200 rounded-xl placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#003882]/40 focus:border-transparent transition-all font-mono leading-relaxed"
           style={{ resize: "vertical", minHeight: "120px" }}
         />
       </div>
@@ -1260,14 +1263,14 @@ function Step5({ form, setForm, employerData }) {
 
         {employerData && (
           <div className="flex items-center gap-3 pb-3 border-b border-slate-200">
-            <div className="w-9 h-9 rounded-full bg-black flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-full bg-[#003882] flex items-center justify-center shrink-0">
               <span className="text-white text-sm font-bold">
                 {employerData.firstName?.[0]}
                 {employerData.lastName?.[0]}
               </span>
             </div>
             <div>
-              <p className="text-sm font-bold text-black">
+              <p className="text-sm font-bold text-slate-900">
                 {employerData.firstName} {employerData.lastName}
               </p>
               <p className="text-xs text-slate-500">
@@ -1523,7 +1526,7 @@ export default function CreateJob({ draftId }) {
             <X size={16} className="text-slate-500" />
           </button>
           <div>
-            <h1 className="text-sm font-bold text-black">
+            <h1 className="text-sm font-bold text-[#003882]">
               {currentDraftId ? "Continue Draft" : "Create Job Posting"}
             </h1>
             {currentDraftId && (
@@ -1577,7 +1580,7 @@ export default function CreateJob({ draftId }) {
             {step < 5 ? (
               <button
                 onClick={handleNext}
-                className="flex items-center gap-1.5 px-6 py-3 text-sm font-semibold text-white bg-black hover:bg-black rounded-xl transition-colors shadow-sm"
+                className="flex items-center gap-1.5 px-6 py-3 text-sm font-semibold text-white bg-[#003882] hover:bg-[#002a61] rounded-xl transition-colors shadow-sm"
               >
                 Next <ChevronRight size={15} />
               </button>
@@ -1585,7 +1588,7 @@ export default function CreateJob({ draftId }) {
               <button
                 onClick={handlePublish}
                 disabled={publishing}
-                className="flex items-center gap-2 px-7 py-3 text-sm font-semibold text-white bg-black hover:bg-black rounded-xl transition-colors shadow-sm disabled:opacity-60"
+                className="flex items-center gap-2 px-7 py-3 text-sm font-semibold text-white bg-[#003882] hover:bg-[#002a61] rounded-xl transition-colors shadow-sm disabled:opacity-60"
               >
                 <Send size={14} />
                 {publishing ? "Publishing…" : "Publish Job"}
@@ -1600,9 +1603,9 @@ export default function CreateJob({ draftId }) {
       </div>
 
       {showLeaveWarning && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#003882]/40 backdrop-blur-sm px-4">
           <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full">
-            <h2 className="text-base font-bold text-black mb-2">
+            <h2 className="text-base font-bold text-slate-900 mb-2">
               Save before leaving?
             </h2>
             <p className="text-sm text-slate-500 mb-5 leading-relaxed">
@@ -1615,7 +1618,7 @@ export default function CreateJob({ draftId }) {
                   await saveDraft(form);
                   router.push("/employer/dashboard");
                 }}
-                className="flex-1 py-2.5 text-sm font-semibold text-white bg-black hover:bg-black rounded-xl transition-colors"
+                className="flex-1 py-2.5 text-sm font-semibold text-white bg-[#003882] hover:bg-[#002a61] rounded-xl transition-colors"
               >
                 Save as Draft
               </button>

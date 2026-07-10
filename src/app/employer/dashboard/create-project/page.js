@@ -22,6 +22,11 @@ import EmployerSidebar from "@/employerComponets/EmployerSidebar";
 import DashboardNavbar from "@/employerComponets/DashboardNavbar";
 import { ChevronLeft, Check } from "lucide-react";
 
+// ---- Brand theme ----
+const BLUE = "#003882";
+const BLUE_HOVER = "#002a63";
+const BG_GRAY = "#e8eaed";
+
 const PROJECT_TYPES = [
   {
     group: "Construction",
@@ -170,7 +175,10 @@ export default function CreateProjectPage() {
 function CreateProjectFallback() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-white">
-      <div className="w-6 h-6 border-2 border-slate-700 border-t-transparent rounded-full animate-spin" />
+      <div
+        className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin"
+        style={{ borderColor: BLUE, borderTopColor: "transparent" }}
+      />
     </div>
   );
 }
@@ -208,7 +216,7 @@ function CreateProjectPageInner() {
     country: "",
     state: "",
     urgent: false,
-    deadline: "", 
+    deadline: "",
   });
 
   useEffect(() => {
@@ -394,7 +402,10 @@ function CreateProjectPageInner() {
   if (checking) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="w-6 h-6 border-2 border-slate-700 border-t-transparent rounded-full animate-spin" />
+        <div
+          className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin"
+          style={{ borderColor: BLUE, borderTopColor: "transparent" }}
+        />
       </div>
     );
   }
@@ -404,9 +415,15 @@ function CreateProjectPageInner() {
       <>
         <EmployerSidebar />
         <DashboardNavbar />
-        <main className="md:ml-64 pt-14 min-h-screen bg-[#f8fafc] flex items-center justify-center">
+        <main
+          className="md:ml-64 pt-14 min-h-screen flex items-center justify-center"
+          style={{ backgroundColor: BG_GRAY }}
+        >
           <div className="flex flex-col items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center">
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: BLUE }}
+            >
               <Check size={28} className="text-white" strokeWidth={3} />
             </div>
             <h2 className="text-xl font-black text-slate-900">
@@ -425,17 +442,23 @@ function CreateProjectPageInner() {
     <>
       <EmployerSidebar />
       <DashboardNavbar />
-      <main className="md:ml-64 pt-14 min-h-screen bg-[#f8fafc] pb-24 md:pb-8">
+      <main
+        className="md:ml-64 pt-14 min-h-screen pb-24 md:pb-8"
+        style={{ backgroundColor: BG_GRAY }}
+      >
         <div className="px-4 md:px-6 py-8">
           <div className="mb-7">
             <Link
               href="/employer/dashboard/projects"
-              className="flex items-center gap-1.5 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors no-underline mb-3"
+              className="flex items-center gap-1.5 text-sm font-bold text-slate-500 transition-colors no-underline mb-3"
+              style={{ "--hover-color": BLUE }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = BLUE)}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "")}
             >
               <ChevronLeft size={15} />
               All Projects
             </Link>
-            <h1 className="text-2xl font-black text-slate-900">
+            <h1 className="text-2xl font-black text-[#003882]">
               {editId ? "Edit Project" : "Add New Project"}
             </h1>
             <p className="text-sm font-semibold text-slate-400 mt-1">
@@ -468,6 +491,15 @@ function CreateProjectPageInner() {
                         set("company", e.target.value);
                       }}
                       className={inputCls(errors.company)}
+                      style={inputStyle}
+                      onFocusCapture={(e) =>
+                        (e.target.style.borderColor = BLUE)
+                      }
+                      onBlurCapture={(e) =>
+                        (e.target.style.borderColor = errors.company
+                          ? "#f87171"
+                          : "#e2e8f0")
+                      }
                     />
                     {showCompanySuggestions && filteredCompanies.length > 0 && (
                       <ul className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-50 max-h-52 overflow-y-auto p-1">
@@ -496,6 +528,13 @@ function CreateProjectPageInner() {
                     value={form.title}
                     onChange={(e) => set("title", e.target.value)}
                     className={inputCls(errors.title)}
+                    style={inputStyle}
+                    onFocusCapture={(e) => (e.target.style.borderColor = BLUE)}
+                    onBlurCapture={(e) =>
+                      (e.target.style.borderColor = errors.title
+                        ? "#f87171"
+                        : "#e2e8f0")
+                    }
                   />
                 </Field>
 
@@ -504,6 +543,13 @@ function CreateProjectPageInner() {
                     value={form.projectType}
                     onChange={(e) => set("projectType", e.target.value)}
                     className={inputCls(errors.projectType)}
+                    style={inputStyle}
+                    onFocusCapture={(e) => (e.target.style.borderColor = BLUE)}
+                    onBlurCapture={(e) =>
+                      (e.target.style.borderColor = errors.projectType
+                        ? "#f87171"
+                        : "#e2e8f0")
+                    }
                   >
                     <option value="">Select project type</option>
                     {Object.entries(
@@ -532,6 +578,13 @@ function CreateProjectPageInner() {
                     value={form.workType}
                     onChange={(e) => set("workType", e.target.value)}
                     className={inputCls(errors.workType)}
+                    style={inputStyle}
+                    onFocusCapture={(e) => (e.target.style.borderColor = BLUE)}
+                    onBlurCapture={(e) =>
+                      (e.target.style.borderColor = errors.workType
+                        ? "#f87171"
+                        : "#e2e8f0")
+                    }
                   >
                     <option value="">Select work type</option>
                     {WORK_TYPES.map((t) => (
@@ -547,6 +600,13 @@ function CreateProjectPageInner() {
                     value={form.work}
                     onChange={(e) => set("work", e.target.value)}
                     className={inputCls(errors.work)}
+                    style={inputStyle}
+                    onFocusCapture={(e) => (e.target.style.borderColor = BLUE)}
+                    onBlurCapture={(e) =>
+                      (e.target.style.borderColor = errors.work
+                        ? "#f87171"
+                        : "#e2e8f0")
+                    }
                   >
                     <option value="">Select type of work</option>
                     {WORKS.map((w) => (
@@ -562,6 +622,11 @@ function CreateProjectPageInner() {
                     value={form.rateType}
                     onChange={(e) => set("rateType", e.target.value)}
                     className={inputCls()}
+                    style={inputStyle}
+                    onFocusCapture={(e) => (e.target.style.borderColor = BLUE)}
+                    onBlurCapture={(e) =>
+                      (e.target.style.borderColor = "#e2e8f0")
+                    }
                   >
                     {RATE_TYPES.map((r) => (
                       <option key={r.label} value={r.label} title={r.example}>
@@ -577,6 +642,13 @@ function CreateProjectPageInner() {
                       value={form.rateAmount}
                       onChange={(e) => set("rateAmount", e.target.value)}
                       className={`${inputCls()} mt-3`}
+                      style={inputStyle}
+                      onFocusCapture={(e) =>
+                        (e.target.style.borderColor = BLUE)
+                      }
+                      onBlurCapture={(e) =>
+                        (e.target.style.borderColor = "#e2e8f0")
+                      }
                     />
                   )}
                 </Field>
@@ -593,6 +665,13 @@ function CreateProjectPageInner() {
                     value={form.workersRequired}
                     onChange={(e) => set("workersRequired", e.target.value)}
                     className={inputCls(errors.workersRequired)}
+                    style={inputStyle}
+                    onFocusCapture={(e) => (e.target.style.borderColor = BLUE)}
+                    onBlurCapture={(e) =>
+                      (e.target.style.borderColor = errors.workersRequired
+                        ? "#f87171"
+                        : "#e2e8f0")
+                    }
                   />
                 </Field>
 
@@ -607,6 +686,13 @@ function CreateProjectPageInner() {
                     value={form.location}
                     onChange={(e) => set("location", e.target.value)}
                     className={inputCls(errors.location)}
+                    style={inputStyle}
+                    onFocusCapture={(e) => (e.target.style.borderColor = BLUE)}
+                    onBlurCapture={(e) =>
+                      (e.target.style.borderColor = errors.location
+                        ? "#f87171"
+                        : "#e2e8f0")
+                    }
                   />
                 </Field>
 
@@ -615,6 +701,13 @@ function CreateProjectPageInner() {
                     value={form.country}
                     onChange={(e) => set("country", e.target.value)}
                     className={inputCls(errors.country)}
+                    style={inputStyle}
+                    onFocusCapture={(e) => (e.target.style.borderColor = BLUE)}
+                    onBlurCapture={(e) =>
+                      (e.target.style.borderColor = errors.country
+                        ? "#f87171"
+                        : "#e2e8f0")
+                    }
                   >
                     <option value="">Select country</option>
                     {countries.map((c) => (
@@ -628,7 +721,14 @@ function CreateProjectPageInner() {
                     value={form.state}
                     onChange={(e) => set("state", e.target.value)}
                     className={inputCls(errors.state)}
+                    style={inputStyle}
                     disabled={!form.country || loadingStates}
+                    onFocusCapture={(e) => (e.target.style.borderColor = BLUE)}
+                    onBlurCapture={(e) =>
+                      (e.target.style.borderColor = errors.state
+                        ? "#f87171"
+                        : "#e2e8f0")
+                    }
                   >
                     <option value="">
                       {!form.country
@@ -654,6 +754,13 @@ function CreateProjectPageInner() {
                     min={todayStr}
                     onChange={(e) => set("deadline", e.target.value)}
                     className={inputCls(errors.deadline)}
+                    style={inputStyle}
+                    onFocusCapture={(e) => (e.target.style.borderColor = BLUE)}
+                    onBlurCapture={(e) =>
+                      (e.target.style.borderColor = errors.deadline
+                        ? "#f87171"
+                        : "#e2e8f0")
+                    }
                   />
                 </Field>
 
@@ -665,7 +772,7 @@ function CreateProjectPageInner() {
                       width: 44,
                       height: 24,
                       borderRadius: 12,
-                      background: form.urgent ? "#0f0f0f" : "#e2e8f0",
+                      background: form.urgent ? BLUE : "#e2e8f0",
                       border: "none",
                       cursor: "pointer",
                       position: "relative",
@@ -686,7 +793,8 @@ function CreateProjectPageInner() {
                     />
                   </button>
                   <span
-                    className={`text-sm font-bold ${form.urgent ? "text-slate-900" : "text-slate-400"}`}
+                    className="text-sm font-bold"
+                    style={{ color: form.urgent ? BLUE : "#94a3b8" }}
                   >
                     Mark as Urgent Hiring
                   </span>
@@ -696,7 +804,15 @@ function CreateProjectPageInner() {
                   <button
                     onClick={handleSubmit}
                     disabled={loading}
-                    className="flex items-center gap-2 bg-[#0f0f0f] text-white text-sm font-black px-6 py-3 rounded-xl hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 text-white text-sm font-black px-6 py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ backgroundColor: BLUE }}
+                    onMouseEnter={(e) =>
+                      !loading &&
+                      (e.currentTarget.style.backgroundColor = BLUE_HOVER)
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor = BLUE)
+                    }
                   >
                     {loading
                       ? "Saving…"
@@ -765,5 +881,7 @@ function Field({ label, required, error, hint, children }) {
   );
 }
 
+const inputStyle = { transition: "border-color 0.15s" };
+
 const inputCls = (error) =>
-  `w-full border ${error ? "border-red-400" : "border-slate-200"} rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-800 bg-slate-50 outline-none focus:border-slate-400 transition-colors box-border disabled:opacity-50 disabled:cursor-not-allowed`;
+  `w-full border ${error ? "border-red-400" : "border-slate-200"} rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-800 bg-slate-50 outline-none transition-colors box-border disabled:opacity-50 disabled:cursor-not-allowed`;

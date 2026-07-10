@@ -26,6 +26,9 @@ import {
 import EmployerSidebar from "@/employerComponets/EmployerSidebar";
 import DashboardNavbar from "@/employerComponets/DashboardNavbar";
 
+const BRAND = "#003882";
+const BRAND_HOVER = "#002a63";
+const BRAND_TINT = "#eaf1fb";
 
 const todayStr = () => new Date().toISOString().split("T")[0];
 
@@ -40,11 +43,8 @@ const formatDeadline = (deadline) => {
 
 const deadlineDays = (deadline) => {
   if (!deadline) return null;
-  return Math.ceil(
-    (new Date(deadline) - new Date()) / (1000 * 60 * 60 * 24),
-  );
+  return Math.ceil((new Date(deadline) - new Date()) / (1000 * 60 * 60 * 24));
 };
-
 
 export default function AllProjectsPage() {
   const [projects, setProjects] = useState([]);
@@ -115,8 +115,8 @@ export default function AllProjectsPage() {
       label: "Total Applicants",
       value: totalApplicants,
       icon: UserCheck,
-      color: "text-blue-600",
-      bg: "bg-blue-50",
+      color: "text-[#003882]",
+      bg: "bg-[#eaf1fb]",
     },
     {
       label: "Active Projects",
@@ -146,8 +146,11 @@ export default function AllProjectsPage() {
       <>
         <EmployerSidebar />
         <DashboardNavbar />
-        <main className="md:ml-64 pt-14 min-h-screen bg-[#f8fafc] flex items-center justify-center">
-          <div className="w-6 h-6 border-2 border-slate-700 border-t-transparent rounded-full animate-spin" />
+        <main className="md:ml-64 pt-14 min-h-screen bg-[#e8eaed] flex items-center justify-center">
+          <div
+            className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin"
+            style={{ borderColor: BRAND, borderTopColor: "transparent" }}
+          />
         </main>
       </>
     );
@@ -157,12 +160,11 @@ export default function AllProjectsPage() {
     <>
       <EmployerSidebar />
       <DashboardNavbar />
-      <main className="md:ml-64 pt-14 min-h-screen bg-[#f8fafc] pb-16">
+      <main className="md:ml-64 pt-14 min-h-screen bg-[#e8eaed] pb-16">
         <div className="px-4 md:px-6 py-8">
-
           <div className="flex items-start justify-between mb-8">
             <div>
-              <h1 className="text-2xl font-black text-slate-900">
+              <h1 className="text-2xl font-black text-[#003882]">
                 All Projects
               </h1>
               <p className="text-sm font-semibold text-slate-400 mt-0.5">
@@ -173,7 +175,17 @@ export default function AllProjectsPage() {
             </div>
             <Link
               href="/employer/dashboard/create-project"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-black text-white text-sm font-black rounded-xl transition-colors no-underline shadow-md shadow-slate-400/20"
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-white text-sm font-black rounded-xl transition-colors no-underline shadow-md"
+              style={{
+                backgroundColor: BRAND,
+                boxShadow: "0 8px 20px rgba(0,56,130,0.25)",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = BRAND_HOVER)
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor = BRAND)
+              }
             >
               <Plus size={15} strokeWidth={2.5} />
               Add New Project
@@ -221,20 +233,27 @@ export default function AllProjectsPage() {
               </p>
               <Link
                 href="/employer/dashboard/create-project"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-slate-900 hover:bg-black text-white text-sm font-black rounded-xl transition-colors no-underline shadow-md shadow-slate-400/20"
+                className="inline-flex items-center gap-2 px-6 py-3 text-white text-sm font-black rounded-xl transition-colors no-underline shadow-md"
+                style={{
+                  backgroundColor: BRAND,
+                  boxShadow: "0 8px 20px rgba(0,56,130,0.25)",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = BRAND_HOVER)
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = BRAND)
+                }
               >
                 <Plus size={15} /> Add New Project
               </Link>
             </div>
           ) : (
-
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {projects.map((project) => {
-                const isExpired =
-                  project.deadline && project.deadline < today;
+                const isExpired = project.deadline && project.deadline < today;
                 const days = deadlineDays(project.deadline);
-                const isClosingSoon =
-                  !isExpired && days !== null && days <= 3;
+                const isClosingSoon = !isExpired && days !== null && days <= 3;
 
                 return (
                   <div
@@ -290,14 +309,16 @@ export default function AllProjectsPage() {
                       </span>
                       <span className="mx-2">·</span>
                       <span>
-                        <strong className="text-slate-700">Workers needed:</strong>{" "}
+                        <strong className="text-slate-700">
+                          Workers needed:
+                        </strong>{" "}
                         {project.workersRequired}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
-                        <UserCheck size={12} className="text-blue-500" />
+                        <UserCheck size={12} style={{ color: BRAND }} />
                         <span>
                           <strong className="text-slate-700">
                             {project.applicants || 0}
@@ -323,7 +344,10 @@ export default function AllProjectsPage() {
                     )}
 
                     <div className="flex flex-wrap gap-2">
-                      <span className="border border-slate-800 text-slate-800 text-[11px] font-bold px-3 py-1 rounded-full">
+                      <span
+                        className="text-[11px] font-bold px-3 py-1 rounded-full"
+                        style={{ border: `1px solid ${BRAND}`, color: BRAND }}
+                      >
                         {project.projectType}
                       </span>
                       <span className="border border-red-400 text-red-500 text-[11px] font-bold px-3 py-1 rounded-full">
@@ -335,7 +359,10 @@ export default function AllProjectsPage() {
 
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-600">
+                        <div
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black"
+                          style={{ backgroundColor: BRAND_TINT, color: BRAND }}
+                        >
                           {project.company?.slice(0, 2).toUpperCase()}
                         </div>
                         <span className="text-xs font-bold text-slate-700 max-w-28 truncate">
@@ -377,8 +404,8 @@ export default function AllProjectsPage() {
               Delete this project?
             </h2>
             <p className="text-sm font-semibold text-slate-500 mb-5 leading-relaxed">
-              This is permanent and cannot be undone. All applicant data
-              linked to this project will also be removed from your view.
+              This is permanent and cannot be undone. All applicant data linked
+              to this project will also be removed from your view.
             </p>
             <div className="flex gap-3">
               <button

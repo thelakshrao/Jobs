@@ -13,6 +13,7 @@ import {
 } from "firebase/firestore";
 
 const BORDER = "1.5px solid #cbd5e1";
+const BRAND = "#004aac";
 
 function timeAgo(ts) {
   if (!ts) return "";
@@ -78,8 +79,11 @@ function NotifDropdown({ notifications, totalUnread, onClose, onNotifClick }) {
               }}
               className="w-full flex items-start gap-3 px-4 py-3.5 hover:bg-slate-50 border-none bg-transparent cursor-pointer text-left border-b border-slate-50 transition-colors"
             >
-              <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center shrink-0 mt-0.5">
-                <MessageSquare size={16} className="text-blue-500" />
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                style={{ backgroundColor: "#eaf1fb" }}
+              >
+                <MessageSquare size={16} style={{ color: BRAND }} />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[13px] font-semibold text-slate-900 truncate">
@@ -109,7 +113,8 @@ function NotifDropdown({ notifications, totalUnread, onClose, onNotifClick }) {
               onNotifClick(null);
               onClose();
             }}
-            className="text-[12px] font-semibold text-blue-500 hover:text-blue-600 border-none bg-transparent cursor-pointer"
+            className="text-[12px] font-semibold border-none bg-transparent cursor-pointer"
+            style={{ color: BRAND }}
           >
             View all messages →
           </button>
@@ -264,7 +269,8 @@ export default function DashboardNavbar() {
           <button
             onClick={handleProfileClick}
             aria-label="Profile"
-            className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-900 text-white hover:scale-105 transition-transform"
+            className="flex items-center justify-center w-8 h-8 rounded-full text-white hover:scale-105 transition-transform"
+            style={{ backgroundColor: BRAND }}
           >
             <User size={15} strokeWidth={2.5} />
           </button>
@@ -356,8 +362,11 @@ export default function DashboardNavbar() {
                     }}
                     className="w-full flex items-start gap-3 px-4 py-4 hover:bg-slate-50 border-none bg-transparent cursor-pointer text-left border-b border-slate-50"
                   >
-                    <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
-                      <MessageSquare size={18} className="text-blue-500" />
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: "#eaf1fb" }}
+                    >
+                      <MessageSquare size={18} style={{ color: BRAND }} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[14px] font-semibold text-slate-900">
@@ -386,7 +395,8 @@ export default function DashboardNavbar() {
                     router.push("/employer/dashboard/empmessages");
                     setNotifOpen(false);
                   }}
-                  className="w-full py-2.5 rounded-xl bg-slate-900 text-white text-[13px] font-semibold border-none cursor-pointer"
+                  className="w-full py-2.5 rounded-xl text-white text-[13px] font-semibold border-none cursor-pointer"
+                  style={{ backgroundColor: BRAND }}
                 >
                   View all messages
                 </button>

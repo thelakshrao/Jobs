@@ -20,6 +20,9 @@ import {
   Building2,
 } from "lucide-react";
 
+const SIDEBAR_BG = "#003882";
+const BRAND = "#003882";
+
 const navItems = [
   { href: "/employer/dashboard", icon: Briefcase, label: "Posted Jobs" },
   {
@@ -121,7 +124,7 @@ export default function EmployerSidebar() {
         pathname.startsWith(href + "?");
 
   const ProfileCard = () => (
-    <div className="px-4 py-4 border-b border-white/10">
+    <div className="px-4 py-4 border-b border-white/25">
       <div className="flex items-center gap-3 mb-3">
         <div className="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center shrink-0">
           <User size={16} strokeWidth={2.5} className="text-white" />
@@ -189,34 +192,48 @@ export default function EmployerSidebar() {
 
   return (
     <>
-      <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-64 flex-col bg-[#0f0f0f] z-40 border-r border-white/10">
-        <div className="flex items-center px-6 h-14 shrink-0 border-b border-white/10">
+      <aside
+        className="hidden md:flex fixed left-0 top-0 bottom-0 w-64 flex-col z-40 border-r border-white/10"
+        style={{ backgroundColor: SIDEBAR_BG }}
+      >
+        <div className="flex items-center px-6 h-14 shrink-0 border-b border-white/25">
           <a href="/employer">
-            <img src={LogoEmp.src} alt="Logo" className="h-9 w-auto block" />
+            <img
+              src={LogoEmp.src}
+              alt="Logo"
+              className="h-9 w-auto block brightness-0 invert"
+            />
           </a>
         </div>
 
         <ProfileCard />
 
         <nav className="flex flex-col gap-2 px-3 py-4 flex-1 overflow-y-auto">
-          {navItems.map(({ href, icon: Icon, label }) => (
-            <Link
-              key={href}
-              href={href}
-              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 no-underline
-                ${
-                  isActive(href)
-                    ? "bg-white text-[#0f0f0f]"
-                    : "text-white/60 hover:bg-white/10 hover:text-white"
-                }`}
-            >
-              <Icon size={18} className="shrink-0" />
-              {label}
-            </Link>
-          ))}
+          {navItems.map(({ href, icon: Icon, label }) => {
+            const active = isActive(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 no-underline"
+                style={{
+                  backgroundColor: active
+                    ? "rgba(255,255,255,0.08)"
+                    : "transparent",
+                  color: "#ffffff",
+                  border: active
+                    ? "2px solid #ffffff"
+                    : "2px solid transparent",
+                }}
+              >
+                <Icon size={18} className="shrink-0" />
+                {label}
+              </Link>
+            );
+          })}
         </nav>
 
-        <div className="px-3 pb-5 pt-3 shrink-0 border-t border-white/10">
+        <div className="px-3 pb-5 pt-3 shrink-0 border-t border-white/25">
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
@@ -227,7 +244,10 @@ export default function EmployerSidebar() {
         </div>
       </aside>
 
-      <div className="md:hidden fixed top-0 left-0 right-0 z-50 h-14 flex items-center px-4 bg-[#0f0f0f] border-b border-white/10">
+      <div
+        className="md:hidden fixed top-0 left-0 right-0 z-50 h-14 flex items-center px-4 border-b border-white/25"
+        style={{ backgroundColor: SIDEBAR_BG }}
+      >
         <button
           onClick={() => setMobileOpen(true)}
           className="flex items-center justify-center w-9 h-9 rounded-xl text-white/60 hover:bg-white/10 hover:text-white transition-colors mr-3"
@@ -236,13 +256,18 @@ export default function EmployerSidebar() {
           <Menu size={22} />
         </button>
         <a href="/employer">
-          <img src={LogoEmp.src} alt="Logo" className="h-8 w-auto block" />
+          <img
+            src={LogoEmp.src}
+            alt="Logo"
+            className="h-8 w-auto block brightness-0 invert"
+          />
         </a>
         <div className="flex-1" />
         <button
           onClick={handleProfileClick}
           aria-label="Profile"
-          className="flex items-center justify-center w-8 h-8 rounded-full bg-white text-[#0f0f0f] hover:scale-105 transition-transform"
+          className="flex items-center justify-center w-8 h-8 rounded-full hover:scale-105 transition-transform"
+          style={{ backgroundColor: BRAND, color: "#ffffff" }}
         >
           <User size={15} strokeWidth={2.5} />
         </button>
@@ -255,13 +280,18 @@ export default function EmployerSidebar() {
       />
 
       <div
-        className={`md:hidden fixed top-0 left-0 bottom-0 z-70 w-72 flex flex-col bg-[#0f0f0f] border-r border-white/10
+        className={`md:hidden fixed top-0 left-0 bottom-0 z-70 w-72 flex flex-col border-r border-white/10
           transition-transform duration-300 ease-in-out
           ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
+        style={{ backgroundColor: SIDEBAR_BG }}
       >
-        <div className="flex items-center justify-between px-5 h-14 shrink-0 border-b border-white/10">
+        <div className="flex items-center justify-between px-5 h-14 shrink-0 border-b border-white/25">
           <a href="/employer">
-            <img src={LogoEmp.src} alt="Logo" className="h-8 w-auto block" />
+            <img
+              src={LogoEmp.src}
+              alt="Logo"
+              className="h-8 w-auto block brightness-0 invert"
+            />
           </a>
           <button
             onClick={() => setMobileOpen(false)}
@@ -275,25 +305,32 @@ export default function EmployerSidebar() {
         <ProfileCard />
 
         <nav className="flex flex-col gap-2 px-3 py-4 flex-1 overflow-y-auto">
-          {navItems.map(({ href, icon: Icon, label }) => (
-            <Link
-              key={href}
-              href={href}
-              onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-150 no-underline
-                ${
-                  isActive(href)
-                    ? "bg-white text-[#0f0f0f]"
-                    : "text-white/60 hover:bg-white/10 hover:text-white"
-                }`}
-            >
-              <Icon size={18} className="shrink-0" />
-              {label}
-            </Link>
-          ))}
+          {navItems.map(({ href, icon: Icon, label }) => {
+            const active = isActive(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-150 no-underline"
+                style={{
+                  backgroundColor: active
+                    ? "rgba(255,255,255,0.08)"
+                    : "transparent",
+                  color: "#ffffff",
+                  border: active
+                    ? "2px solid #ffffff"
+                    : "2px solid transparent",
+                }}
+              >
+                <Icon size={18} className="shrink-0" />
+                {label}
+              </Link>
+            );
+          })}
         </nav>
 
-        <div className="px-3 pb-6 pt-3 shrink-0 border-t border-white/10">
+        <div className="px-3 pb-6 pt-3 shrink-0 border-t border-white/25">
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"

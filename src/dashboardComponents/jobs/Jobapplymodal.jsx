@@ -27,7 +27,7 @@ import {
   Upload,
 } from "lucide-react";
 
-const BLUE = "#60a5fa";
+const BLUE = "#004aac";
 
 export default function JobApplyModal({ job, onClose, onApplied }) {
   const [profile, setProfile] = useState(null);

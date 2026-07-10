@@ -212,7 +212,7 @@ export default function EmployerApplicantsPage() {
 
   if (checking) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-[#e8eaed]">
         <div className="w-6 h-6 border-2 border-slate-700 border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -226,9 +226,9 @@ export default function EmployerApplicantsPage() {
           onClick={() => switchView(t)}
           className="flex-1 text-xs font-black px-3 py-2 rounded-xl border transition-colors"
           style={{
-            backgroundColor: viewType === t ? "#000000" : "#ffffff",
+            backgroundColor: viewType === t ? "#003882" : "#ffffff",
             color: viewType === t ? "#fff" : "#475569",
-            borderColor: viewType === t ? "#000000" : "#e2e8f0",
+            borderColor: viewType === t ? "#003882" : "#e2e8f0",
           }}
         >
           {t === "job" ? "Jobs" : "Projects"}
@@ -256,19 +256,19 @@ export default function EmployerApplicantsPage() {
               className="w-14 h-14 rounded-xl object-cover shrink-0 border-2 border-slate-100"
             />
           ) : (
-            <div className="w-14 h-14 rounded-xl bg-black flex items-center justify-center shrink-0">
+            <div className="w-14 h-14 rounded-xl bg-[#003882] flex items-center justify-center shrink-0">
               <span className="text-white text-xl font-black">
                 {selectedApp.applicantName?.[0]?.toUpperCase() || "?"}
               </span>
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-black text-black leading-tight">
+            <h2 className="text-xl font-black text-slate-900 leading-tight">
               {selectedApp.applicantName || "Applicant"}
             </h2>
             <p className="text-sm font-bold text-slate-500 mt-0.5">
               Applied for{" "}
-              <span className="text-black">{getTitle(selectedApp)}</span>
+              <span className="text-slate-900">{getTitle(selectedApp)}</span>
             </p>
             <p className="text-xs font-semibold text-slate-400 mt-0.5">
               {timeAgo(selectedApp.appliedAt)}
@@ -289,7 +289,7 @@ export default function EmployerApplicantsPage() {
                   backgroundColor: active
                     ? s === "Rejected"
                       ? "#ef4444"
-                      : "#000000"
+                      : "#003882"
                     : s === "Rejected"
                       ? "#fff5f5"
                       : "#f8fafc",
@@ -301,7 +301,7 @@ export default function EmployerApplicantsPage() {
                   borderColor: active
                     ? s === "Rejected"
                       ? "#dc2626"
-                      : "#0f172a"
+                      : "#003882"
                     : s === "Rejected"
                       ? "#fca5a5"
                       : "#e2e8f0",
@@ -349,7 +349,7 @@ export default function EmployerApplicantsPage() {
                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-wide">
                       {label}
                     </p>
-                    <p className="text-sm font-black text-black truncate">
+                    <p className="text-sm font-black text-slate-900 truncate">
                       {value}
                     </p>
                   </div>
@@ -374,7 +374,9 @@ export default function EmployerApplicantsPage() {
                   <FileText size={16} className="text-slate-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-black text-black">View Resume</p>
+                  <p className="text-sm font-black text-slate-900">
+                    View Resume
+                  </p>
                   <p className="text-xs font-semibold text-slate-400">
                     Click to open
                   </p>
@@ -395,11 +397,13 @@ export default function EmployerApplicantsPage() {
                 onClick={() => markAsViewed(selectedApp.id)}
                 className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 transition-all"
               >
-                <div className="w-9 h-9 rounded-lg bg-black flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-lg bg-[#003882] flex items-center justify-center shrink-0">
                   <User size={16} className="text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-black text-black">View Profile</p>
+                  <p className="text-sm font-black text-slate-900">
+                    View Profile
+                  </p>
                   <p className="text-xs font-semibold text-slate-400">
                     Open full profile
                   </p>
@@ -418,7 +422,7 @@ export default function EmployerApplicantsPage() {
                   <Briefcase size={15} className="text-slate-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-black text-black">
+                  <p className="text-sm font-black text-slate-900">
                     {selectedApp.lastJobTitle || "—"}
                   </p>
                   <p className="text-xs font-semibold text-slate-500">
@@ -437,10 +441,10 @@ export default function EmployerApplicantsPage() {
     <>
       <EmployerSidebar />
       <DashboardNavbar />
-      <main className="md:ml-64 pt-14 pb-16 md:pb-0 min-h-screen bg-[#f8fafc]">
+      <main className="md:ml-64 pt-14 pb-16 md:pb-0 min-h-screen bg-[#e8eaed]">
         <div className="pt-5 pb-10 px-4 sm:px-6 h-[calc(100vh-56px)] flex flex-col">
           <div className="mb-5 shrink-0">
-            <h1 className="text-2xl font-black text-black">Applicants</h1>
+            <h1 className="text-2xl font-black text-[#003882]">Applicants</h1>
             <p className="text-sm font-semibold text-slate-500 mt-0.5">
               {loading
                 ? "Loading…"
@@ -450,12 +454,12 @@ export default function EmployerApplicantsPage() {
 
           {loading ? (
             <div className="flex items-center justify-center h-64">
-              <div className="w-7 h-7 border-[3px] border-slate-300 border-t-black rounded-full animate-spin" />
+              <div className="w-7 h-7 border-[3px] border-slate-300 border-t-[#003882] rounded-full animate-spin" />
             </div>
           ) : applications.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-slate-200 flex flex-col items-center justify-center py-24 px-6 text-center">
+            <div className="bg-[#e8eaed] rounded-2xl border border-slate-200 flex flex-col items-center justify-center py-24 px-6 text-center">
               <User size={40} className="text-slate-200 mb-4" />
-              <p className="text-lg font-black text-black mb-1">
+              <p className="text-lg font-black text-slate-900 mb-1">
                 No applicants yet
               </p>
               <p className="text-sm font-semibold text-slate-400">
@@ -466,7 +470,7 @@ export default function EmployerApplicantsPage() {
             <>
               <div className="hidden md:flex gap-3 items-stretch flex-1 min-h-0">
                 <div className="w-52 shrink-0 flex flex-col gap-1.5 h-full overflow-y-auto pr-1">
-                  <div className="sticky top-0 bg-[#f8fafc] z-10 pb-1">
+                  <div className="sticky top-0 bg-[#e8eaed] z-10 pb-1">
                     <ViewToggle />
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 px-1">
                       {viewType === "job" ? "Jobs" : "Projects"}
@@ -489,8 +493,8 @@ export default function EmployerApplicantsPage() {
                         key={title}
                         className="w-full rounded-xl transition-all shrink-0 overflow-hidden"
                         style={{
-                          backgroundColor: active ? "#000000" : "#ffffff",
-                          border: `1.5px solid ${active ? "#0f172a" : "#e2e8f0"}`,
+                          backgroundColor: active ? "#003882" : "#ffffff",
+                          border: `1.5px solid ${active ? "#003882" : "#e2e8f0"}`,
                         }}
                       >
                         <button
@@ -501,7 +505,7 @@ export default function EmployerApplicantsPage() {
                           className="w-full text-left px-3.5 py-3"
                         >
                           <p
-                            className={`text-sm font-black truncate ${active ? "text-white" : "text-black"}`}
+                            className={`text-sm font-black truncate ${active ? "text-white" : "text-slate-900"}`}
                           >
                             {title}
                           </p>
@@ -516,7 +520,7 @@ export default function EmployerApplicantsPage() {
                           className={`w-full flex items-center justify-center gap-1.5 text-xs font-bold px-3.5 py-2 border-t transition-colors ${
                             active
                               ? "text-slate-300 border-white/10 hover:bg-white/5 hover:text-white"
-                              : "text-slate-500 border-slate-100 hover:bg-slate-50 hover:text-black"
+                              : "text-slate-500 border-slate-100 hover:bg-slate-50 hover:text-[#003882]"
                           }`}
                         >
                           <Info size={12} />
@@ -529,10 +533,13 @@ export default function EmployerApplicantsPage() {
                   })}
                 </div>
 
-                <div className="w-px self-stretch bg-slate-200 shrink-0" />
+                <div
+                  className="w-px self-stretch shrink-0"
+                  style={{ backgroundColor: "#b9bec7" }}
+                />
 
                 <div className="w-60 shrink-0 flex flex-col gap-1.5 h-full overflow-y-auto pr-1">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 px-1 truncate sticky top-0 bg-[#f8fafc] z-10 py-1">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 px-1 truncate sticky top-0 bg-[#e8eaed] z-10 py-1">
                     {selectedJob || `Select a ${viewType}`}
                   </p>
                   {jobApplicants.map((app) => {
@@ -578,7 +585,7 @@ export default function EmployerApplicantsPage() {
                               </span>
                             </div>
                           )}
-                          <p className="text-sm font-black text-black truncate flex-1">
+                          <p className="text-sm font-black text-slate-900 truncate flex-1">
                             {app.applicantName || "Applicant"}
                           </p>
                           <span
@@ -605,7 +612,10 @@ export default function EmployerApplicantsPage() {
                   })}
                 </div>
 
-                <div className="w-px self-stretch bg-slate-200 shrink-0" />
+                <div
+                  className="w-px self-stretch shrink-0"
+                  style={{ backgroundColor: "#b9bec7" }}
+                />
 
                 <div className="flex-1 min-w-0 h-full overflow-y-auto pr-1">
                   {selectedApp ? (
@@ -650,14 +660,14 @@ export default function EmployerApplicantsPage() {
                             className="w-full text-left px-4 py-4 flex items-center justify-between"
                           >
                             <div>
-                              <p className="text-base font-black text-black">
+                              <p className="text-base font-black text-slate-900">
                                 {title}
                               </p>
                               <p className="text-sm font-bold text-slate-400 mt-0.5">
                                 {count} applicant{count !== 1 ? "s" : ""}
                               </p>
                             </div>
-                            <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center shrink-0">
+                            <div className="w-8 h-8 rounded-full bg-[#003882] flex items-center justify-center shrink-0">
                               <ChevronLeft
                                 size={16}
                                 className="text-white rotate-180"
@@ -668,7 +678,7 @@ export default function EmployerApplicantsPage() {
                             onClick={() =>
                               openJobDetail(getRefId(job), viewType)
                             }
-                            className="w-full flex items-center justify-center gap-1.5 text-xs font-bold px-4 py-2.5 border-t border-slate-100 text-slate-500 hover:bg-slate-50 hover:text-black transition-colors"
+                            className="w-full flex items-center justify-center gap-1.5 text-xs font-bold px-4 py-2.5 border-t border-slate-100 text-slate-500 hover:bg-slate-50 hover:text-[#003882] transition-colors"
                           >
                             <Info size={12} />
                             {viewType === "job"
@@ -722,7 +732,7 @@ export default function EmployerApplicantsPage() {
                               className="w-10 h-10 rounded-xl object-cover shrink-0"
                             />
                           ) : (
-                            <div className="w-10 h-10 rounded-xl bg-black flex items-center justify-center shrink-0">
+                            <div className="w-10 h-10 rounded-xl bg-[#003882] flex items-center justify-center shrink-0">
                               <span className="text-white text-sm font-black">
                                 {app.applicantName?.[0]?.toUpperCase() || "?"}
                               </span>
@@ -730,7 +740,7 @@ export default function EmployerApplicantsPage() {
                           )}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
-                              <p className="text-sm font-black text-black truncate">
+                              <p className="text-sm font-black text-slate-900 truncate">
                                 {app.applicantName || "Applicant"}
                               </p>
                               <span
@@ -791,7 +801,7 @@ export default function EmployerApplicantsPage() {
           >
             {loadingJobDetail && !jobDetail ? (
               <div className="flex items-center justify-center py-24">
-                <div className="w-7 h-7 border-[3px] border-slate-300 border-t-black rounded-full animate-spin" />
+                <div className="w-7 h-7 border-[3px] border-slate-300 border-t-[#003882] rounded-full animate-spin" />
               </div>
             ) : jobDetail ? (
               <>
@@ -806,7 +816,7 @@ export default function EmployerApplicantsPage() {
                     >
                       {jobDetail.status || "Draft"}
                     </p>
-                    <h2 className="text-xl font-black text-black leading-tight">
+                    <h2 className="text-xl font-black text-slate-900 leading-tight">
                       {jobDetail.title || "Untitled Role"}
                     </h2>
                     <p className="text-sm font-bold text-slate-500 mt-0.5">
@@ -894,7 +904,7 @@ export default function EmployerApplicantsPage() {
                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-wide">
                             {label}
                           </p>
-                          <p className="text-sm font-black text-black truncate">
+                          <p className="text-sm font-black text-slate-900 truncate">
                             {String(value)}
                           </p>
                         </div>

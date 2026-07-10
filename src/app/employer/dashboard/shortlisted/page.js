@@ -36,16 +36,15 @@ import {
   Star,
   XCircle,
 } from "lucide-react";
-
+const BRAND = "#003882";
+const BRAND_DARK = "#002a63";
 const PIPELINE_STAGES = ["Shortlisted", "Interviewing", "Hired"];
-
 const STAGE_COLORS = {
   Shortlisted: { bg: "#fefce8", text: "#854d0e", border: "#fde047" },
   Interviewing: { bg: "#eff6ff", text: "#1e40af", border: "#93c5fd" },
   Hired: { bg: "#f0fdf4", text: "#166534", border: "#86efac" },
   Rejected: { bg: "#fef2f2", text: "#991b1b", border: "#fca5a5" },
 };
-
 function formatSalary(job) {
   const currency = job.currencies?.[0] || "INR";
   if (job.payStructure === "Negotiable") return "Negotiable";
@@ -57,14 +56,12 @@ function formatSalary(job) {
     return `${currency} ${job.hourlyRate} / hr`;
   return "";
 }
-
 function getTitle(app) {
   return app.type === "project" ? app.projectTitle : app.jobTitle;
 }
 function getRefId(app) {
   return app.type === "project" ? app.projectId : app.jobId;
 }
-
 export default function EmployerShortlistedPage() {
   const router = useRouter();
   const [checking, setChecking] = useState(true);
@@ -77,7 +74,6 @@ export default function EmployerShortlistedPage() {
   const [mobileView, setMobileView] = useState("jobs");
   const [jobDetail, setJobDetail] = useState(null);
   const [loadingJobDetail, setLoadingJobDetail] = useState(false);
-
   const openJobDetail = async (id, type = "job") => {
     if (!id) return;
     setLoadingJobDetail(true);
@@ -91,7 +87,6 @@ export default function EmployerShortlistedPage() {
       setLoadingJobDetail(false);
     }
   };
-
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -145,7 +140,6 @@ export default function EmployerShortlistedPage() {
     });
     return () => unsub();
   }, []);
-
   const updateStatus = async (appId, status) => {
     setUpdatingStatus(true);
     try {
@@ -159,10 +153,8 @@ export default function EmployerShortlistedPage() {
               : status === "Rejected"
                 ? "rejectedAt"
                 : null;
-
       const updatePayload = { status, statusUpdatedAt: serverTimestamp() };
       if (timestampField) updatePayload[timestampField] = serverTimestamp();
-
       await updateDoc(doc(db, "applications", appId), updatePayload);
       setApplications((prev) =>
         prev.map((a) => (a.id === appId ? { ...a, status } : a)),
@@ -175,7 +167,6 @@ export default function EmployerShortlistedPage() {
     }
     setUpdatingStatus(false);
   };
-
   function timeAgo(dateStr) {
     if (!dateStr) return "";
     const d = dateStr?.toDate ? dateStr.toDate() : new Date(dateStr);
@@ -186,7 +177,6 @@ export default function EmployerShortlistedPage() {
     if (diff < 7) return `${Math.floor(diff)}d ago`;
     return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
   }
-
   const typedApplications = applications.filter(
     (a) => (a.type || "job") === viewType,
   );
@@ -196,22 +186,22 @@ export default function EmployerShortlistedPage() {
   const jobApplicants = typedApplications.filter(
     (a) => getTitle(a) === selectedJob,
   );
-
   const switchView = (type) => {
     setViewType(type);
     setSelectedJob(null);
     setSelectedApp(null);
     setMobileView("jobs");
   };
-
   if (checking) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="w-6 h-6 border-2 border-slate-700 border-t-transparent rounded-full animate-spin" />
+        <div
+          className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin"
+          style={{ borderColor: BRAND, borderTopColor: "transparent" }}
+        />
       </div>
     );
   }
-
   const ViewToggle = () => (
     <div className="flex gap-1.5 mb-3 px-1">
       {["job", "project"].map((t) => (
@@ -220,9 +210,9 @@ export default function EmployerShortlistedPage() {
           onClick={() => switchView(t)}
           className="flex-1 text-xs font-black px-3 py-2 rounded-xl border transition-colors"
           style={{
-            backgroundColor: viewType === t ? "#000000" : "#ffffff",
+            backgroundColor: viewType === t ? BRAND : "#ffffff",
             color: viewType === t ? "#fff" : "#475569",
-            borderColor: viewType === t ? "#000000" : "#e2e8f0",
+            borderColor: viewType === t ? BRAND : "#e2e8f0",
           }}
         >
           {t === "job" ? "Jobs" : "Projects"}
@@ -230,11 +220,9 @@ export default function EmployerShortlistedPage() {
       ))}
     </div>
   );
-
   const PipelineBar = ({ currentStatus }) => {
     const isRejected = currentStatus === "Rejected";
     const currentIdx = PIPELINE_STAGES.indexOf(currentStatus);
-
     return (
       <div className="mt-4">
         <div className="flex items-center gap-0 mb-3">
@@ -267,7 +255,6 @@ export default function EmployerShortlistedPage() {
             );
           })}
         </div>
-
         <div className="flex flex-wrap gap-2">
           {PIPELINE_STAGES.map((s) => {
             const active = currentStatus === s;
@@ -278,9 +265,9 @@ export default function EmployerShortlistedPage() {
                 disabled={updatingStatus || isRejected}
                 className="flex items-center gap-1.5 text-xs font-black px-3.5 py-1.5 rounded-xl border transition-all disabled:opacity-40"
                 style={{
-                  backgroundColor: active ? "#000000" : "#f8fafc",
+                  backgroundColor: active ? BRAND : "#f8fafc",
                   color: active ? "#ffffff" : "#475569",
-                  borderColor: active ? "#0f172a" : "#e2e8f0",
+                  borderColor: active ? BRAND_DARK : "#e2e8f0",
                 }}
               >
                 {active && <Check size={11} />}
@@ -292,7 +279,6 @@ export default function EmployerShortlistedPage() {
               </button>
             );
           })}
-
           <button
             onClick={() => updateStatus(selectedApp.id, "Rejected")}
             disabled={updatingStatus}
@@ -315,7 +301,6 @@ export default function EmployerShortlistedPage() {
             )}
           </button>
         </div>
-
         {currentStatus === "Rejected" && (
           <p className="text-xs font-semibold text-red-400 mt-2">
             This candidate has been marked as not a fit. You can re-shortlist
@@ -325,11 +310,9 @@ export default function EmployerShortlistedPage() {
       </div>
     );
   };
-
   const DetailPanel = () => {
     const sc = STAGE_COLORS[selectedApp.status] || STAGE_COLORS.Shortlisted;
     const isRejected = selectedApp.status === "Rejected";
-
     return (
       <div
         className="rounded-2xl border overflow-hidden"
@@ -352,7 +335,10 @@ export default function EmployerShortlistedPage() {
                 className="w-14 h-14 rounded-xl object-cover shrink-0 border-2 border-slate-100"
               />
             ) : (
-              <div className="w-14 h-14 rounded-xl bg-black flex items-center justify-center shrink-0">
+              <div
+                className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: BRAND }}
+              >
                 <span className="text-white text-xl font-black">
                   {selectedApp.applicantName?.[0]?.toUpperCase() || "?"}
                 </span>
@@ -385,10 +371,8 @@ export default function EmployerShortlistedPage() {
               </p>
             </div>
           </div>
-
           <PipelineBar currentStatus={selectedApp.status} />
         </div>
-
         <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
@@ -467,7 +451,10 @@ export default function EmployerShortlistedPage() {
                   rel="noreferrer"
                   className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 transition-all"
                 >
-                  <div className="w-9 h-9 rounded-lg bg-black flex items-center justify-center shrink-0">
+                  <div
+                    className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: BRAND }}
+                  >
                     <User size={16} className="text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -507,17 +494,16 @@ export default function EmployerShortlistedPage() {
       </div>
     );
   };
-
   return (
     <>
       <EmployerSidebar />
       <DashboardNavbar />
-      <main className="md:ml-64 pt-14 pb-16 md:pb-0 min-h-screen bg-[#f8fafc]">
+      <main className="md:ml-64 pt-14 pb-16 md:pb-0 min-h-screen bg-[#e8eaed]">
         <div className="pt-5 pb-10 px-4 sm:px-6 h-[calc(100vh-56px)] flex flex-col">
           <div className="mb-5 shrink-0">
             <div className="flex items-center gap-2">
-              <Star size={20} className="text-black" />
-              <h1 className="text-2xl font-black text-black">Shortlisted</h1>
+              <Star size={20} style={{ color: BRAND }} />
+              <h1 className="text-2xl font-black text-[#003882]">Shortlisted</h1>
             </div>
             <p className="text-sm font-semibold text-slate-500 mt-0.5">
               {loading
@@ -525,10 +511,12 @@ export default function EmployerShortlistedPage() {
                 : `${applications.length} candidate${applications.length !== 1 ? "s" : ""} in pipeline`}
             </p>
           </div>
-
           {loading ? (
             <div className="flex items-center justify-center h-64">
-              <div className="w-7 h-7 border-[3px] border-slate-300 border-t-black rounded-full animate-spin" />
+              <div
+                className="w-7 h-7 border-[3px] border-slate-300 rounded-full animate-spin"
+                style={{ borderTopColor: BRAND }}
+              />
             </div>
           ) : applications.length === 0 ? (
             <div className="bg-white rounded-2xl border border-slate-200 flex flex-col items-center justify-center py-24 px-6 text-center">
@@ -544,7 +532,7 @@ export default function EmployerShortlistedPage() {
             <>
               <div className="hidden md:flex gap-3 items-stretch flex-1 min-h-0">
                 <div className="w-52 shrink-0 flex flex-col gap-1.5 h-full overflow-y-auto pr-1">
-                  <div className="sticky top-0 bg-[#f8fafc] z-10 pb-1">
+                  <div className="sticky top-0 bg-[#e8eaed] z-10 pb-1">
                     <ViewToggle />
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 px-1">
                       {viewType === "job" ? "Jobs" : "Projects"}
@@ -567,8 +555,8 @@ export default function EmployerShortlistedPage() {
                         key={title}
                         className="w-full rounded-xl transition-all shrink-0 overflow-hidden"
                         style={{
-                          backgroundColor: active ? "#000000" : "#ffffff",
-                          border: `1.5px solid ${active ? "#0f172a" : "#e2e8f0"}`,
+                          backgroundColor: active ? BRAND : "#ffffff",
+                          border: `1.5px solid ${active ? BRAND_DARK : "#e2e8f0"}`,
                         }}
                       >
                         <button
@@ -606,11 +594,12 @@ export default function EmployerShortlistedPage() {
                     );
                   })}
                 </div>
-
-                <div className="w-px self-stretch bg-slate-200 shrink-0" />
-
+                <div
+                  className="w-px self-stretch shrink-0"
+                  style={{ backgroundColor: "#cbd1db" }}
+                />
                 <div className="w-60 shrink-0 flex flex-col gap-1.5 h-full overflow-y-auto pr-1">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 px-1 truncate sticky top-0 bg-[#f8fafc] z-10 py-1">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 px-1 truncate sticky top-0 bg-[#e8eaed] z-10 py-1">
                     {selectedJob || `Select a ${viewType}`}
                   </p>
                   {jobApplicants.map((app) => {
@@ -627,9 +616,9 @@ export default function EmployerShortlistedPage() {
                           backgroundColor: isRejected
                             ? "#fff5f5"
                             : active
-                              ? "#f1f5f9"
+                              ? "#eaf1fb"
                               : "#ffffff",
-                          border: `1.5px solid ${isRejected ? "#fca5a5" : active ? "#94a3b8" : "#e2e8f0"}`,
+                          border: `1.5px solid ${isRejected ? "#fca5a5" : active ? BRAND : "#e2e8f0"}`,
                         }}
                       >
                         <div className="flex items-center gap-2 mb-1">
@@ -640,7 +629,10 @@ export default function EmployerShortlistedPage() {
                               className="w-6 h-6 rounded-full object-cover shrink-0"
                             />
                           ) : (
-                            <div className="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center shrink-0">
+                            <div
+                              className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
+                              style={{ backgroundColor: BRAND }}
+                            >
                               <span className="text-white text-[9px] font-black">
                                 {app.applicantName?.[0]?.toUpperCase() || "?"}
                               </span>
@@ -672,9 +664,10 @@ export default function EmployerShortlistedPage() {
                     );
                   })}
                 </div>
-
-                <div className="w-px self-stretch bg-slate-200 shrink-0" />
-
+                <div
+                  className="w-px self-stretch shrink-0"
+                  style={{ backgroundColor: "#cbd1db" }}
+                />
                 <div className="flex-1 min-w-0 h-full overflow-y-auto pr-1">
                   {selectedApp ? (
                     <DetailPanel />
@@ -687,7 +680,6 @@ export default function EmployerShortlistedPage() {
                   )}
                 </div>
               </div>
-
               <div className="md:hidden flex-1 min-h-0 overflow-y-auto">
                 {mobileView === "jobs" && (
                   <div className="flex flex-col gap-2">
@@ -725,7 +717,10 @@ export default function EmployerShortlistedPage() {
                                 {count} candidate{count !== 1 ? "s" : ""}
                               </p>
                             </div>
-                            <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center shrink-0">
+                            <div
+                              className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                              style={{ backgroundColor: BRAND }}
+                            >
                               <ChevronLeft
                                 size={16}
                                 className="text-white rotate-180"
@@ -748,7 +743,6 @@ export default function EmployerShortlistedPage() {
                     })}
                   </div>
                 )}
-
                 {mobileView === "applicants" && (
                   <div className="flex flex-col gap-2">
                     <button
@@ -786,7 +780,10 @@ export default function EmployerShortlistedPage() {
                               className="w-10 h-10 rounded-xl object-cover shrink-0"
                             />
                           ) : (
-                            <div className="w-10 h-10 rounded-xl bg-black flex items-center justify-center shrink-0">
+                            <div
+                              className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                              style={{ backgroundColor: BRAND }}
+                            >
                               <span className="text-white text-sm font-black">
                                 {app.applicantName?.[0]?.toUpperCase() || "?"}
                               </span>
@@ -826,7 +823,6 @@ export default function EmployerShortlistedPage() {
                     })}
                   </div>
                 )}
-
                 {mobileView === "detail" && selectedApp && (
                   <div>
                     <button
@@ -843,7 +839,6 @@ export default function EmployerShortlistedPage() {
           )}
         </div>
       </main>
-
       {(jobDetail || loadingJobDetail) && (
         <div
           className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm"
@@ -856,7 +851,10 @@ export default function EmployerShortlistedPage() {
           >
             {loadingJobDetail && !jobDetail ? (
               <div className="flex items-center justify-center py-24">
-                <div className="w-7 h-7 border-[3px] border-slate-300 border-t-black rounded-full animate-spin" />
+                <div
+                  className="w-7 h-7 border-[3px] border-slate-300 rounded-full animate-spin"
+                  style={{ borderTopColor: BRAND }}
+                />
               </div>
             ) : jobDetail ? (
               <>

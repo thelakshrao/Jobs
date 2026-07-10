@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useMemo, useRef } from "react";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import {
@@ -8,9 +8,9 @@ import {
   IoAddOutline,
   IoTrashOutline,
   IoCheckmarkOutline,
-  IoChevronDownOutline,
 } from "react-icons/io5";
 import { BLUE, BLUE_BG } from "./shared";
+import { COUNTRY_CODES, PhoneInput, getSalaryOptions } from "./locale-utils";
 
 const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
@@ -43,60 +43,6 @@ const EXP_YEARS = [
   "4 years",
   "5+ years",
   "10+ years",
-];
-const SALARY_OPTIONS = [
-  "Below ₹10,000/mo",
-  "₹10,000–15,000/mo",
-  "₹15,000–25,000/mo",
-  "₹25,000–40,000/mo",
-  "₹40,000+/mo",
-  "Open to discuss",
-];
-
-const COUNTRY_CODES = [
-  { code: "+91", country: "India", flag: "🇮🇳" },
-  { code: "+971", country: "UAE", flag: "🇦🇪" },
-  { code: "+966", country: "Saudi Arabia", flag: "🇸🇦" },
-  { code: "+974", country: "Qatar", flag: "🇶🇦" },
-  { code: "+965", country: "Kuwait", flag: "🇰🇼" },
-  { code: "+968", country: "Oman", flag: "🇴🇲" },
-  { code: "+973", country: "Bahrain", flag: "🇧🇭" },
-  { code: "+1", country: "USA / Canada", flag: "🇺🇸" },
-  { code: "+44", country: "UK", flag: "🇬🇧" },
-  { code: "+61", country: "Australia", flag: "🇦🇺" },
-  { code: "+64", country: "New Zealand", flag: "🇳🇿" },
-  { code: "+49", country: "Germany", flag: "🇩🇪" },
-  { code: "+33", country: "France", flag: "🇫🇷" },
-  { code: "+39", country: "Italy", flag: "🇮🇹" },
-  { code: "+34", country: "Spain", flag: "🇪🇸" },
-  { code: "+31", country: "Netherlands", flag: "🇳🇱" },
-  { code: "+41", country: "Switzerland", flag: "🇨🇭" },
-  { code: "+46", country: "Sweden", flag: "🇸🇪" },
-  { code: "+47", country: "Norway", flag: "🇳🇴" },
-  { code: "+45", country: "Denmark", flag: "🇩🇰" },
-  { code: "+353", country: "Ireland", flag: "🇮🇪" },
-  { code: "+65", country: "Singapore", flag: "🇸🇬" },
-  { code: "+60", country: "Malaysia", flag: "🇲🇾" },
-  { code: "+62", country: "Indonesia", flag: "🇮🇩" },
-  { code: "+63", country: "Philippines", flag: "🇵🇭" },
-  { code: "+66", country: "Thailand", flag: "🇹🇭" },
-  { code: "+84", country: "Vietnam", flag: "🇻🇳" },
-  { code: "+92", country: "Pakistan", flag: "🇵🇰" },
-  { code: "+880", country: "Bangladesh", flag: "🇧🇩" },
-  { code: "+94", country: "Sri Lanka", flag: "🇱🇰" },
-  { code: "+977", country: "Nepal", flag: "🇳🇵" },
-  { code: "+27", country: "South Africa", flag: "🇿🇦" },
-  { code: "+234", country: "Nigeria", flag: "🇳🇬" },
-  { code: "+254", country: "Kenya", flag: "🇰🇪" },
-  { code: "+20", country: "Egypt", flag: "🇪🇬" },
-  { code: "+86", country: "China", flag: "🇨🇳" },
-  { code: "+81", country: "Japan", flag: "🇯🇵" },
-  { code: "+82", country: "South Korea", flag: "🇰🇷" },
-  { code: "+852", country: "Hong Kong", flag: "🇭🇰" },
-  { code: "+90", country: "Turkey", flag: "🇹🇷" },
-  { code: "+7", country: "Russia", flag: "🇷🇺" },
-  { code: "+55", country: "Brazil", flag: "🇧🇷" },
-  { code: "+52", country: "Mexico", flag: "🇲🇽" },
 ];
 
 const STEPS = [
@@ -131,69 +77,6 @@ function TextInput({ placeholder, value, onChange, type = "text" }) {
   );
 }
 
-function PhoneInput({
-  countryCode,
-  onCountryCodeChange,
-  value,
-  onChange,
-  fullWidth,
-}) {
-  return (
-    <div
-      className="flex items-stretch w-full overflow-hidden"
-      style={{
-        border: "1.5px solid #e2e8f0",
-        borderRadius: fullWidth ? 16 : 12,
-        backgroundColor: fullWidth ? "#f8fafc" : "white",
-      }}
-      onFocus={(e) => (e.currentTarget.style.borderColor = BLUE)}
-      onBlur={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
-    >
-      <div className="relative flex items-center shrink-0">
-        <select
-          value={countryCode}
-          onChange={(e) => onCountryCodeChange(e.target.value)}
-          className="h-full appearance-none outline-none text-sm font-semibold pl-3 pr-7"
-          style={{
-            border: "none",
-            borderRight: "1.5px solid #e2e8f0",
-            color: "#0f172a",
-            backgroundColor: "transparent",
-            cursor: "pointer",
-          }}
-        >
-          {COUNTRY_CODES.map((c) => (
-            <option key={c.code + c.country} value={c.code}>
-              {c.flag} {c.code} {c.country}
-            </option>
-          ))}
-        </select>
-        <IoChevronDownOutline
-          size={12}
-          style={{
-            position: "absolute",
-            right: 8,
-            color: "#94a3b8",
-            pointerEvents: "none",
-          }}
-        />
-      </div>
-      <input
-        type="tel"
-        value={value}
-        onChange={onChange}
-        placeholder="Enter your mobile number"
-        className={`flex-1 min-w-0 outline-none text-sm ${fullWidth ? "px-4 py-3" : "px-3 py-2.5"}`}
-        style={{
-          border: "none",
-          color: "#0f172a",
-          backgroundColor: "transparent",
-        }}
-      />
-    </div>
-  );
-}
-
 export default function SimpleProfile({ onComplete }) {
   const [step, setStep] = useState(0);
   const [photoURL, setPhotoURL] = useState("");
@@ -212,6 +95,11 @@ export default function SimpleProfile({ onComplete }) {
   ]);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef(null);
+
+  const { options: SALARY_OPTIONS, currencyCode } = useMemo(
+    () => getSalaryOptions(countryCode),
+    [countryCode],
+  );
 
   const addEmployer = () =>
     setEmployers([
@@ -234,6 +122,12 @@ export default function SimpleProfile({ onComplete }) {
     setUploading(false);
   };
 
+  const handleCountryCodeChange = (val) => {
+    setCountryCode(val);
+    const { options: nextOptions } = getSalaryOptions(val);
+    if (salary && !nextOptions.includes(salary)) setSalary("");
+  };
+
   const handleSave = async () => {
     setSaving(true);
     const user = auth.currentUser;
@@ -251,6 +145,7 @@ export default function SimpleProfile({ onComplete }) {
         education,
         experience: expYears,
         expectedSalary: salary,
+        currency: currencyCode,
         onboardingDone: true,
       },
       simpleEmployers: employers
@@ -500,11 +395,12 @@ export default function SimpleProfile({ onComplete }) {
                   Your mobile number
                 </h2>
                 <p className="text-sm" style={{ color: "#64748b" }}>
-                  Employers will contact you on this number
+                  Employers will contact you on this number. We also use your
+                  country to show pay ranges in the right currency later.
                 </p>
                 <PhoneInput
                   countryCode={countryCode}
-                  onCountryCodeChange={setCountryCode}
+                  onCountryCodeChange={handleCountryCodeChange}
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   fullWidth
@@ -588,7 +484,8 @@ export default function SimpleProfile({ onComplete }) {
                   How much pay are you expecting?
                 </h2>
                 <p className="text-sm" style={{ color: "#64748b" }}>
-                  Pick what feels right for your work
+                  Shown in {currencyCode}, based on the country you picked for
+                  your phone number
                 </p>
                 <div className="flex flex-col gap-2">
                   {SALARY_OPTIONS.map((opt) => (

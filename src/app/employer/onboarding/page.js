@@ -116,16 +116,16 @@ function PhoneInput({ value, onChange, dialCode, onDialChange }) {
 
   return (
     <div
-      className="flex gap-0 rounded-lg border border-slate-300 overflow-visible focus-within:ring-2 focus-within:ring-slate-400 focus-within:border-slate-400"
+      className="flex gap-0 rounded-lg border border-gray-300 overflow-visible focus-within:ring-2 focus-within:ring-[#004aac] focus-within:border-[#004aac]"
       ref={ref}
     >
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1.5 px-3 py-3 border-r border-slate-300 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors shrink-0 rounded-l-lg"
+        className="flex items-center gap-1.5 px-3 py-3 border-r border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shrink-0 rounded-l-lg"
       >
         <span className="text-base leading-none">{selected?.flag}</span>
-        <span className="text-slate-600">{selected?.dial}</span>
+        <span className="text-gray-600">{selected?.dial}</span>
         <svg
           width="10"
           height="10"
@@ -133,22 +133,22 @@ function PhoneInput({ value, onChange, dialCode, onDialChange }) {
           fill="none"
           stroke="currentColor"
           strokeWidth="2.5"
-          className={`text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
+          className={`text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
         >
           <polyline points="6 9 12 15 18 9" />
         </svg>
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-12 w-64 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden">
-          <div className="p-2 border-b border-slate-100">
+        <div className="absolute z-50 mt-12 w-64 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
+          <div className="p-2 border-b border-gray-100">
             <input
               autoFocus
               type="text"
               placeholder="Search country…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full px-3 py-2 text-sm rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-slate-300"
+              className="w-full px-3 py-2 text-sm rounded-lg bg-gray-50 border border-gray-200 outline-none focus:ring-2 focus:ring-[#004aac]/40"
             />
           </div>
           <div className="max-h-52 overflow-y-auto">
@@ -161,12 +161,12 @@ function PhoneInput({ value, onChange, dialCode, onDialChange }) {
                   setOpen(false);
                   setSearch("");
                 }}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-slate-50 transition-colors text-left
-                  ${c.dial === dialCode ? "bg-slate-100 font-semibold text-slate-900" : "text-slate-700"}`}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-[#eaf1fb] transition-colors text-left
+                  ${c.dial === dialCode ? "bg-[#eaf1fb] font-semibold text-[#004aac]" : "text-gray-700"}`}
               >
                 <span className="text-base">{c.flag}</span>
                 <span className="flex-1">{c.name}</span>
-                <span className="text-slate-400 text-xs">{c.dial}</span>
+                <span className="text-gray-400 text-xs">{c.dial}</span>
               </button>
             ))}
           </div>
@@ -178,7 +178,7 @@ function PhoneInput({ value, onChange, dialCode, onDialChange }) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Phone number"
-        className="flex-1 px-4 py-3 text-sm text-slate-800 placeholder-slate-400 bg-white outline-none rounded-r-lg"
+        className="flex-1 px-4 py-3 text-sm text-gray-800 placeholder-gray-400 bg-white outline-none rounded-r-lg"
       />
     </div>
   );
@@ -292,8 +292,8 @@ function EmployerOnboardingInner() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#e8eaed]">
-        <div className="w-6 h-6 border-2 border-slate-700 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-[#eef1f8]">
+        <div className="w-6 h-6 border-2 border-[#004aac] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -302,18 +302,18 @@ function EmployerOnboardingInner() {
     <>
       <EmpNavbar />
       <div
-        className="min-h-screen bg-[#e8eaed] flex flex-col items-center py-14 px-4 mt-20"
+        className="min-h-screen bg-[#eef1f8] flex flex-col items-center py-14 px-4 mt-20"
         style={{ fontFamily: "'Inter', 'DM Sans', system-ui, sans-serif" }}
       >
-        <div className="w-full max-w-lg bg-white rounded-2xl border border-slate-200 shadow-sm px-8 py-10">
-          <h1 className="text-3xl font-bold text-slate-900 mb-1">
+        <div className="w-full max-w-lg bg-white rounded-2xl border border-gray-200 shadow-sm px-8 py-10">
+          <h1 className="text-3xl font-bold text-gray-900 mb-1">
             {isSwitchMode
               ? "Switch employer account"
               : "Create an employer account"}
           </h1>
 
           {prefilled && (
-            <div className="mt-3 mb-1 flex items-center gap-2 text-sm text-slate-700 bg-slate-100 border border-slate-200 rounded-lg px-3 py-2">
+            <div className="mt-3 mb-1 flex items-center gap-2 text-sm text-[#004aac] bg-[#eaf1fb] border border-[#cfe0f5] rounded-lg px-3 py-2">
               <svg
                 width="15"
                 height="15"
@@ -332,7 +332,7 @@ function EmployerOnboardingInner() {
 
           <a
             href="/jobs"
-            className="inline-flex items-center gap-1.5 mt-4 mb-7 text-slate-700 text-sm font-semibold hover:underline group"
+            className="inline-flex items-center gap-1.5 mt-4 mb-7 text-[#004aac] text-sm font-semibold hover:underline group"
           >
             I'm looking for a job
             <svg
@@ -350,7 +350,7 @@ function EmployerOnboardingInner() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-semibold text-slate-800 mb-1.5">
+              <label className="block text-sm font-semibold text-gray-800 mb-1.5">
                 Company name <span className="text-red-500">*</span>
               </label>
               <input
@@ -358,13 +358,13 @@ function EmployerOnboardingInner() {
                 value={form.company}
                 onChange={(e) => set("company")(e.target.value)}
                 required
-                className="w-full px-4 py-3 rounded-lg border border-slate-300 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-slate-400 focus:border-slate-400 transition-all placeholder-slate-400"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-[#004aac] focus:border-[#004aac] transition-all placeholder-gray-400"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-slate-800 mb-1.5">
+                <label className="block text-sm font-semibold text-gray-800 mb-1.5">
                   First name <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -374,15 +374,15 @@ function EmployerOnboardingInner() {
                     onChange={(e) => set("firstName")(e.target.value)}
                     required
                     readOnly={prefilled && !isSwitchMode}
-                    className={`w-full px-4 py-3 rounded-lg border text-sm text-slate-800 outline-none transition-all
+                    className={`w-full px-4 py-3 rounded-lg border text-sm text-gray-800 outline-none transition-all
                       ${
                         prefilled && !isSwitchMode
-                          ? "bg-slate-50 border-slate-200 text-slate-600 cursor-default"
-                          : "border-slate-300 focus:ring-2 focus:ring-slate-400 focus:border-slate-400"
+                          ? "bg-gray-50 border-gray-200 text-gray-600 cursor-default"
+                          : "border-gray-300 focus:ring-2 focus:ring-[#004aac] focus:border-[#004aac]"
                       }`}
                   />
                   {prefilled && !isSwitchMode && (
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#004aac]">
                       <svg
                         width="14"
                         height="14"
@@ -398,7 +398,7 @@ function EmployerOnboardingInner() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-800 mb-1.5">
+                <label className="block text-sm font-semibold text-gray-800 mb-1.5">
                   Last name <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -408,15 +408,15 @@ function EmployerOnboardingInner() {
                     onChange={(e) => set("lastName")(e.target.value)}
                     required
                     readOnly={prefilled && !isSwitchMode}
-                    className={`w-full px-4 py-3 rounded-lg border text-sm text-slate-800 outline-none transition-all
+                    className={`w-full px-4 py-3 rounded-lg border text-sm text-gray-800 outline-none transition-all
                       ${
                         prefilled && !isSwitchMode
-                          ? "bg-slate-50 border-slate-200 text-slate-600 cursor-default"
-                          : "border-slate-300 focus:ring-2 focus:ring-slate-400 focus:border-slate-400"
+                          ? "bg-gray-50 border-gray-200 text-gray-600 cursor-default"
+                          : "border-gray-300 focus:ring-2 focus:ring-[#004aac] focus:border-[#004aac]"
                       }`}
                   />
                   {prefilled && !isSwitchMode && (
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#004aac]">
                       <svg
                         width="14"
                         height="14"
@@ -434,7 +434,7 @@ function EmployerOnboardingInner() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-800 mb-1.5">
+              <label className="block text-sm font-semibold text-gray-800 mb-1.5">
                 Work email <span className="text-red-500">*</span>
               </label>
               <div className="relative">
@@ -444,15 +444,15 @@ function EmployerOnboardingInner() {
                   onChange={(e) => set("email")(e.target.value)}
                   required
                   readOnly={prefilled && !isSwitchMode}
-                  className={`w-full px-4 py-3 rounded-lg border text-sm text-slate-800 outline-none transition-all
+                  className={`w-full px-4 py-3 rounded-lg border text-sm text-gray-800 outline-none transition-all
                     ${
                       prefilled && !isSwitchMode
-                        ? "bg-slate-50 border-slate-200 text-slate-600 cursor-default"
-                        : "border-slate-300 focus:ring-2 focus:ring-slate-400 focus:border-slate-400"
+                        ? "bg-gray-50 border-gray-200 text-gray-600 cursor-default"
+                        : "border-gray-300 focus:ring-2 focus:ring-[#004aac] focus:border-[#004aac]"
                     }`}
                 />
                 {prefilled && !isSwitchMode && (
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#004aac]">
                     <svg
                       width="14"
                       height="14"
@@ -469,7 +469,7 @@ function EmployerOnboardingInner() {
             </div>
 
             <div className="relative">
-              <label className="block text-sm font-semibold text-slate-800 mb-1.5">
+              <label className="block text-sm font-semibold text-gray-800 mb-1.5">
                 Phone number
               </label>
               <PhoneInput
@@ -478,7 +478,7 @@ function EmployerOnboardingInner() {
                 dialCode={form.dialCode}
                 onDialChange={set("dialCode")}
               />
-              <p className="text-xs text-slate-400 mt-1.5">
+              <p className="text-xs text-gray-400 mt-1.5">
                 For account management communication. Not visible to jobseekers.
               </p>
             </div>
@@ -491,8 +491,8 @@ function EmployerOnboardingInner() {
                 className={`mt-0.5 w-5 h-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors cursor-pointer
                   ${
                     form.dataConsent
-                      ? "bg-slate-900 border-slate-900"
-                      : "border-slate-400 bg-white"
+                      ? "bg-[#004aac] border-[#004aac]"
+                      : "border-gray-400 bg-white"
                   }`}
               >
                 {form.dataConsent && (
@@ -508,7 +508,7 @@ function EmployerOnboardingInner() {
                   </svg>
                 )}
               </div>
-              <span className="text-sm text-slate-600 leading-snug">
+              <span className="text-sm text-gray-600 leading-snug">
                 By clicking this box, you agree to receive relevant applicant
                 data from Jobs Abroad — including CVs, contact details, and
                 match alerts — directly to your registered email and phone
@@ -524,8 +524,8 @@ function EmployerOnboardingInner() {
                 className={`mt-0.5 w-5 h-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors cursor-pointer
                   ${
                     form.termsConsent
-                      ? "bg-slate-900 border-slate-900"
-                      : "border-slate-400 bg-white"
+                      ? "bg-[#004aac] border-[#004aac]"
+                      : "border-gray-400 bg-white"
                   }`}
               >
                 {form.termsConsent && (
@@ -541,18 +541,18 @@ function EmployerOnboardingInner() {
                   </svg>
                 )}
               </div>
-              <span className="text-sm text-slate-600 leading-snug">
+              <span className="text-sm text-gray-600 leading-snug">
                 I agree to the{" "}
                 <a
                   href="#"
-                  className="text-slate-900 font-semibold hover:underline"
+                  className="text-[#004aac] font-semibold hover:underline"
                 >
                   Terms of Service
                 </a>{" "}
                 and{" "}
                 <a
                   href="#"
-                  className="text-slate-900 font-semibold hover:underline"
+                  className="text-[#004aac] font-semibold hover:underline"
                 >
                   Privacy Policy
                 </a>
@@ -565,8 +565,8 @@ function EmployerOnboardingInner() {
               className={`w-full py-3.5 rounded-lg text-sm font-semibold transition-all mt-2
                 ${
                   form.termsConsent
-                    ? "bg-slate-900 hover:bg-black text-white shadow-sm hover:shadow-md"
-                    : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                    ? "bg-[#004aac] hover:bg-[#003b8a] text-white shadow-sm hover:shadow-md"
+                    : "bg-gray-200 text-gray-400 cursor-not-allowed"
                 }`}
             >
               Continue
@@ -582,8 +582,8 @@ export default function EmployerOnboarding() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-[#e8eaed]">
-          <div className="w-6 h-6 border-2 border-slate-700 border-t-transparent rounded-full animate-spin" />
+        <div className="min-h-screen flex items-center justify-center bg-[#eef1f8]">
+          <div className="w-6 h-6 border-2 border-[#004aac] border-t-transparent rounded-full animate-spin" />
         </div>
       }
     >

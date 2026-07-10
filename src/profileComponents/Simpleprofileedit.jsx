@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useMemo, useRef } from "react";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import {
@@ -19,6 +19,7 @@ import {
   IoMailOutline,
 } from "react-icons/io5";
 import { BLUE, BLUE_BG } from "./shared";
+import { PhoneInput, getSalaryOptions, parsePhone } from "./locale-utils";
 
 const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
@@ -52,15 +53,6 @@ const EXP_YEARS = [
   "5+ years",
   "10+ years",
 ];
-const SALARY_OPTIONS = [
-  "Below ₹10,000/mo",
-  "₹10,000–15,000/mo",
-  "₹15,000–25,000/mo",
-  "₹25,000–40,000/mo",
-  "₹40,000+/mo",
-  "Open to discuss",
-];
-
 
 function QLabel({ children }) {
   return (
@@ -212,7 +204,6 @@ function EmployerForm({ value, onChange, onSave, onCancel }) {
     </div>
   );
 }
-
 
 function QARow({ question, answer, icon }) {
   if (!answer) return null;
@@ -431,7 +422,11 @@ function SimpleProfileViewCard({
             icon={<IoBriefcaseOutline size={12} />}
           />
           <QARow
-            question="Expected Pay"
+            question={
+              about.currency
+                ? `Expected Pay (${about.currency})`
+                : "Expected Pay"
+            }
             answer={about.expectedSalary}
             icon={<IoCashOutline size={12} />}
           />
@@ -516,13 +511,16 @@ function SimpleProfileViewCard({
   );
 }
 
-
 function SimpleProfileEditForm({ profile, employers, onSave, onCancel }) {
   const [photoURL, setPhotoURL] = useState(profile.photoURL || "");
   const [name, setName] = useState(profile.name || "");
   const [jobTitle, setJobTitle] = useState(profile.title || "");
   const [location, setLocation] = useState(profile.location || "");
-  const [phone, setPhone] = useState(profile.phone || "");
+
+  const parsedPhone = parsePhone(profile.phone || "");
+  const [countryCode, setCountryCode] = useState(parsedPhone.countryCode);
+  const [phone, setPhone] = useState(parsedPhone.number);
+
   const [education, setEducation] = useState(profile.about?.education || "");
   const [expYears, setExpYears] = useState(profile.about?.experience || "");
   const [salary, setSalary] = useState(profile.about?.expectedSalary || "");
@@ -543,6 +541,17 @@ function SimpleProfileEditForm({ profile, employers, onSave, onCancel }) {
   const [saving, setSaving] = useState(false);
   const fileRef = useRef(null);
 
+  const { options: SALARY_OPTIONS, currencyCode } = useMemo(
+    () => getSalaryOptions(countryCode),
+    [countryCode],
+  );
+
+  const handleCountryCodeChange = (val) => {
+    setCountryCode(val);
+    const { options: nextOptions } = getSalaryOptions(val);
+    if (salary && !nextOptions.includes(salary)) setSalary("");
+  };
+
   const handlePhoto = async (file) => {
     if (!file || !file.type.startsWith("image/")) return;
     setUploading(true);
@@ -561,7 +570,7 @@ function SimpleProfileEditForm({ profile, employers, onSave, onCancel }) {
       name,
       title: jobTitle,
       location,
-      phone,
+      phone: phone ? `${countryCode} ${phone}` : "",
       photoURL,
       bio,
       profileType: "simple",
@@ -570,6 +579,7 @@ function SimpleProfileEditForm({ profile, employers, onSave, onCancel }) {
         education,
         experience: expYears,
         expectedSalary: salary,
+        currency: currencyCode,
         onboardingDone: true,
       },
       simpleEmployers: validEmployers,
@@ -683,13 +693,19 @@ function SimpleProfileEditForm({ profile, employers, onSave, onCancel }) {
           onChange={(e) => setLocation(e.target.value)}
           placeholder="e.g. Andheri, Mumbai"
         />
-        <EditInput
-          label="Your mobile number"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder="+91 9876543210"
-          type="tel"
-        />
+        <div className="flex flex-col gap-1.5">
+          <QLabel>Your mobile number</QLabel>
+          <PhoneInput
+            countryCode={countryCode}
+            onCountryCodeChange={handleCountryCodeChange}
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            fullWidth
+          />
+          <p className="text-xs" style={{ color: "#94a3b8" }}>
+            Your country here also sets the currency used for expected pay below
+          </p>
+        </div>
       </div>
 
       <div
@@ -721,7 +737,7 @@ function SimpleProfileEditForm({ profile, employers, onSave, onCancel }) {
         style={{ backgroundColor: "#f8fafc", border: "1.5px solid #e2e8f0" }}
       >
         <ChipSelect
-          label="How much pay are you expecting?"
+          label={`How much pay are you expecting? (shown in ${currencyCode})`}
           options={SALARY_OPTIONS}
           value={salary}
           onChange={setSalary}
@@ -858,7 +874,6 @@ function SimpleProfileEditForm({ profile, employers, onSave, onCancel }) {
     </div>
   );
 }
-
 
 export default function SimpleProfileEdit({
   profile,
