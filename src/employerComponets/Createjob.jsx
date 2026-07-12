@@ -24,6 +24,7 @@ import {
   LANGUAGES,
   INDUSTRIES,
   JOB_TITLE_SUGGESTIONS,
+  JOB_TITLES_BY_INDUSTRY,
   DEPARTMENT_SUGGESTIONS,
   WORK_TYPES,
   JOB_TYPES,
@@ -690,6 +691,8 @@ function Step1({ form, setForm, employerData }) {
 
 function Step2({ form, setForm }) {
   const update = (key) => (val) => setForm((f) => ({ ...f, [key]: val }));
+  const titleSuggestions =
+    JOB_TITLES_BY_INDUSTRY[form.industry] || JOB_TITLE_SUGGESTIONS;
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
   const [loadingStates, setLoadingStates] = useState(false);
@@ -759,13 +762,15 @@ function Step2({ form, setForm }) {
       <div>
         <Label required>Job Title</Label>
         <AutocompleteInput
-          suggestions={JOB_TITLE_SUGGESTIONS}
+          suggestions={titleSuggestions}
           value={form.title}
           onChange={update("title")}
           placeholder="e.g. Full Stack Developer, Data Scientist..."
         />
         <p className="text-xs text-slate-400 mt-1.5">
-          Start typing to see suggestions
+          {form.industry
+            ? `Showing suggestions for ${form.industry}`
+            : "Start typing to see suggestions"}
         </p>
       </div>
       <div>
@@ -957,10 +962,19 @@ function Step3({ form, setForm }) {
   );
 }
 
+const SALARY_UNIT_OPTIONS = [
+  "LPA",
+  "CTC",
+  "Per Month",
+  "Per Week",
+  "Per Day",
+  "Per Hour",
+];
+
 function SalaryUnitToggle({ value, onChange }) {
   return (
-    <div className="flex gap-2">
-      {["LPA", "CTC"].map((unit) => (
+    <div className="flex flex-wrap gap-2">
+      {SALARY_UNIT_OPTIONS.map((unit) => (
         <button
           key={unit}
           type="button"

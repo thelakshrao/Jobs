@@ -133,15 +133,26 @@ export default function DashboardNavbar() {
   const senderCache = useRef({});
 
   useEffect(() => {
+    let unsubConvs = null;
+
     const unsub = auth.onAuthStateChanged((user) => {
-      if (!user) return;
+      if (unsubConvs) {
+        unsubConvs();
+        unsubConvs = null;
+      }
+
+      if (!user) {
+        setMsgNotifs([]);
+        setTotalUnread(0);
+        return;
+      }
 
       const q = query(
         collection(db, "conversations"),
         where("participants", "array-contains", user.uid),
       );
 
-      const unsubConvs = onSnapshot(q, async (snap) => {
+      unsubConvs = onSnapshot(q, async (snap) => {
         const convs = snap.docs
           .map((d) => ({ id: d.id, ...d.data() }))
           .filter(
@@ -194,11 +205,12 @@ export default function DashboardNavbar() {
         setMsgNotifs(validNotifs);
         setTotalUnread(validNotifs.reduce((s, n) => s + n.unread, 0));
       });
-
-      return unsubConvs;
     });
 
-    return () => unsub();
+    return () => {
+      if (unsubConvs) unsubConvs();
+      unsub();
+    };
   }, []);
 
   const handleNotifClick = (convId) => {

@@ -2,52 +2,23 @@
 import { Bookmark, BookmarkCheck, ThumbsDown, MapPin } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { doc, setDoc, deleteDoc } from "firebase/firestore";
+import { CURRENCIES } from "@/app/employer/dashboard/create-job/constants";
 
 const BLUE = "#004aac";
 const LIGHT_BLUE = "#e8f0fb";
 
-const CURRENCY_SYMBOLS = {
-  INR: "₹",
-  USD: "$",
-  EUR: "€",
-  GBP: "£",
-  AED: "د.إ",
-  SAR: "ر.س",
-  CAD: "C$",
-  AUD: "A$",
-  SGD: "S$",
-  MYR: "RM",
-  JPY: "¥",
-  CNY: "¥",
-  KRW: "₩",
-  CHF: "Fr",
-  QAR: "ر.ق",
-  KWD: "د.ك",
-  BHD: "BD",
-  OMR: "ر.ع.",
-  NZD: "NZ$",
-  ZAR: "R",
-  NGN: "₦",
-  PKR: "₨",
-  BDT: "৳",
-  PHP: "₱",
-  THB: "฿",
-  IDR: "Rp",
-  VND: "₫",
-  MXN: "MX$",
-  BRL: "R$",
-  TRY: "₺",
-  EGP: "£",
-};
+function getSymbol(code) {
+  return CURRENCIES.find((c) => c.code === code)?.symbol || code || "";
+}
 
 function formatSalary(job) {
   const code = job.currencies?.[0] || "INR";
-  const sym = CURRENCY_SYMBOLS[code] || code;
+  const sym = getSymbol(code);
   if (job.payStructure === "Negotiable") return "Negotiable";
   if (job.payStructure === "Salary Range" && job.salaryMin && job.salaryMax)
-    return `${sym} ${Number(job.salaryMin).toLocaleString()} – ${Number(job.salaryMax).toLocaleString()} ${job.salaryUnit || ""}`.trim();
+    return `${sym} ${Number(job.salaryMin).toLocaleString()} – ${sym} ${Number(job.salaryMax).toLocaleString()} ${job.salaryUnit || ""}`.trim();
   if (job.payStructure === "Fixed" && job.fixedSalary)
-    return `${sym} ${Number(job.fixedSalary).toLocaleString()} ${job.salaryUnit || "/ yr"}`.trim();
+    return `${sym} ${Number(job.fixedSalary).toLocaleString()} ${job.salaryUnit || ""}`.trim();
   if (job.payStructure === "Hourly" && job.hourlyRate)
     return `${sym} ${job.hourlyRate} / hr`;
   return null;

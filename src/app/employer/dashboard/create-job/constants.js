@@ -127,39 +127,48 @@ export const COUNTRIES = [
 export const LANGUAGES = ["English"];
 
 export const INDUSTRIES = [
-  "Management",
   "Accounting & Finance",
   "Advertising & Marketing",
   "Aerospace & Defense",
   "Agriculture & Farming",
+  "Agritech",
   "Architecture & Design",
   "Artificial Intelligence & ML",
   "Automotive",
   "Aviation",
   "Banking & Financial Services",
+  "Beauty & Personal Care",
   "Biotechnology",
+  "Blockchain & Web3",
   "Broadcasting & Media",
   "Chemical",
+  "Childcare & Early Education",
   "Civil Engineering",
   "Cloud Computing",
   "Construction",
   "Consulting",
   "Consumer Electronics",
-  "Content Creation",
   "Cybersecurity",
+  "Dairy & Livestock",
   "Data Science & Analytics",
   "E-commerce",
   "Education & Training",
+  "Electricians & Electrical Services",
   "Energy & Utilities",
   "Environmental Services",
   "Events & Entertainment",
+  "Facility Management",
   "Fashion & Apparel",
+  "Fisheries & Aquaculture",
   "Food & Beverage",
+  "Forestry",
+  "Funeral & Memorial Services",
+  "Furniture & Woodworking",
   "Gaming",
   "Government & Public Sector",
   "Healthcare & Medical",
   "Hospitality & Tourism",
-  "Human Resources",
+  "HVAC Services",
   "Import & Export",
   "Insurance",
   "Interior Design",
@@ -167,25 +176,29 @@ export const INDUSTRIES = [
   "Investment & Venture Capital",
   "IT Services & Consulting",
   "Journalism & Publishing",
+  "Kitchen & Culinary Arts",
+  "Landscaping & Horticulture",
   "Law & Legal Services",
   "Logistics & Supply Chain",
   "Luxury Goods",
   "Manufacturing",
   "Marine & Shipping",
   "Mining & Metals",
+  "Music Industry",
   "Non-Profit & NGO",
   "Oil & Gas",
+  "Packaging & Printing",
   "Pharmaceuticals",
   "Photography & Film",
-  "Product Management",
+  "Plumbing Services",
   "Public Relations",
   "Real Estate",
   "Recruitment & Staffing",
-  "Research & Development",
+  "Renewable Energy",
   "Retail",
-  "Sales",
   "Security Services",
-  "Social Media",
+  "Semiconductor",
+  "Skilled Trades & Craftsmanship",
   "Software Development",
   "Sports & Fitness",
   "Telecommunications",
@@ -195,11 +208,12 @@ export const INDUSTRIES = [
   "Veterinary",
   "Warehousing",
   "Waste Management",
+  "Water Treatment & Supply",
+  "Wellness & Spa",
   "Other",
 ];
 
-export const JOB_TITLE_SUGGESTIONS = [
-  // Software Development
+const IT_TITLES = [
   "Software Engineer",
   "Software Developer",
   "Frontend Developer",
@@ -209,206 +223,707 @@ export const JOB_TITLE_SUGGESTIONS = [
   "Application Developer",
   "Software Architect",
   "Technical Lead",
-  "Tech Lead",
   "Engineering Manager",
   "CTO",
-
-  // Internships & Freshers
   "Software Engineer Intern",
-  "Software Developer Intern",
-  "Frontend Developer Intern",
-  "Backend Developer Intern",
-  "Full Stack Developer Intern",
-  "Web Developer Intern",
   "SDE Intern",
-  "Summer Intern",
   "Graduate Trainee",
-  "Management Trainee",
-  "Engineer Trainee",
-  "Software Trainee",
-  "Fresher",
-  "Associate Software Engineer",
-  "Junior Software Engineer",
   "Junior Developer",
-  "Trainee Developer",
-
-  // Frontend
   "React Developer",
   "Next.js Developer",
-  "Angular Developer",
-  "Vue.js Developer",
-  "JavaScript Developer",
-  "TypeScript Developer",
-  "UI Developer",
-
-  // Backend
   "Node.js Developer",
-  "Express.js Developer",
   "Java Developer",
-  "Spring Boot Developer",
   "Python Developer",
-  "Django Developer",
-  "Flask Developer",
-  "PHP Developer",
-  "Laravel Developer",
-  ".NET Developer",
-  "C# Developer",
-  "Ruby on Rails Developer",
-
-  // Full Stack Variants
-  "MERN Stack Developer",
-  "MEAN Stack Developer",
-  "Java Full Stack Developer",
-  "Python Full Stack Developer",
-  ".NET Full Stack Developer",
-  "PHP Full Stack Developer",
-
-  // Mobile Development
-  "Mobile Developer",
   "Mobile App Developer",
   "Android Developer",
-  "Android Engineer",
   "iOS Developer",
-  "iOS Engineer",
   "Flutter Developer",
-  "React Native Developer",
+  "DevOps Engineer",
+  "Cloud Engineer",
+  "QA Engineer",
+  "Database Administrator",
+  "System Administrator",
+  "Network Engineer",
+  "IT Support Engineer",
+  "Technical Support Engineer",
+  "UI Designer",
+  "UX Designer",
+];
 
-  // Data & AI
+const AI_DATA_TITLES = [
   "Data Analyst",
-  "Business Data Analyst",
   "Data Engineer",
-  "Big Data Engineer",
   "Data Scientist",
   "Machine Learning Engineer",
-  "Deep Learning Engineer",
   "AI Engineer",
   "Generative AI Engineer",
   "Prompt Engineer",
   "NLP Engineer",
   "Computer Vision Engineer",
   "AI Research Engineer",
+  "Business Intelligence Analyst",
+];
 
-  // Cloud & DevOps
-  "DevOps Engineer",
-  "Cloud Engineer",
-  "AWS Engineer",
-  "Azure Engineer",
-  "Google Cloud Engineer",
-  "Site Reliability Engineer",
-  "Platform Engineer",
-  "Infrastructure Engineer",
-
-  // Security
+const CYBERSECURITY_TITLES = [
   "Cybersecurity Analyst",
   "Security Engineer",
   "Information Security Analyst",
   "SOC Analyst",
   "Penetration Tester",
   "Ethical Hacker",
+  "Security Consultant",
+];
 
-  // QA & Testing
-  "QA Engineer",
-  "QA Analyst",
-  "Software Tester",
-  "Automation Test Engineer",
-  "Manual Tester",
-  "Performance Test Engineer",
-  "Test Engineer",
+const HOSPITALITY_TITLES = [
+  "Hotel Manager",
+  "Front Office Executive",
+  "Front Desk Agent",
+  "Concierge",
+  "Guest Relations Manager",
+  "Housekeeping Supervisor",
+  "Housekeeping Attendant",
+  "Bell Captain",
+  "Duty Manager",
+  "Reservations Manager",
+  "Banquet Manager",
+  "Event Coordinator",
+  "Resort Manager",
+  "Spa Manager",
+  "Bartender",
+  "Sommelier",
+];
 
-  // Database
-  "Database Administrator",
-  "Database Engineer",
-  "SQL Developer",
-  "MongoDB Developer",
+const TRAVEL_AIRLINES_TITLES = [
+  "Travel Consultant",
+  "Tour Guide",
+  "Tour Operator",
+  "Cruise Staff",
+  "Flight Attendant",
+  "Cabin Crew",
+  "Ground Staff",
+  "Pilot",
+  "Air Traffic Controller",
+  "Travel Agent",
+  "Visa Consultant",
+];
 
-  // Networking & Systems
-  "System Administrator",
-  "Network Engineer",
-  "Network Administrator",
-  "IT Support Engineer",
-  "Technical Support Engineer",
+const CULINARY_TITLES = [
+  "Executive Chef",
+  "Head Chef",
+  "Sous Chef",
+  "Chef de Partie",
+  "Line Cook",
+  "Pastry Chef",
+  "Baker",
+  "Kitchen Helper",
+  "Kitchen Steward",
+  "Commis Chef",
+  "Catering Manager",
+  "Food & Beverage Manager",
+  "Restaurant Manager",
+  "Waiter",
+  "Waitress",
+  "Barista",
+];
 
-  // Design
-  "UI Designer",
-  "UX Designer",
-  "UI/UX Designer",
-  "Graphic Designer",
-  "Visual Designer",
-  "Product Designer",
-  "Motion Designer",
+const HEALTHCARE_TITLES = [
+  "Doctor",
+  "General Physician",
+  "Surgeon",
+  "Nurse",
+  "Staff Nurse",
+  "Nurse Practitioner",
+  "Medical Officer",
+  "Physiotherapist",
+  "Pharmacist",
+  "Lab Technician",
+  "Radiologist",
+  "Medical Assistant",
+  "Caregiver",
+  "Home Health Aide",
+  "Hospital Administrator",
+  "Clinical Research Associate",
+  "Paramedic",
+  "Optometrist",
+  "Nutritionist / Dietitian",
+  "Medical Receptionist",
+];
 
-  // Product & Management
-  "Product Manager",
-  "Associate Product Manager",
+const DENTAL_TITLES = [
+  "Dentist",
+  "Dental Hygienist",
+  "Dental Assistant",
+  "Orthodontist",
+  "Dental Receptionist",
+];
+
+const CONSTRUCTION_TITLES = [
+  "Site Engineer",
+  "Construction Manager",
+  "Project Engineer",
+  "Site Supervisor",
+  "Foreman",
+  "Quantity Surveyor",
+  "Safety Officer",
+  "Mason",
+  "Carpenter",
+  "Welder",
+  "Heavy Equipment Operator",
+  "Draftsman",
+  "Surveyor",
+  "Laborer",
+];
+
+const CIVIL_ENGINEERING_TITLES = [
+  "Civil Engineer",
+  "Structural Engineer",
+  "Site Engineer",
   "Project Manager",
-  "Program Manager",
-  "Scrum Master",
-  "Business Analyst",
-  "Technical Product Manager",
+  "Quantity Surveyor",
+  "Construction Manager",
+  "Surveyor",
+  "AutoCAD Draftsman",
+];
 
-  // Marketing
-  "Marketing Manager",
-  "Digital Marketing Specialist",
-  "Performance Marketing Executive",
-  "Growth Marketer",
-  "SEO Specialist",
-  "SEM Specialist",
-  "Content Writer",
-  "Content Strategist",
-  "Copywriter",
-  "Social Media Manager",
-  "Brand Manager",
+const ARCHITECTURE_TITLES = [
+  "Architect",
+  "Junior Architect",
+  "Architectural Draftsman",
+  "Urban Planner",
+  "Landscape Architect",
+];
 
-  // Sales
-  "Sales Executive",
-  "Sales Manager",
-  "Business Development Executive",
-  "Business Development Associate",
-  "Business Development Manager",
-  "Account Executive",
-  "Account Manager",
+const INTERIOR_DESIGN_TITLES = [
+  "Interior Designer",
+  "Interior Design Consultant",
+  "3D Visualizer",
+  "Furniture Designer",
+  "Space Planner",
+];
 
-  // Customer Success
-  "Customer Support",
-  "Customer Support Executive",
-  "Customer Success Associate",
-  "Customer Success Manager",
+const TRADES_TITLES = [
+  "Electrician",
+  "Plumber",
+  "HVAC Technician",
+  "AC Technician",
+  "Refrigeration Technician",
+  "Maintenance Technician",
+  "Handyman",
+];
 
-  // HR
-  "HR Executive",
-  "HR Manager",
-  "Talent Acquisition Specialist",
-  "Recruiter",
-  "Technical Recruiter",
+const RETAIL_TITLES = [
+  "Store Manager",
+  "Assistant Store Manager",
+  "Sales Associate",
+  "Cashier",
+  "Retail Sales Executive",
+  "Visual Merchandiser",
+  "Inventory Manager",
+  "Store Supervisor",
+  "Department Manager",
+  "Customer Service Representative",
+];
 
-  // Finance
-  "Finance Manager",
-  "Financial Analyst",
-  "Investment Analyst",
-  "Accountant",
-  "Chartered Accountant",
-  "Finance Executive",
+const MANUFACTURING_TITLES = [
+  "Production Manager",
+  "Production Supervisor",
+  "Machine Operator",
+  "Quality Control Inspector",
+  "Quality Assurance Engineer",
+  "Maintenance Technician",
+  "Assembly Line Worker",
+  "Plant Manager",
+  "Industrial Engineer",
+  "Process Engineer",
+  "Packaging Operator",
+];
 
-  // Operations
-  "Operations Executive",
-  "Operations Manager",
-  "Operations Analyst",
+const LOGISTICS_TITLES = [
   "Logistics Coordinator",
   "Supply Chain Manager",
-  "Procurement Specialist",
+  "Warehouse Manager",
+  "Delivery Driver",
+  "Truck Driver",
+  "Fleet Manager",
+  "Dispatcher",
+  "Procurement Manager",
+  "Inventory Analyst",
+  "Shipping Coordinator",
+  "Import Export Executive",
+  "Warehouse Supervisor",
+  "Forklift Operator",
+];
 
-  // Emerging Roles
-  "Blockchain Developer",
-  "Web3 Developer",
-  "AR Developer",
-  "VR Developer",
+const EDUCATION_TITLES = [
+  "Teacher",
+  "Assistant Teacher",
+  "Professor",
+  "Lecturer",
+  "Principal",
+  "School Administrator",
+  "Academic Counselor",
+  "Curriculum Developer",
+  "Corporate Trainer",
+  "Tutor",
+  "Special Education Teacher",
+  "Librarian",
+  "Admissions Officer",
+];
+
+const FINANCE_TITLES = [
+  "Bank Teller",
+  "Relationship Manager",
+  "Loan Officer",
+  "Branch Manager",
+  "Financial Advisor",
+  "Investment Banker",
+  "Credit Analyst",
+  "Underwriter",
+  "Accountant",
+  "Chartered Accountant",
+  "Financial Analyst",
+  "Auditor",
+  "Tax Consultant",
+  "Actuary",
+  "Finance Manager",
+  "Bookkeeper",
+];
+
+const INSURANCE_TITLES = [
+  "Insurance Agent",
+  "Underwriter",
+  "Claims Adjuster",
+  "Insurance Broker",
+  "Actuary",
+  "Risk Analyst",
+];
+
+const BEAUTY_TITLES = [
+  "Hair Stylist",
+  "Makeup Artist",
+  "Nail Technician",
+  "Beauty Therapist",
+  "Salon Manager",
+  "Spa Therapist",
+  "Massage Therapist",
+  "Esthetician",
+  "Barber",
+];
+
+const AGRICULTURE_TITLES = [
+  "Farm Manager",
+  "Agricultural Technician",
+  "Agronomist",
+  "Farm Worker",
+  "Livestock Manager",
+  "Horticulturist",
+  "Farm Supervisor",
+];
+
+const VETERINARY_TITLES = [
+  "Veterinarian",
+  "Veterinary Assistant",
+  "Veterinary Technician",
+  "Animal Care Attendant",
+];
+
+const SECURITY_TITLES = [
+  "Security Guard",
+  "Security Supervisor",
+  "Security Manager",
+  "Loss Prevention Officer",
+  "CCTV Operator",
+  "Bouncer",
+];
+
+const TRANSPORTATION_TITLES = [
+  "Driver",
+  "Chauffeur",
+  "Bus Driver",
+  "Ship Captain",
+  "Transportation Manager",
+  "Fleet Coordinator",
+  "Delivery Rider",
+];
+
+const MARINE_SHIPPING_TITLES = [
+  "Ship Captain",
+  "Marine Engineer",
+  "Deck Officer",
+  "Port Operations Manager",
+  "Cargo Supervisor",
+  "Sailor / Seaman",
+];
+
+const MEDIA_TITLES = [
+  "Journalist",
+  "Editor",
+  "News Anchor",
+  "Producer",
+  "Video Editor",
+  "Camera Operator",
+  "Sound Engineer",
+  "Broadcast Technician",
+  "Reporter",
+];
+
+const PHOTOGRAPHY_FILM_TITLES = [
+  "Photographer",
+  "Videographer",
+  "Film Director",
+  "Film Editor",
+  "Cinematographer",
+  "Production Assistant",
+  "Photo Editor",
+];
+
+const MUSIC_TITLES = [
+  "Musician",
+  "Sound Engineer",
+  "Music Producer",
+  "Audio Engineer",
+  "DJ",
+  "Music Teacher",
+];
+
+const GAMING_TITLES = [
   "Game Developer",
   "Unity Developer",
   "Unreal Engine Developer",
-  "Embedded Systems Engineer",
-  "IoT Engineer",
-  "Robotics Engineer",
+  "Game Designer",
+  "Game Artist",
+  "Game Tester",
+  "Level Designer",
 ];
+
+const EVENTS_ENTERTAINMENT_TITLES = [
+  "Event Manager",
+  "Event Coordinator",
+  "Event Planner",
+  "Stage Manager",
+  "Talent Coordinator",
+  "Wedding Planner",
+];
+
+const LEGAL_TITLES = [
+  "Lawyer",
+  "Legal Advisor",
+  "Paralegal",
+  "Legal Associate",
+  "Corporate Counsel",
+  "Compliance Officer",
+  "Legal Assistant",
+];
+
+const NON_PROFIT_TITLES = [
+  "Program Manager",
+  "Community Outreach Coordinator",
+  "Fundraising Manager",
+  "Volunteer Coordinator",
+  "Grant Writer",
+  "NGO Field Officer",
+];
+
+const GOVERNMENT_TITLES = [
+  "Administrative Officer",
+  "Policy Analyst",
+  "Public Affairs Officer",
+  "Government Clerk",
+  "Program Coordinator",
+];
+
+const REAL_ESTATE_TITLES = [
+  "Real Estate Agent",
+  "Property Manager",
+  "Leasing Consultant",
+  "Real Estate Broker",
+  "Property Valuer",
+];
+
+const AVIATION_AEROSPACE_TITLES = [
+  "Pilot",
+  "Aircraft Maintenance Engineer",
+  "Air Traffic Controller",
+  "Aerospace Engineer",
+  "Avionics Technician",
+  "Flight Dispatcher",
+];
+
+const AUTOMOTIVE_TITLES = [
+  "Automotive Technician",
+  "Mechanic",
+  "Auto Electrician",
+  "Service Advisor",
+  "Automotive Engineer",
+  "Body Shop Technician",
+];
+
+const ENERGY_TITLES = [
+  "Energy Engineer",
+  "Solar Technician",
+  "Power Plant Operator",
+  "Electrical Engineer",
+  "Renewable Energy Consultant",
+  "Grid Operator",
+];
+
+const OIL_GAS_TITLES = [
+  "Petroleum Engineer",
+  "Rig Operator",
+  "Drilling Engineer",
+  "Pipeline Technician",
+  "HSE Officer",
+];
+
+const MINING_TITLES = [
+  "Mining Engineer",
+  "Mine Supervisor",
+  "Geologist",
+  "Heavy Machinery Operator",
+];
+
+const TEXTILE_FASHION_TITLES = [
+  "Fashion Designer",
+  "Textile Designer",
+  "Tailor",
+  "Pattern Maker",
+  "Garment Technician",
+  "Merchandiser",
+];
+
+const PHARMA_BIOTECH_TITLES = [
+  "Pharmacist",
+  "Research Scientist",
+  "Lab Technician",
+  "Quality Control Analyst",
+  "Regulatory Affairs Specialist",
+  "Clinical Research Associate",
+  "Biotechnologist",
+];
+
+const CHEMICAL_TITLES = [
+  "Chemical Engineer",
+  "Process Engineer",
+  "Lab Chemist",
+  "Plant Operator",
+  "QA/QC Chemist",
+];
+
+const TELECOM_TITLES = [
+  "Network Engineer",
+  "Telecom Technician",
+  "RF Engineer",
+  "Field Technician",
+  "Customer Support Executive",
+];
+
+const CONSUMER_ELECTRONICS_TITLES = [
+  "Electronics Engineer",
+  "Hardware Engineer",
+  "Repair Technician",
+  "Product Tester",
+  "Embedded Systems Engineer",
+];
+
+const SEMICONDUCTOR_TITLES = [
+  "Semiconductor Engineer",
+  "VLSI Engineer",
+  "Chip Design Engineer",
+  "Process Technician",
+];
+
+const ENVIRONMENTAL_TITLES = [
+  "Environmental Engineer",
+  "Sustainability Consultant",
+  "Environmental Scientist",
+  "Waste Management Officer",
+];
+
+const WASTE_WATER_TITLES = [
+  "Waste Management Officer",
+  "Sanitation Worker",
+  "Water Treatment Operator",
+  "Environmental Health Officer",
+];
+
+const FORESTRY_FISHERIES_TITLES = [
+  "Forest Ranger",
+  "Forestry Technician",
+  "Fisheries Officer",
+  "Fisherman",
+];
+
+const CHILDCARE_TITLES = [
+  "Daycare Worker",
+  "Preschool Teacher",
+  "Nanny",
+  "Childcare Coordinator",
+];
+
+const FUNERAL_TITLES = ["Funeral Director", "Embalmer", "Funeral Attendant"];
+
+const FURNITURE_WOODWORKING_TITLES = [
+  "Carpenter",
+  "Furniture Maker",
+  "Woodworker",
+  "CNC Operator",
+];
+
+const PACKAGING_PRINTING_TITLES = [
+  "Printing Press Operator",
+  "Packaging Technician",
+  "Graphic Print Designer",
+];
+
+const WELLNESS_FITNESS_TITLES = [
+  "Fitness Trainer",
+  "Gym Instructor",
+  "Yoga Instructor",
+  "Wellness Coach",
+  "Nutritionist",
+  "Personal Trainer",
+];
+
+const RECRUITMENT_TITLES = [
+  "Recruiter",
+  "Talent Acquisition Specialist",
+  "HR Executive",
+  "HR Manager",
+  "Staffing Coordinator",
+  "HR Business Partner",
+];
+
+const CONSULTING_TITLES = [
+  "Management Consultant",
+  "Business Analyst",
+  "Strategy Consultant",
+  "Associate Consultant",
+  "Consultant",
+];
+
+const PR_ADVERTISING_TITLES = [
+  "PR Manager",
+  "Public Relations Executive",
+  "Communications Specialist",
+  "Media Relations Manager",
+  "Advertising Executive",
+];
+
+const CORPORATE_GENERAL_TITLES = [
+  "Marketing Manager",
+  "Digital Marketing Specialist",
+  "Content Writer",
+  "Social Media Manager",
+  "Brand Manager",
+  "SEO Specialist",
+  "Copywriter",
+  "Sales Executive",
+  "Sales Manager",
+  "Business Development Manager",
+  "Account Executive",
+  "Account Manager",
+  "HR Executive",
+  "HR Manager",
+  "Operations Manager",
+  "Operations Executive",
+  "Customer Support Executive",
+  "Administrative Assistant",
+  "Office Manager",
+  "Product Manager",
+  "Project Manager",
+  "Business Analyst",
+];
+
+export const JOB_TITLES_BY_INDUSTRY = {
+  "Accounting & Finance": FINANCE_TITLES,
+  "Advertising & Marketing": PR_ADVERTISING_TITLES,
+  "Aerospace & Defense": AVIATION_AEROSPACE_TITLES,
+  "Agriculture & Farming": AGRICULTURE_TITLES,
+  Agritech: AGRICULTURE_TITLES,
+  "Architecture & Design": ARCHITECTURE_TITLES,
+  "Artificial Intelligence & ML": AI_DATA_TITLES,
+  Automotive: AUTOMOTIVE_TITLES,
+  Aviation: AVIATION_AEROSPACE_TITLES,
+  "Banking & Financial Services": FINANCE_TITLES,
+  "Beauty & Personal Care": BEAUTY_TITLES,
+  Biotechnology: PHARMA_BIOTECH_TITLES,
+  "Blockchain & Web3": IT_TITLES,
+  "Broadcasting & Media": MEDIA_TITLES,
+  Chemical: CHEMICAL_TITLES,
+  "Childcare & Early Education": CHILDCARE_TITLES,
+  "Civil Engineering": CIVIL_ENGINEERING_TITLES,
+  "Cloud Computing": IT_TITLES,
+  Construction: CONSTRUCTION_TITLES,
+  Consulting: CONSULTING_TITLES,
+  "Consumer Electronics": CONSUMER_ELECTRONICS_TITLES,
+  Cybersecurity: CYBERSECURITY_TITLES,
+  "Dairy & Livestock": AGRICULTURE_TITLES,
+  "Data Science & Analytics": AI_DATA_TITLES,
+  "E-commerce": RETAIL_TITLES,
+  "Education & Training": EDUCATION_TITLES,
+  "Electricians & Electrical Services": TRADES_TITLES,
+  "Energy & Utilities": ENERGY_TITLES,
+  "Environmental Services": ENVIRONMENTAL_TITLES,
+  "Events & Entertainment": EVENTS_ENTERTAINMENT_TITLES,
+  "Facility Management": TRADES_TITLES,
+  "Fashion & Apparel": TEXTILE_FASHION_TITLES,
+  "Fisheries & Aquaculture": FORESTRY_FISHERIES_TITLES,
+  "Food & Beverage": CULINARY_TITLES,
+  Forestry: FORESTRY_FISHERIES_TITLES,
+  "Funeral & Memorial Services": FUNERAL_TITLES,
+  "Furniture & Woodworking": FURNITURE_WOODWORKING_TITLES,
+  Gaming: GAMING_TITLES,
+  "Government & Public Sector": GOVERNMENT_TITLES,
+  "Healthcare & Medical": HEALTHCARE_TITLES,
+  "Hospitality & Tourism": HOSPITALITY_TITLES,
+  "HVAC Services": TRADES_TITLES,
+  "Import & Export": LOGISTICS_TITLES,
+  Insurance: INSURANCE_TITLES,
+  "Interior Design": INTERIOR_DESIGN_TITLES,
+  "Internet & Technology": IT_TITLES,
+  "Investment & Venture Capital": FINANCE_TITLES,
+  "IT Services & Consulting": IT_TITLES,
+  "Journalism & Publishing": MEDIA_TITLES,
+  "Kitchen & Culinary Arts": CULINARY_TITLES,
+  "Landscaping & Horticulture": AGRICULTURE_TITLES,
+  "Law & Legal Services": LEGAL_TITLES,
+  "Logistics & Supply Chain": LOGISTICS_TITLES,
+  "Luxury Goods": RETAIL_TITLES,
+  Manufacturing: MANUFACTURING_TITLES,
+  "Marine & Shipping": MARINE_SHIPPING_TITLES,
+  "Mining & Metals": MINING_TITLES,
+  "Music Industry": MUSIC_TITLES,
+  "Non-Profit & NGO": NON_PROFIT_TITLES,
+  "Oil & Gas": OIL_GAS_TITLES,
+  "Packaging & Printing": PACKAGING_PRINTING_TITLES,
+  Pharmaceuticals: PHARMA_BIOTECH_TITLES,
+  "Photography & Film": PHOTOGRAPHY_FILM_TITLES,
+  "Plumbing Services": TRADES_TITLES,
+  "Public Relations": PR_ADVERTISING_TITLES,
+  "Real Estate": REAL_ESTATE_TITLES,
+  "Recruitment & Staffing": RECRUITMENT_TITLES,
+  "Renewable Energy": ENERGY_TITLES,
+  Retail: RETAIL_TITLES,
+  "Security Services": SECURITY_TITLES,
+  Semiconductor: SEMICONDUCTOR_TITLES,
+  "Skilled Trades & Craftsmanship": TRADES_TITLES,
+  "Software Development": IT_TITLES,
+  "Sports & Fitness": WELLNESS_FITNESS_TITLES,
+  Telecommunications: TELECOM_TITLES,
+  Textile: TEXTILE_FASHION_TITLES,
+  Transportation: TRANSPORTATION_TITLES,
+  "Travel & Airlines": TRAVEL_AIRLINES_TITLES,
+  Veterinary: VETERINARY_TITLES,
+  Warehousing: LOGISTICS_TITLES,
+  "Waste Management": WASTE_WATER_TITLES,
+  "Water Treatment & Supply": WASTE_WATER_TITLES,
+  "Wellness & Spa": WELLNESS_FITNESS_TITLES,
+  Other: CORPORATE_GENERAL_TITLES,
+};
+
+export const JOB_TITLE_SUGGESTIONS = Array.from(
+  new Set(Object.values(JOB_TITLES_BY_INDUSTRY).flat()),
+);
 
 export const DEPARTMENT_SUGGESTIONS = [
   "Engineering",
@@ -420,6 +935,7 @@ export const DEPARTMENT_SUGGESTIONS = [
   "Human Resources",
   "Operations",
   "Customer Success",
+  "Customer Support",
   "Legal",
   "IT",
   "Data & Analytics",
@@ -429,6 +945,83 @@ export const DEPARTMENT_SUGGESTIONS = [
   "Administration",
   "Business Development",
   "Strategy",
+  "Quality Assurance",
+  "Quality Control",
+  "Production",
+  "Manufacturing",
+  "Maintenance",
+  "Warehouse & Logistics",
+  "Front Office",
+  "Housekeeping",
+  "Food & Beverage Service",
+  "Kitchen & Culinary",
+  "Guest Relations",
+  "Reservations",
+  "Concierge",
+  "Nursing",
+  "Medical & Clinical",
+  "Pharmacy",
+  "Patient Care",
+  "Laboratory",
+  "Radiology",
+  "Store Operations",
+  "Merchandising",
+  "Visual Merchandising",
+  "Inventory Management",
+  "E-commerce Operations",
+  "Content & Editorial",
+  "Social Media",
+  "Public Relations",
+  "Brand Management",
+  "Advertising",
+  "Creative",
+  "Photography & Videography",
+  "Teaching & Faculty",
+  "Academic Affairs",
+  "Admissions",
+  "Student Services",
+  "Training & Development",
+  "Recruitment & Talent Acquisition",
+  "Compensation & Benefits",
+  "Health & Safety",
+  "Security",
+  "Facilities Management",
+  "Construction & Site Operations",
+  "Architecture & Planning",
+  "Civil Engineering",
+  "Electrical Engineering",
+  "Mechanical Engineering",
+  "Project Management",
+  "Compliance",
+  "Risk Management",
+  "Underwriting",
+  "Claims",
+  "Investment & Portfolio Management",
+  "Treasury",
+  "Accounting",
+  "Audit",
+  "Import & Export / Trade",
+  "Fleet & Transportation",
+  "Driver Operations",
+  "Delivery & Dispatch",
+  "Agriculture & Farm Operations",
+  "Veterinary Services",
+  "Environmental & Sustainability",
+  "Event Management",
+  "Spa & Wellness",
+  "Fitness & Recreation",
+  "Beauty & Grooming",
+  "Skilled Trades",
+  "Installation & Field Services",
+  "Technical Support",
+  "Network Operations",
+  "DevOps & Infrastructure",
+  "Cybersecurity",
+  "UX Research",
+  "Localization & Translation",
+  "Public Affairs & Government Relations",
+  "Volunteer & Community Programs",
+  "Other",
 ];
 
 export const WORK_TYPES = ["On-site", "Remote", "Hybrid"];

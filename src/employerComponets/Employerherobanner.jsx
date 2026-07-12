@@ -25,19 +25,17 @@ const SLIDES = [
     title: "Choose wisely, not quickly",
     copy: "Compare applicants side by side, filter by what actually matters, and shortlist with confidence.",
     cta: "Review Applicants",
-    href: "/employer/dashboard/jobs",
+    href: "/employer/dashboard/applicants",
     bg: "linear-gradient(135deg, #002559 0%, #0057C7 100%)",
   },
   {
-    key: "deliver",
-    image: deliverImg,
-    eyebrow: "Step 3 · Deliver",
-    title: "We deliver, end to end",
-    copy: "Shortlisting, interview scheduling, and hiring updates — automated from the moment you post to the moment you hire.",
-    cta: "See How It Works",
-    href: "/employer/how-it-works",
-    bg: "linear-gradient(135deg, #001438 0%, #003D94 100%)",
-  },
+  key: "deliver",
+  image: deliverImg,
+  eyebrow: "Step 3 · Deliver",
+  title: "We deliver, end to end",
+  copy: "Shortlisting, interview scheduling, offer management, and hiring updates — all automated from the moment you post a job to the moment your new hire signs on. No spreadsheets, no chasing emails, no guesswork.",
+  bg: "linear-gradient(135deg, #001438 0%, #003D94 100%)",
+},
 ];
 
 export default function EmployerHeroBanner() {
@@ -91,14 +89,16 @@ export default function EmployerHeroBanner() {
             <p className="text-xs sm:text-[15px] font-medium text-blue-100/80 leading-snug sm:leading-relaxed transition-opacity duration-700">
               {slide.copy}
             </p>
-            <Link
-              href={slide.href}
-              className="inline-flex items-center gap-1.5 mt-3 sm:mt-5 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-opacity hover:opacity-90 no-underline shadow-sm bg-white"
-              style={{ color: "#004aac" }}
-            >
-              {slide.cta}
-              <ArrowRight size={13} strokeWidth={2.5} />
-            </Link>
+            {slide.cta && slide.href && (
+              <Link
+                href={slide.href}
+                className="inline-flex items-center gap-1.5 mt-3 sm:mt-5 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-opacity hover:opacity-90 no-underline shadow-sm bg-white"
+                style={{ color: "#004aac" }}
+              >
+                {slide.cta}
+                <ArrowRight size={13} strokeWidth={2.5} />
+              </Link>
+            )}
           </div>
         </div>
       </div>

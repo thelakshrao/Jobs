@@ -15,17 +15,23 @@ import {
 import { auth, db } from "@/lib/firebase";
 import { doc, setDoc, deleteDoc } from "firebase/firestore";
 import JobApplyModal from "@/dashboardComponents/jobs/Jobapplymodal";
+import { CURRENCIES } from "@/app/employer/dashboard/create-job/constants";
 
 const BLUE = "#004aac";
 const BLUE_HOVER = "#003a8c";
 
+function getSymbol(code) {
+  return CURRENCIES.find((c) => c.code === code)?.symbol || code || "₹";
+}
+
 function formatSalary(job) {
-  const sym = job.currencies?.[0] || "₹";
+  const code = job.currencies?.[0] || "INR";
+  const sym = getSymbol(code);
   if (job.payStructure === "Negotiable") return "Negotiable";
   if (job.payStructure === "Salary Range" && job.salaryMin && job.salaryMax)
-    return `${sym} ${Number(job.salaryMin).toLocaleString()} – ${Number(job.salaryMax).toLocaleString()} ${job.salaryUnit || "/ yr"}`;
+    return `${sym} ${Number(job.salaryMin).toLocaleString()} – ${sym} ${Number(job.salaryMax).toLocaleString()} ${job.salaryUnit || ""}`.trim();
   if (job.payStructure === "Fixed" && job.fixedSalary)
-    return `${sym} ${Number(job.fixedSalary).toLocaleString()} ${job.salaryUnit || "/ yr"}`;
+    return `${sym} ${Number(job.fixedSalary).toLocaleString()} ${job.salaryUnit || ""}`.trim();
   if (job.payStructure === "Hourly" && job.hourlyRate)
     return `${sym} ${job.hourlyRate} / hr`;
   return "Not disclosed";

@@ -26,6 +26,7 @@ import {
 import ProfileStrength from "@/profileComponents/ProfileStrength";
 import { computeCompletedItems } from "@/lib/Computecompleteditems";
 import PromoBannerCarousel from "@/components/PromoBannerCarousel";
+import { CURRENCIES } from "@/app/employer/dashboard/create-job/constants";
 
 function timeAgo(dateStr) {
   if (!dateStr) return null;
@@ -52,38 +53,25 @@ function timeAgo(dateStr) {
   if (months === 1) return "1 month ago";
   return `${months} months ago`;
 }
-const CURRENCY_SYMBOLS = {
-  INR: "₹",
-  USD: "$",
-  EUR: "€",
-  GBP: "£",
-  AED: "د.إ",
-  SAR: "ر.س",
-  CAD: "C$",
-  AUD: "A$",
-  SGD: "S$",
-  MYR: "RM",
-  JPY: "¥",
-  CNY: "¥",
-  KRW: "₩",
-  CHF: "Fr",
-  QAR: "ر.ق",
-  KWD: "د.ك",
-  BHD: "BD",
-  OMR: "ر.ع.",
-};
+
+
+function getSymbol(code) {
+  return CURRENCIES.find((c) => c.code === code)?.symbol || code || "₹";
+}
+
 function formatSalary(job) {
   const code = job.currencies?.[0] || "INR";
-  const sym = CURRENCY_SYMBOLS[code] || code;
+  const sym = getSymbol(code);
   if (job.payStructure === "Negotiable") return "Negotiable";
   if (job.payStructure === "Salary Range" && job.salaryMin && job.salaryMax)
-    return `${sym}${Number(job.salaryMin).toLocaleString()} – ${sym}${Number(job.salaryMax).toLocaleString()}`;
+    return `${sym}${Number(job.salaryMin).toLocaleString()} – ${sym}${Number(job.salaryMax).toLocaleString()} ${job.salaryUnit || ""}`.trim();
   if (job.payStructure === "Fixed" && job.fixedSalary)
-    return `${sym}${Number(job.fixedSalary).toLocaleString()} / yr`;
+    return `${sym}${Number(job.fixedSalary).toLocaleString()} ${job.salaryUnit || ""}`.trim();
   if (job.payStructure === "Hourly" && job.hourlyRate)
     return `${sym}${job.hourlyRate} / hr`;
   return null;
 }
+
 function formatRate(project) {
   if (project.rateType === "On Discussion") return "On Discussion";
   if (project.rateAmount)
