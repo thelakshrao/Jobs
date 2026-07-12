@@ -39,6 +39,7 @@ import {
   UserCheck,
   Phone,
 } from "lucide-react";
+import EmployerHeroBanner from "@/employerComponets/Employerherobanner"
 
 const BRAND = "#004aac";
 const BRAND_HOVER = "#00397f";
@@ -428,6 +429,7 @@ export default function PostedJobs() {
             animation: slide-up 0.3s ease-out;
           }
         `}</style>
+          <EmployerHeroBanner />
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-extrabold text-[#003882] tracking-tight">
