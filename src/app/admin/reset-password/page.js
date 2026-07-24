@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { auth } from "@/lib/firebase";
 import {
@@ -13,6 +13,20 @@ import Logo from "@/images/logoemp.png";
 const BRAND = "#003882";
 
 export default function AdminResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-slate-50">
+          <div className="w-6 h-6 border-2 border-slate-700 border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <AdminResetPasswordInner />
+    </Suspense>
+  );
+}
+
+function AdminResetPasswordInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const oobCode = searchParams.get("oobCode");
