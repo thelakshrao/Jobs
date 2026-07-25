@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { doc, getDoc, setDoc } from "firebase/firestore";
@@ -99,13 +98,11 @@ function PhoneInput({ value, onChange, dialCode, onDialChange }) {
   const [search, setSearch] = useState("");
   const ref = useRef(null);
   const selected = COUNTRIES.find((c) => c.dial === dialCode) || COUNTRIES[35];
-
   const filtered = COUNTRIES.filter(
     (c) =>
       c.name.toLowerCase().includes(search.toLowerCase()) ||
       c.dial.includes(search),
   );
-
   useEffect(() => {
     const handler = (e) => {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
@@ -113,7 +110,6 @@ function PhoneInput({ value, onChange, dialCode, onDialChange }) {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
-
   return (
     <div
       className="flex gap-0 rounded-lg border border-gray-300 overflow-visible focus-within:ring-2 focus-within:ring-[#004aac] focus-within:border-[#004aac]"
@@ -138,7 +134,6 @@ function PhoneInput({ value, onChange, dialCode, onDialChange }) {
           <polyline points="6 9 12 15 18 9" />
         </svg>
       </button>
-
       {open && (
         <div className="absolute z-50 mt-12 w-64 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
           <div className="p-2 border-b border-gray-100">
@@ -172,7 +167,6 @@ function PhoneInput({ value, onChange, dialCode, onDialChange }) {
           </div>
         </div>
       )}
-
       <input
         type="tel"
         value={value}
@@ -184,15 +178,26 @@ function PhoneInput({ value, onChange, dialCode, onDialChange }) {
   );
 }
 
+function normalizeWebsite(raw) {
+  if (!raw) return "";
+  let v = raw.trim().toLowerCase();
+  v = v.replace(/^https?:\/\//, "").replace(/^www\./, "");
+  v = v.replace(/\/+$/, "");
+  return v;
+}
+
 function EmployerOnboardingInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isSwitchMode = searchParams.get("mode") === "switch";
-
   const [loading, setLoading] = useState(true);
   const [prefilled, setPrefilled] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [existingVerified, setExistingVerified] = useState(false);
   const [form, setForm] = useState({
     company: "",
+    website: "",
     firstName: "",
     lastName: "",
     email: "",
@@ -208,31 +213,29 @@ function EmployerOnboardingInner() {
         setLoading(false);
         return;
       }
-
       try {
         const empDoc = await getDoc(doc(db, "employers", currentUser.uid));
-
         if (empDoc.exists() && !isSwitchMode) {
           router.replace("/employer/dashboard");
           return;
         }
-
         if (empDoc.exists() && isSwitchMode) {
           const data = empDoc.data();
           setForm((f) => ({
             ...f,
             company: data.company || "",
+            website: data.website || "",
             firstName: data.firstName || "",
             lastName: data.lastName || "",
             email: data.email || currentUser.email || "",
             phone: data.phone || "",
             dialCode: data.dialCode || "+91",
           }));
+          setExistingVerified(Boolean(data.verified));
           setPrefilled(true);
           setLoading(false);
           return;
         }
-
         const userDoc = await getDoc(doc(db, "users", currentUser.uid));
         if (userDoc.exists()) {
           const data = userDoc.data();
@@ -270,9 +273,19 @@ function EmployerOnboardingInner() {
     e.preventDefault();
     const user = auth.currentUser;
     if (!user) return;
+
+    const website = normalizeWebsite(form.website);
+    if (!website) {
+      setError("Please enter your company website.");
+      return;
+    }
+
+    setError("");
+    setSubmitting(true);
     try {
       await setDoc(doc(db, "employers", user.uid), {
         company: form.company,
+        website,
         firstName: form.firstName,
         lastName: form.lastName,
         email: form.email,
@@ -280,6 +293,7 @@ function EmployerOnboardingInner() {
         dialCode: form.dialCode,
         dataConsent: form.dataConsent,
         termsConsent: form.termsConsent,
+        verified: false,
         createdAt: new Date().toISOString(),
         uid: user.uid,
       });
@@ -287,6 +301,9 @@ function EmployerOnboardingInner() {
       router.replace("/employer/dashboard");
     } catch (err) {
       console.error("Error saving employer data:", err);
+      setError("Something went wrong while saving. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -330,6 +347,26 @@ function EmployerOnboardingInner() {
             </div>
           )}
 
+          <div className="mt-3 mb-1 flex items-start gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              className="mt-0.5 shrink-0"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>
+              After you submit, our team reviews your company details. You can
+              post jobs only once your account is <b>verified</b> by an admin.
+            </span>
+          </div>
+
           <a
             href="/jobs"
             className="inline-flex items-center gap-1.5 mt-4 mb-7 text-[#004aac] text-sm font-semibold hover:underline group"
@@ -360,6 +397,29 @@ function EmployerOnboardingInner() {
                 required
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-[#004aac] focus:border-[#004aac] transition-all placeholder-gray-400"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-1.5">
+                Company website <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm select-none">
+                  https://
+                </span>
+                <input
+                  type="text"
+                  value={form.website}
+                  onChange={(e) => set("website")(e.target.value)}
+                  required
+                  placeholder="yourcompany.com"
+                  className="w-full pl-[4.6rem] pr-4 py-3 rounded-lg border border-gray-300 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-[#004aac] focus:border-[#004aac] transition-all placeholder-gray-400"
+                />
+              </div>
+              <p className="text-xs text-gray-400 mt-1.5">
+                Shown to admins during verification. Helps applicants trust your
+                listings.
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -559,17 +619,21 @@ function EmployerOnboardingInner() {
               </span>
             </label>
 
+            {error && (
+              <p className="text-sm text-red-600 font-medium">{error}</p>
+            )}
+
             <button
               type="submit"
-              disabled={!form.termsConsent}
+              disabled={!form.termsConsent || submitting}
               className={`w-full py-3.5 rounded-lg text-sm font-semibold transition-all mt-2
                 ${
-                  form.termsConsent
+                  form.termsConsent && !submitting
                     ? "bg-[#004aac] hover:bg-[#003b8a] text-white shadow-sm hover:shadow-md"
                     : "bg-gray-200 text-gray-400 cursor-not-allowed"
                 }`}
             >
-              Continue
+              {submitting ? "Saving…" : "Continue"}
             </button>
           </form>
         </div>

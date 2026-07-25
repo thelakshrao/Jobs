@@ -86,7 +86,6 @@ function AdminResetPasswordInner() {
 
   return (
     <div className="min-h-screen flex bg-white">
-      {/* Left hero panel */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <img
           src={AdminBg.src}
@@ -126,7 +125,6 @@ function AdminResetPasswordInner() {
         </div>
       </div>
 
-      {/* Right form panel */}
       <div className="flex-1 flex items-center justify-center px-4 py-12 bg-slate-50">
         <div className="w-full max-w-sm">
           <div className="flex flex-col items-center mb-7">
