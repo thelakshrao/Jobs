@@ -129,23 +129,23 @@ export default function AdminSidebar() {
       : pathname === href || pathname.startsWith(href + "/");
 
   const LogoMark = () => (
-    <div className="flex items-center gap-2.5">
+    <div className="flex items-center">
       {collapsed ? (
         <Image
           src={logoIcon}
           alt="Jobs Abroad"
-          width={36}
-          height={36}
-          className="rounded-lg shrink-0"
+          width={28}
+          height={28}
+          className="rounded-lg shrink-0 object-contain"
           priority
         />
       ) : (
         <Image
           src={logoFull}
           alt="the Jobs Abroad"
-          width={160}
-          height={40}
-          className="object-contain"
+          width={120}
+          height={28}
+          className="object-contain h-7 w-auto"
           priority
         />
       )}
@@ -187,7 +187,7 @@ export default function AdminSidebar() {
           collapsed ? "w-20" : "w-60"
         }`}
       >
-        <div className="flex items-center px-4 h-16 shrink-0 border-b border-slate-100">
+        <div className="flex items-center px-4 h-14 shrink-0 border-b border-slate-100">
           <LogoMark />
         </div>
 
@@ -226,7 +226,7 @@ export default function AdminSidebar() {
           transition-transform duration-300 ease-in-out
           ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
-        <div className="flex items-center justify-between px-4 h-16 shrink-0 border-b border-slate-100">
+        <div className="flex items-center justify-between px-4 h-14 shrink-0 border-b border-slate-100">
           <LogoMark />
           <button
             onClick={() => setMobileOpen(false)}

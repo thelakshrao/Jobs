@@ -10,7 +10,7 @@ import AdminSidebar, {
 } from "@/adminComponents/AdminSidebar";
 import { Download, FileDown } from "lucide-react";
 import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+import html2canvas from "html2canvas-pro";
 import {
   LineChart,
   Line,
@@ -25,13 +25,11 @@ import {
 } from "recharts";
 
 const BRAND = "#003882";
-const COLOR_PRIMARY = "#4f46e5"; // indigo — applications / bars
-const COLOR_HIRED = "#22c55e"; // emerald
-const COLOR_INTERVIEWED = "#0ea5e9"; // sky
-const COLOR_REJECTED = "#f43f5e"; // rose
+const COLOR_PRIMARY = "#4f46e5";
+const COLOR_HIRED = "#22c55e";
+const COLOR_INTERVIEWED = "#0ea5e9";
+const COLOR_REJECTED = "#f43f5e";
 const MONTHS_WINDOW = 7;
-
-// ---------- date / aggregation helpers ----------
 
 function toDate(dateInput) {
   const date =
@@ -41,8 +39,6 @@ function toDate(dateInput) {
   return isNaN(date.getTime()) ? null : date;
 }
 
-// Builds the last N months (oldest -> newest, including the current month)
-// so the charts always show a rolling window instead of a hardcoded range.
 function lastNMonths(n) {
   const out = [];
   const now = new Date();
@@ -62,10 +58,6 @@ function monthKeyOf(dateInput) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
-// Your candidate pipeline uses these stage labels (see the applicant detail
-// page): Shortlisted -> In Hiring Process -> Hired / Reject. This maps each
-// chart bucket to every spelling that stage might be saved as, so the chart
-// doesn't silently go flat if the exact string changes later.
 const STATUS_ALIASES = {
   hired: ["hired"],
   inProcess: [
@@ -85,7 +77,7 @@ function matchesStatus(app, group) {
 
 const STAGE_TIMESTAMP_FIELD = {
   hired: "hiredAt",
-  inProcess: "inProcessAt",
+  inProcess: "interviewingAt",
   rejected: "rejectedAt",
 };
 
@@ -93,8 +85,6 @@ function statusTimestamp(app, group) {
   const field = STAGE_TIMESTAMP_FIELD[group];
   return app[field] || app.statusUpdatedAt || app.appliedAt;
 }
-
-// ---------- CSV export ----------
 
 function exportCsv(filename, rows) {
   if (!rows || rows.length === 0) return;
@@ -128,8 +118,6 @@ function ExportButton({ onClick }) {
   );
 }
 
-// Shared tooltip renderer — `series` describes which lines/bars to surface
-// and how to label/color them, so one component covers all three charts.
 function ChartTooltip({ active, payload, label, series }) {
   if (!active || !payload || payload.length === 0) return null;
   return (
@@ -232,7 +220,6 @@ export default function AdminReportsPage() {
     loadData();
   }, [checking]);
 
-  // ---------- Applications Over Time ----------
   const applicationsOverTime = useMemo(() => {
     const months = lastNMonths(MONTHS_WINDOW);
     return months.map((m) => ({
@@ -243,7 +230,6 @@ export default function AdminReportsPage() {
     }));
   }, [applications]);
 
-  // ---------- Hiring Trends (In Hiring Process vs Hired vs Rejected) ----------
   const hiringTrends = useMemo(() => {
     const months = lastNMonths(MONTHS_WINDOW);
     return months.map((m) => ({
@@ -266,7 +252,6 @@ export default function AdminReportsPage() {
     }));
   }, [applications]);
 
-  // ---------- Applications Per Job (top 7) ----------
   const applicationsPerJob = useMemo(() => {
     const map = new Map();
     applications.forEach((a) => {
@@ -279,7 +264,6 @@ export default function AdminReportsPage() {
       .slice(0, 7);
   }, [applications]);
 
-  // ---------- Top Employers by Activity ----------
   const topEmployers = useMemo(() => {
     const jobsByEmployer = new Map();
     jobs.forEach((j) => {
@@ -331,9 +315,6 @@ export default function AdminReportsPage() {
     );
   }
 
-  // Snapshots the whole reports container (all three charts + the table) as
-  // an image and slices it across as many A4 pages as needed. Needs
-  // `npm install jspdf html2canvas`.
   const handlePdfExport = async () => {
     if (!reportRef.current) return;
     setExportingPdf(true);
