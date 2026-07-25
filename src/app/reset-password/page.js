@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -13,8 +13,9 @@ import {
   IoChevronBackOutline,
 } from "react-icons/io5";
 import { FiArrowRight } from "react-icons/fi";
-import { confirmPasswordReset } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { confirmPasswordReset, verifyPasswordResetCode } from "firebase/auth";
+import { auth, db } from "@/lib/firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import { useSearchParams, useRouter } from "next/navigation";
 
 const BRAND_BLUE = "#004AAC";
@@ -57,6 +58,7 @@ function ResetPasswordForm() {
   const router = useRouter();
   const oobCode = searchParams.get("oobCode");
 
+  const [checkingAccountType, setCheckingAccountType] = useState(true);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -64,6 +66,43 @@ function ResetPasswordForm() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!oobCode) {
+      setCheckingAccountType(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    verifyPasswordResetCode(auth, oobCode)
+      .then(async (email) => {
+        if (cancelled) return;
+        try {
+          const q = query(
+            collection(db, "admin_staff"),
+            where("email", "==", email),
+          );
+          const snap = await getDocs(q);
+          if (!snap.empty) {
+            router.replace(
+              `/admin/reset-password?oobCode=${encodeURIComponent(oobCode)}`,
+            );
+            return;
+          }
+        } catch (err) {
+          console.error("Admin check failed:", err);
+        }
+        if (!cancelled) setCheckingAccountType(false);
+      })
+      .catch(() => {
+        if (!cancelled) setCheckingAccountType(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [oobCode, router]);
 
   const handleResetSubmit = async (e) => {
     e.preventDefault();
@@ -94,6 +133,14 @@ function ResetPasswordForm() {
       setLoading(false);
     }
   };
+
+  if (checkingAccountType) {
+    return (
+      <div className="relative z-10 flex items-center justify-center py-20">
+        <div className="w-6 h-6 border-2 border-[#004AAC] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -240,7 +287,6 @@ function ResetPasswordForm() {
 const ResetPassword = () => {
   return (
     <div className="relative w-full min-h-screen bg-white flex flex-col md:flex-row font-sans">
-      {/* Left panel — desktop */}
       <div className="hidden md:block w-1/2 p-4 lg:p-6">
         <div className="relative w-full h-full rounded-4xl overflow-hidden">
           <Image
@@ -327,7 +373,6 @@ const ResetPassword = () => {
         </div>
       </div>
 
-      {/* Top image — mobile */}
       <div className="md:hidden relative w-full h-72 sm:h-80 overflow-hidden">
         <Image
           src={premiumImg}
