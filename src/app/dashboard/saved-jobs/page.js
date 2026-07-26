@@ -456,7 +456,7 @@ export default function MyJobsPage() {
       ? router.push(`/dashboard/${profileSlug}`)
       : router.push("/dashboard/profile");
   return (
-    <main className="min-h-screen bg-[#f8fafc] pb-16 md:pb-0">
+    <main className="min-h-screen bg-[#ffffff] pb-16 md:pb-0">
       <div className="w-full max-w-6xl mx-auto pt-3 md:pt-6">
         <div className="flex flex-col lg:flex-row gap-6 items-start">
           <div className="flex-1 min-w-0 w-full">
@@ -471,9 +471,8 @@ export default function MyJobsPage() {
               </div>
             )}
 
-            {/* Sticky header: title + tabs stay pinned while the list below scrolls */}
             <div
-              className="sticky top-0 z-20 bg-[#f8fafc] px-3 sm:px-6 pt-1 pb-0"
+              className="sticky top-0 z-20 bg-[#ffffff] px-3 sm:px-6 pt-1 pb-0"
               style={{ boxShadow: "0 1px 0 0 rgba(0,0,0,0.02)" }}
             >
               <h1 className="text-2xl md:text-3xl font-black text-slate-900 mb-3">

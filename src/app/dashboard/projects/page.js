@@ -77,7 +77,7 @@ export default function ApplicantProjectsPage() {
 
 function ProjectsPageFallback() {
   return (
-    <div className="min-h-screen bg-[#f5f5f0] flex items-center justify-center">
+    <div className="min-h-screen bg-[#ffffff] flex items-center justify-center">
       <div
         className="w-7 h-7 border-[3px] border-slate-200 rounded-full animate-spin"
         style={{ borderTopColor: "#fb923c" }}
@@ -337,7 +337,7 @@ function ApplicantProjectsPageInner() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f0] pt-3 md:pt-5">
+    <div className="min-h-screen bg-[##ffffff] pt-3 md:pt-5">
       <div className="relative bg-white border border-slate-200 rounded-3xl mx-3 md:mx-6 mb-4 md:mb-6 overflow-hidden shadow-sm">
         <div className="absolute inset-0">
           <Image

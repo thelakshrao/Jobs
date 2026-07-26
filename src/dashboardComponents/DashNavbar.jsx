@@ -251,7 +251,7 @@ export default function DashNavbar() {
         />
       )}
       <aside
-        className="hidden md:flex fixed left-4 top-4 bottom-4 w-17 flex-col items-center py-5 z-40"
+        className="hidden md:flex w-17 flex-col items-center py-5 z-40 h-[calc(100vh-2rem)]"
         style={{
           backgroundColor: "#ffffff",
           borderRadius: "20px",

@@ -63,7 +63,7 @@ function PasteURLModal({ onConfirm, onClose }) {
       <div
         className="w-full max-w-sm rounded-2xl overflow-hidden"
         style={{
-          backgroundColor: "#fff",
+          backgroundColor: "#ffffff",
           boxShadow: "0 24px 48px rgba(0,0,0,0.18)",
           border: "1.5px solid #e2e8f0",
         }}

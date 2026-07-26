@@ -1,13 +1,17 @@
 "use client";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
 import LogoEmp from "@/images/logoemp.png";
+import PolicyPanel from "@/components/Policypanel";
+import policyContent from "@/components/Policycontent";
 
 export default function Footer() {
   const router = useRouter();
   const pathname = usePathname();
+  const [activePolicy, setActivePolicy] = useState(null);
 
   const handleHomeClick = () => {
     if (pathname === "/employer") {
@@ -98,25 +102,25 @@ export default function Footer() {
           <h4 className="text-[13px] font-bold uppercase tracking-widest text-white/60 mb-4">
             Company
           </h4>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 items-start">
             <Link
               href="/dashboard"
               className="text-[14px] font-medium text-white/85 hover:text-white transition-colors no-underline"
             >
               Find a Job
             </Link>
-            <a
-              href="#"
-              className="text-[14px] font-medium text-white/85 hover:text-white transition-colors no-underline"
+            <button
+              onClick={() => setActivePolicy(policyContent.privacy)}
+              className="text-[14px] font-medium text-white/85 hover:text-white transition-colors bg-transparent border-none cursor-pointer p-0 text-left"
             >
               Privacy Policy
-            </a>
-            <a
-              href="#"
-              className="text-[14px] font-medium text-white/85 hover:text-white transition-colors no-underline"
+            </button>
+            <button
+              onClick={() => setActivePolicy(policyContent.terms)}
+              className="text-[14px] font-medium text-white/85 hover:text-white transition-colors bg-transparent border-none cursor-pointer p-0 text-left"
             >
               Terms of Service
-            </a>
+            </button>
           </div>
         </div>
       </div>
@@ -128,6 +132,8 @@ export default function Footer() {
           Made for employers, by JobsAbroad.
         </span>
       </div>
+
+      <PolicyPanel content={activePolicy} onClose={() => setActivePolicy(null)} />
     </footer>
   );
 }

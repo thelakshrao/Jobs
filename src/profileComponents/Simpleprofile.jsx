@@ -172,7 +172,7 @@ export default function SimpleProfile({ onComplete }) {
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center p-4"
-      style={{ backgroundColor: "#f8fafc" }}
+      style={{ backgroundColor: "#ffffff" }}
     >
       <div
         className="w-full bg-white rounded-3xl overflow-hidden flex flex-col"
@@ -182,7 +182,7 @@ export default function SimpleProfile({ onComplete }) {
           minHeight: 560,
         }}
       >
-        <div className="w-full h-1.5" style={{ backgroundColor: "#f1f5f9" }}>
+        <div className="w-full h-1.5" style={{ backgroundColor: "#ffffff" }}>
           <div
             className="h-full rounded-full transition-all duration-500"
             style={{ width: `${pct}%`, backgroundColor: BLUE }}

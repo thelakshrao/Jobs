@@ -26,7 +26,6 @@ import SimpleProfileEdit from "@/profileComponents/Simpleprofileedit";
 import SimpleProfileCard from "@/profileComponents/SimpleProfileCard";
 import { computeCompletedItems } from "@/lib/Computecompleteditems";
 import { Briefcase } from "lucide-react";
-
 function LoginPromptModal({ onClose, router }) {
   return (
     <div
@@ -70,12 +69,10 @@ function LoginPromptModal({ onClose, router }) {
     </div>
   );
 }
-
 export default function ProfileSlugPage() {
   const router = useRouter();
   const params = useParams();
   const slug = params?.slug;
-
   const [isOwner, setIsOwner] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
@@ -96,7 +93,6 @@ export default function ProfileSlugPage() {
   const [skillInput, setSkillInput] = useState("");
   const [uid, setUid] = useState(null);
   const [resumeURL, setResumeURL] = useState("");
-
   const isSimple = profile.profileType === "simple";
   const isGraduate = about.educationLevel === "graduate";
   const completedItems = computeCompletedItems({
@@ -106,7 +102,6 @@ export default function ProfileSlugPage() {
     educations,
     resumeURL,
   });
-
   const requireAuth = () => {
     if (!isLoggedIn) {
       setShowLoginPrompt(true);
@@ -114,13 +109,10 @@ export default function ProfileSlugPage() {
     }
     return false;
   };
-
   useEffect(() => {
     if (!slug) return;
-
     let currentUserUid = null;
     let authDone = false;
-
     const loadProfile = async () => {
       try {
         const slugSnap = await getDoc(doc(db, "slugs", slug));
@@ -129,7 +121,6 @@ export default function ProfileSlugPage() {
           setLoading(false);
           return;
         }
-
         const profileUid = slugSnap.data().uid;
         const profileSnap = await getDoc(doc(db, "users", profileUid));
         if (!profileSnap.exists()) {
@@ -137,31 +128,26 @@ export default function ProfileSlugPage() {
           setLoading(false);
           return;
         }
-
         const data = profileSnap.data();
         const p = { ...DEFAULT_PROFILE, ...data };
         const a = { ...DEFAULT_ABOUT, ...(data.about || {}) };
-
         setProfile(p);
         setAbout(a);
         setExperiences(data.experiences || []);
         setEducations(data.educations || []);
         setResumeURL(data.resumeURL || data.resume?.url || "");
-
         if (currentUserUid && currentUserUid === profileUid) {
           setUid(currentUserUid);
           setForm(p);
           setAboutForm(a);
           setIsOwner(true);
         }
-
         setLoading(false);
       } catch (err) {
         console.error("Error loading profile:", err);
         setLoading(false);
       }
     };
-
     const unsubAuth = onAuthStateChanged(auth, (currentUser) => {
       if (authDone) return;
       authDone = true;
@@ -170,15 +156,12 @@ export default function ProfileSlugPage() {
       unsubAuth();
       loadProfile();
     });
-
     return () => unsubAuth();
   }, [slug]);
-
   const saveToDb = async (uid, data) => {
     if (!uid) return;
     await setDoc(doc(db, "users", uid), data, { merge: true });
   };
-
   const handleSave = async () => {
     setSaving(true);
     await saveToDb(uid, form);
@@ -189,7 +172,6 @@ export default function ProfileSlugPage() {
     setEditSection(null);
     setSaving(false);
   };
-
   const handleCancel = () => {
     setForm(profile);
     setAboutForm(about);
@@ -198,7 +180,6 @@ export default function ProfileSlugPage() {
     setEditSection(null);
     setEditing(false);
   };
-
   const saveExpToFirebase = async (updated) => {
     if (!uid) return;
     await setDoc(
@@ -210,7 +191,6 @@ export default function ProfileSlugPage() {
     setExpForm({});
     setEditSection(null);
   };
-
   const saveEduToFirebase = async (updated) => {
     if (!uid) return;
     await setDoc(
@@ -222,7 +202,6 @@ export default function ProfileSlugPage() {
     setEduForm({});
     setEditSection(null);
   };
-
   const handleAddSkill = async () => {
     if (!skillInput.trim()) return;
     const updated = {
@@ -234,7 +213,6 @@ export default function ProfileSlugPage() {
     setAboutForm(updated);
     setSkillInput("");
   };
-
   const handleDeleteSkill = async (skill) => {
     const updated = {
       ...about,
@@ -244,12 +222,11 @@ export default function ProfileSlugPage() {
     setAbout(updated);
     setAboutForm(updated);
   };
-
   if (loading)
     return (
       <div
         className="flex items-center justify-center h-screen"
-        style={{ backgroundColor: "#f8fafc" }}
+        style={{ backgroundColor: "#ffffff" }}
       >
         <div
           className="w-7 h-7 border-[3px] border-t-transparent rounded-full animate-spin"
@@ -257,12 +234,11 @@ export default function ProfileSlugPage() {
         />
       </div>
     );
-
   if (notFound)
     return (
       <div
         className="flex flex-col items-center justify-center h-screen gap-4"
-        style={{ backgroundColor: "#f8fafc" }}
+        style={{ backgroundColor: "#ffffff" }}
       >
         <p className="text-4xl">🔍</p>
         <p className="text-xl font-bold text-slate-900">Profile not found</p>
@@ -278,13 +254,12 @@ export default function ProfileSlugPage() {
         </button>
       </div>
     );
-
   return (
     <div
       className="min-h-screen px-4 sm:px-6 lg:pl-6 lg:pr-6 pb-20 lg:pb-10"
       style={{
         paddingTop: "12px",
-        backgroundColor: "#f8fafc",
+        backgroundColor: "#ffffff",
         fontFamily: "'Inter',system-ui,sans-serif",
       }}
     >
@@ -294,7 +269,6 @@ export default function ProfileSlugPage() {
           router={router}
         />
       )}
-
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div>
           <h1
@@ -312,7 +286,6 @@ export default function ProfileSlugPage() {
             </p>
           )}
         </div>
-
         {isOwner &&
           !isSimple &&
           (!editing ? (
@@ -342,7 +315,6 @@ export default function ProfileSlugPage() {
             <IoPencilOutline size={15} /> Edit Profile
           </BtnPrimary>
         )}
-
         {!isOwner && !isLoggedIn && (
           <div className="flex gap-2">
             <button
@@ -361,7 +333,6 @@ export default function ProfileSlugPage() {
           </div>
         )}
       </div>
-
       {isSimple ? (
         !editing ? (
           <SimpleProfileCard
@@ -416,7 +387,6 @@ export default function ProfileSlugPage() {
                 />
               </div>
             )}
-
             {!editing ? (
               <ProfileCard
                 profile={profile}
@@ -449,7 +419,6 @@ export default function ProfileSlugPage() {
                 />
               )
             )}
-
             {!editing && (
               <TabsSection
                 about={about}
@@ -463,14 +432,12 @@ export default function ProfileSlugPage() {
                 onAuthRequired={requireAuth}
               />
             )}
-
             {isOwner && !editing && (
               <div className="lg:hidden">
                 <ResumeSidebar onUpload={(url) => setResumeURL(url)} />
               </div>
             )}
           </div>
-
           {isOwner && !editing && (
             <div className="hidden lg:flex shrink-0 flex-col gap-4">
               <ProfileStrength

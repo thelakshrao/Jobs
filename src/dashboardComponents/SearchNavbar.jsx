@@ -76,11 +76,9 @@ export default function SearchNavbar() {
   return (
     <>
       <header
-        className="hidden md:flex fixed z-50 items-center gap-3 px-3"
+        className="hidden md:flex sticky z-50 items-center gap-3 px-3"
         style={{
           top: "16px",
-          left: "100px",
-          right: "16px",
           height: "56px",
           backgroundColor: "#ffffff",
           borderRadius: "18px",
@@ -91,7 +89,7 @@ export default function SearchNavbar() {
           className="flex items-center overflow-visible"
           style={{
             flex: "3 1 0",
-            backgroundColor: "#F0F2F5",
+            backgroundColor: "#ffffff",
             borderRadius: "12px",
             height: "38px",
           }}

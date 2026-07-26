@@ -122,7 +122,7 @@ export default function JobsContent() {
     <div
       className="min-h-screen pt-4 pb-20 md:pb-6 px-4 sm:px-6"
       style={{
-        backgroundColor: "#f8fafc",
+        backgroundColor: "#ffffff",
         fontFamily: "'Inter','DM Sans',system-ui,sans-serif",
       }}
     >

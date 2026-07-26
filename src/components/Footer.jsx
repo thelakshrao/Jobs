@@ -1,10 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import logo3 from "@/images/logo3.png";
 import { FaLinkedinIn, FaXTwitter, FaInstagram } from "react-icons/fa6";
+import PolicyPanel from "@/components/Policypanel";
+import policyContent from "@/components/Policycontent";
 
 const BRAND_BLUE = "#004AAC";
 
@@ -13,18 +15,24 @@ const tags = [
   { label: "Premium Services", href: "#premium" },
   { label: "Why JobsAbroad", href: "#why-us" },
   { label: "Contact Support", href: "#contact" },
-  { label: "Privacy Policy", href: "/privacy" },
-  { label: "Terms of Service", href: "/terms" },
-  { label: "Refund Policy", href: "/refund" },
-  { label: "Cookie Settings", href: "/cookies" },
+  { label: "Privacy Policy", href: "/privacy", panelKey: "privacy" },
+  { label: "Terms of Service", href: "/terms", panelKey: "terms" },
+  { label: "Refund Policy", href: "/refund", panelKey: "refund" },
+  { label: "Cookie Settings", href: "/cookies", panelKey: "cookies" },
 ];
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const [activePanel, setActivePanel] = useState(null); 
 
-  const handleTagClick = (e, href) => {
-    if (!href.startsWith("#")) return; // let normal page links (privacy, terms...) navigate as usual
-    const target = document.querySelector(href);
+  const handleTagClick = (e, tag) => {
+    if (tag.panelKey) {
+      e.preventDefault();
+      setActivePanel(tag.panelKey);
+      return;
+    }
+    if (!tag.href.startsWith("#")) return;
+    const target = document.querySelector(tag.href);
     if (!target) return;
     e.preventDefault();
     target.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -33,7 +41,6 @@ const Footer = () => {
   return (
     <footer className="bg-white text-slate-900">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[0.85fr_1.3fr]">
-        {/* ---------------- LEFT: white side ---------------- */}
         <div className="p-6 sm:p-8 lg:p-10 border-b lg:border-b-0 lg:border-r border-slate-200 flex flex-col justify-center gap-4">
           <Link href="/">
             <Image
@@ -73,7 +80,7 @@ const Footer = () => {
                 <Link
                   key={tag.label}
                   href={tag.href}
-                  onClick={(e) => handleTagClick(e, tag.href)}
+                  onClick={(e) => handleTagClick(e, tag)}
                   className="whitespace-nowrap text-xs sm:text-sm text-white/85 border border-white/25 rounded-full px-4 py-1.5 hover:bg-white/10 hover:text-white transition-colors"
                 >
                   {tag.label}
@@ -103,6 +110,11 @@ const Footer = () => {
           </span>
         </div>
       </div>
+
+      <PolicyPanel
+        content={activePanel ? policyContent[activePanel] : null}
+        onClose={() => setActivePanel(null)}
+      />
     </footer>
   );
 };

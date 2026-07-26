@@ -597,7 +597,7 @@ export default function DashboardHome() {
     <div
       className="min-h-screen pb-20 md:pb-6 px-4 sm:px-6"
       style={{
-        backgroundColor: "#F7F8FA",
+        backgroundColor: "#ffffff",
         fontFamily: "'Inter','Outfit',system-ui,sans-serif",
         paddingTop: "12px",
         scrollPaddingTop: "80px",
