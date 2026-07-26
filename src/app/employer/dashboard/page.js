@@ -6,11 +6,11 @@ import { doc, getDoc } from "firebase/firestore";
 import DashboardNavbar from "@/employerComponets/DashboardNavbar";
 import EmployerSidebar from "@/employerComponets/EmployerSidebar";
 import PostedJobs from "@/employerComponets/PostedJobs";
+import EmpPolicyStrip from "@/employerComponets/EmpPolicyStrip";
 
 export default function EmployerDashboard() {
   const router = useRouter();
   const [checking, setChecking] = useState(true);
-
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (!user) {
@@ -27,22 +27,22 @@ export default function EmployerDashboard() {
     });
     return () => unsubscribe();
   }, []);
-
   if (checking) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="w-6 h-6 border-2 border-slate-700 border-t-transparent rounded-full animate-spin" /> 
+        <div className="w-6 h-6 border-2 border-slate-700 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
-
   return (
     <>
       <EmployerSidebar />
       <DashboardNavbar />
-      <main className="md:ml-64 pt-14 pb-16 md:pb-0 min-h-screen bg-slate-50">
+      <main className="md:ml-64 pt-14 pb-16 md:pb-0 min-h-screen bg-[#e8eaed]">
         <PostedJobs />
       </main>
+
+      <EmpPolicyStrip />
     </>
   );
 }

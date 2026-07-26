@@ -4,6 +4,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
 import EmpNavbar from "@/employerComponets/EmpNavbar";
+import PolicyPanel from "@/components/Policypanel";
+import policyContent from "@/components/Policycontent";
 
 const COUNTRIES = [
   { code: "AF", dial: "+93", flag: "🇦🇫", name: "Afghanistan" },
@@ -195,6 +197,7 @@ function EmployerOnboardingInner() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [existingVerified, setExistingVerified] = useState(false);
+  const [activePolicyPanel, setActivePolicyPanel] = useState(null); // null | "privacy" | "terms"
   const [form, setForm] = useState({
     company: "",
     website: "",
@@ -603,19 +606,27 @@ function EmployerOnboardingInner() {
               </div>
               <span className="text-sm text-gray-600 leading-snug">
                 I agree to the{" "}
-                <a
-                  href="#"
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setActivePolicyPanel("terms");
+                  }}
                   className="text-[#004aac] font-semibold hover:underline"
                 >
                   Terms of Service
-                </a>{" "}
+                </button>{" "}
                 and{" "}
-                <a
-                  href="#"
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setActivePolicyPanel("privacy");
+                  }}
                   className="text-[#004aac] font-semibold hover:underline"
                 >
                   Privacy Policy
-                </a>
+                </button>
               </span>
             </label>
 
@@ -638,6 +649,11 @@ function EmployerOnboardingInner() {
           </form>
         </div>
       </div>
+
+      <PolicyPanel
+        content={activePolicyPanel ? policyContent[activePolicyPanel] : null}
+        onClose={() => setActivePolicyPanel(null)}
+      />
     </>
   );
 }

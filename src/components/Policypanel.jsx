@@ -24,7 +24,7 @@ const PolicyPanel = ({ content, onClose }) => {
     <>
       <div
         onClick={onClose}
-        className={`fixed inset-0 bg-black/40 z-9998 transition-opacity duration-300 ${
+        className={`fixed inset-0 bg-black/40 z-999998 transition-opacity duration-300 ${
           isOpen
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
@@ -36,7 +36,7 @@ const PolicyPanel = ({ content, onClose }) => {
         role="dialog"
         aria-modal="true"
         aria-label={content?.title}
-        className={`fixed top-0 right-0 h-full w-full sm:w-105 bg-white z-9999 shadow-2xl
+        className={`fixed top-0 right-0 h-full w-full sm:w-105 bg-white z-999999 shadow-2xl
           transform transition-transform duration-300 ease-out flex flex-col
           ${isOpen ? "translate-x-0" : "translate-x-full"}`}
       >

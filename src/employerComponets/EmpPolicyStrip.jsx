@@ -4,15 +4,15 @@ import React, { useState } from "react";
 import PolicyPanel from "@/components/Policypanel";
 import policyContent from "@/components/Policycontent";
 
-const BRAND_BLUE = "#004AAC";
+const BRAND_BLUE = "#003882";
 
-const DashPolicyStrip = () => {
+const EmpPolicyStrip = () => {
   const [activePanel, setActivePanel] = useState(null); 
 
   return (
     <>
       <div
-        className="w-full flex items-center justify-center sm:justify-end gap-5 px-4 sm:px-6 py-2 mb-24 md:mb-0"
+        className="w-full flex items-center justify-center sm:justify-end gap-5 px-4 sm:px-6 py-2 mb-16 md:mb-0"
         style={{ backgroundColor: BRAND_BLUE }}
       >
         <button
@@ -40,4 +40,4 @@ const DashPolicyStrip = () => {
   );
 };
 
-export default DashPolicyStrip;
+export default EmpPolicyStrip;

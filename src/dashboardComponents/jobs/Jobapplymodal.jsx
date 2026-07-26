@@ -26,6 +26,8 @@ import {
   CheckCircle2,
   Upload,
 } from "lucide-react";
+import PolicyPanel from "@/components/Policypanel";
+import policyContent from "@/components/Policycontent";
 
 const BLUE = "#004aac";
 
@@ -43,6 +45,7 @@ export default function JobApplyModal({ job, onClose, onApplied }) {
   const [editPhone, setEditPhone] = useState("");
   const [editLocation, setEditLocation] = useState("");
   const [mounted, setMounted] = useState(false);
+  const [activePolicyPanel, setActivePolicyPanel] = useState(null); // null | "privacy" | "terms"
 
   useEffect(() => {
     setMounted(true);
@@ -406,25 +409,34 @@ export default function JobApplyModal({ job, onClose, onApplied }) {
 
             <p className="text-[11px] font-bold text-slate-400 text-center leading-relaxed">
               By applying you agree to our{" "}
-              <a
-                href="/terms"
+              <button
+                type="button"
+                onClick={() => setActivePolicyPanel("terms")}
                 className="underline font-extrabold"
                 style={{ color: BLUE }}
               >
                 Terms of Service
-              </a>{" "}
+              </button>{" "}
               and{" "}
-              <a
-                href="/privacy"
+              <button
+                type="button"
+                onClick={() => setActivePolicyPanel("privacy")}
                 className="underline font-extrabold"
                 style={{ color: BLUE }}
               >
                 Privacy Policy
-              </a>
+              </button>
               . Your information may be shared with the employer.
             </p>
           </div>
         )}
+      </div>
+
+      <div onClick={(e) => e.stopPropagation()}>
+        <PolicyPanel
+          content={activePolicyPanel ? policyContent[activePolicyPanel] : null}
+          onClose={() => setActivePolicyPanel(null)}
+        />
       </div>
     </div>
   );
