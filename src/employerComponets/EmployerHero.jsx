@@ -1,10 +1,13 @@
 "use client";
+import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { doc, getDoc } from "firebase/firestore";
-import { db, auth } from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
+import { getEmployerDestination } from "@/lib/employerRouting";
+import EmployerAuthModal from "@/employerComponets/EmployerAuthModal";
 import emphero from "@/images/emphero.jpg";
+
 const container = {
   hidden: {},
   visible: {
@@ -19,30 +22,29 @@ const item = {
     transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
   },
 };
+
 export default function EmployerHero() {
   const router = useRouter();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const handlePostJobClick = async () => {
     const user = auth.currentUser;
     if (!user) {
-      router.push("/employer/onboarding?redirect=create-job");
+      setAuthModalOpen(true);
       return;
     }
-    const empLoggedOut = sessionStorage.getItem("empLoggedOut");
-    if (empLoggedOut === "true") {
-      router.push("/employer/onboarding?mode=switch&redirect=create-job");
-      return;
-    }
-    try {
-      const empDoc = await getDoc(doc(db, "employers", user.uid));
-      router.push(
-        empDoc.exists()
-          ? "/employer/dashboard/create-job"
-          : "/employer/onboarding?redirect=create-job",
-      );
-    } catch (error) {
-      console.error("Firestore error:", error.message);
-    }
+    const dest = await getEmployerDestination(user.uid, {
+      redirect: "create-job",
+    });
+    router.push(dest);
+  };
+
+  const handleAuthed = async (user) => {
+    setAuthModalOpen(false);
+    const dest = await getEmployerDestination(user.uid, {
+      redirect: "create-job",
+    });
+    router.push(dest);
   };
 
   const handleHowItWorksClick = () => {
@@ -152,6 +154,12 @@ export default function EmployerHero() {
           </motion.div>
         </motion.div>
       </div>
+
+      <EmployerAuthModal
+        open={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onAuthed={handleAuthed}
+      />
     </div>
   );
 }

@@ -23,6 +23,15 @@ const tags = [
   "Engineering",
 ];
 
+const TAG_FILTER_MAP = {
+  Remote: { workType: "Remote" },
+  "Full-time": { jobType: "Full-time" },
+  Internship: { jobType: "Internship" },
+  Freelance: { jobType: "Freelance" },
+  "Part-time": { jobType: "Part-time" },
+  Engineering: { department: "Engineering" },
+};
+
 const fadeLeft = (delay = 0) => ({
   initial: { opacity: 0, x: -24 },
   animate: { opacity: 1, x: 0 },
@@ -38,6 +47,7 @@ const fadeRight = (delay = 0) => ({
 export default function Page() {
   const router = useRouter();
   const [checkingSession, setCheckingSession] = useState(true);
+  const [searchText, setSearchText] = useState("");
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -49,6 +59,33 @@ export default function Page() {
     });
     return () => unsub();
   }, [router]);
+
+  const goToJobs = (params) => {
+    const qs = new URLSearchParams(params).toString();
+    const jobsUrl = `/dashboard/jobs${qs ? `?${qs}` : ""}`;
+
+    if (auth.currentUser) {
+      router.push(jobsUrl);
+    } else {
+      router.push(`/login?redirect=${encodeURIComponent(jobsUrl)}`);
+    }
+  };
+
+  const handleFindOpportunities = () => {
+    const trimmed = searchText.trim();
+    goToJobs(trimmed ? { q: trimmed } : {});
+  };
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleFindOpportunities();
+    }
+  };
+
+  const handleTagClick = (tag) => {
+    goToJobs(TAG_FILTER_MAP[tag] || {});
+  };
 
   if (checkingSession) {
     return (
@@ -108,11 +145,17 @@ export default function Page() {
 
               <input
                 type="text"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
                 placeholder="Type your work or skill..."
                 className="w-full bg-gray-50 border border-gray-200 text-[#0A0E17] text-sm rounded-xl px-4 py-2 md:py-2.5 outline-none placeholder:text-gray-400 focus:border-[#004AAC] transition mb-2.5"
               />
 
-              <button className="w-full bg-[#004AAC] hover:bg-[#003785] active:scale-95 text-white font-semibold text-sm py-2 md:py-2.5 rounded-xl transition-all duration-200 cursor-pointer">
+              <button
+                onClick={handleFindOpportunities}
+                className="w-full bg-[#004AAC] hover:bg-[#003785] active:scale-95 text-white font-semibold text-sm py-2 md:py-2.5 rounded-xl transition-all duration-200 cursor-pointer"
+              >
                 Find Opportunities
               </button>
 
@@ -121,8 +164,10 @@ export default function Page() {
                   Popular:
                 </span>
                 {tags.map((tag, i) => (
-                  <motion.span
+                  <motion.button
                     key={tag}
+                    type="button"
+                    onClick={() => handleTagClick(tag)}
                     initial={{ opacity: 0, scale: 0.85 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{
@@ -133,7 +178,7 @@ export default function Page() {
                     className="text-[10px] md:text-xs bg-[#004AAC]/5 border border-[#004AAC]/15 hover:border-[#004AAC] text-[#004AAC]/70 hover:text-[#004AAC] cursor-pointer px-2.5 py-0.5 md:px-3 md:py-1 rounded-full transition-all duration-150"
                   >
                     {tag}
-                  </motion.span>
+                  </motion.button>
                 ))}
               </div>
             </motion.div>

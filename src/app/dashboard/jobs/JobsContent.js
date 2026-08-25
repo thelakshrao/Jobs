@@ -12,6 +12,11 @@ const BLUE = "#004aac";
 export default function JobsContent() {
   const searchParams = useSearchParams();
   const preselectedId = searchParams.get("jobId");
+  const urlKeyword = searchParams.get("q") || searchParams.get("search") || "";
+  const urlLocation = searchParams.get("location") || "";
+  const urlJobType = searchParams.get("jobType") || "";
+  const urlWorkType = searchParams.get("workType") || "";
+  const urlDepartment = searchParams.get("department") || "";
 
   const [jobs, setJobs] = useState([]);
   const [filtered, setFiltered] = useState([]);
@@ -50,6 +55,63 @@ export default function JobsContent() {
     };
     fetchJobs();
   }, [preselectedId]);
+
+  useEffect(() => {
+    if (!jobs.length) return;
+    if (
+      !urlKeyword &&
+      !urlLocation &&
+      !urlJobType &&
+      !urlWorkType &&
+      !urlDepartment
+    )
+      return;
+
+    const keyword = urlKeyword.toLowerCase();
+    const loc = urlLocation.toLowerCase();
+
+    const result = jobs.filter((job) => {
+      const matchKeyword =
+        !keyword ||
+        job.title?.toLowerCase().includes(keyword) ||
+        job.companyName?.toLowerCase().includes(keyword);
+      const matchLocation =
+        !loc ||
+        job.location?.toLowerCase().includes(loc) ||
+        job.targetCountry?.toLowerCase().includes(loc);
+      const jobTypeValue = job.jobType || job.type;
+      const matchJobType = !urlJobType || jobTypeValue === urlJobType;
+      const matchWorkType = !urlWorkType || job.workType === urlWorkType;
+      const matchDepartment =
+        !urlDepartment || job.department === urlDepartment;
+      return (
+        matchKeyword &&
+        matchLocation &&
+        matchJobType &&
+        matchWorkType &&
+        matchDepartment
+      );
+    });
+
+    setFiltered(result);
+
+    if (preselectedId) {
+      const stillPresent = result.find((j) => j.id === preselectedId);
+      if (stillPresent) {
+        setSelectedJob(stillPresent);
+        return;
+      }
+    }
+    setSelectedJob(result[0] || null);
+  }, [
+    jobs,
+    urlKeyword,
+    urlLocation,
+    urlJobType,
+    urlWorkType,
+    urlDepartment,
+    preselectedId,
+  ]);
 
   useEffect(() => {
     const unsub = auth.onAuthStateChanged(async (user) => {

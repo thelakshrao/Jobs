@@ -1,35 +1,35 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import premiumImg from "@/images/premium.jpg";
 import logo3 from "@/images/logo3.png";
 import {
+  IoPersonOutline,
   IoMailOutline,
   IoLockClosedOutline,
   IoEyeOffOutline,
   IoEyeOutline,
+  IoCallOutline,
 } from "react-icons/io5";
 import { FiArrowRight } from "react-icons/fi";
 import {
-  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signInWithPopup,
-  sendPasswordResetEmail,
-  onAuthStateChanged,
+  updateProfile,
 } from "firebase/auth";
-import { auth, googleProvider } from "@/lib/firebase";
-
-const BRAND_BLUE = "#004AAC";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, googleProvider, db } from "@/lib/firebase";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
   visible: (i = 0) => ({
     opacity: 1,
     y: 0,
-    transition: { duration: 0.52, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.52, delay: i * 0.09, ease: [0.22, 1, 0.36, 1] },
   }),
 };
 
@@ -57,50 +57,94 @@ const quotes = [
   },
 ];
 
-const Login = () => {
-  const router = useRouter();
-  const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [checkingSession, setCheckingSession] = useState(true);
+const inputClass =
+  "flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-full px-5 py-3 focus-within:border-[#004AAC] focus-within:bg-white transition-all";
 
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        router.replace("/dashboard");
-      } else {
-        setCheckingSession(false);
-      }
-    });
-    return () => unsub();
-  }, [router]);
+function SignupInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  // Where to go after account creation. Falls back to /dashboard so
+  // existing behavior is unchanged when no redirect is present.
+  const redirectTarget = searchParams.get("redirect") || "/dashboard";
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setSuccess("");
-    setLoading(true);
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.push("/dashboard");
-    } catch (err) {
-      setError("Invalid email or password. Please try again.");
-    } finally {
-      setLoading(false);
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
     }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+    setLoading(true);
+
+    let userCredential;
+    try {
+      userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password,
+      );
+    } catch (err) {
+      if (err.code === "auth/email-already-in-use") {
+        setError("This email is already registered. Try logging in.");
+      } else if (err.code === "auth/invalid-email") {
+        setError("Please enter a valid email address.");
+      } else if (err.code === "auth/weak-password") {
+        setError("Password must be at least 6 characters.");
+      } else {
+        setError("Could not create account. Please try again.");
+      }
+      setLoading(false);
+      return;
+    }
+
+    try {
+      await updateProfile(userCredential.user, { displayName: fullName });
+      await setDoc(doc(db, "users", userCredential.user.uid), {
+        name: fullName,
+        email: email,
+        phone: phone,
+        createdAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      // Profile/Firestore update failed, but the account exists — still navigate
+      console.error("Profile/Firestore update failed:", err);
+    }
+
+    setLoading(false);
+    router.push(redirectTarget);
   };
 
   const handleGoogle = async () => {
     setError("");
-    setSuccess("");
     setLoading(true);
     try {
-      await signInWithPopup(auth, googleProvider);
-      router.push("/dashboard");
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      await setDoc(
+        doc(db, "users", user.uid),
+        {
+          name: user.displayName || "",
+          email: user.email || "",
+          phone: user.phoneNumber || "",
+          createdAt: new Date().toISOString(),
+        },
+        { merge: true },
+      );
+      router.push(redirectTarget);
     } catch (err) {
       setError("Google sign-in failed. Please try again.");
     } finally {
@@ -108,34 +152,10 @@ const Login = () => {
     }
   };
 
-  const handleForgotPassword = async () => {
-    if (!email) {
-      setError("Please enter your email address first.");
-      setSuccess("");
-      return;
-    }
-    setLoading(true);
-    setError("");
-    setSuccess("");
-    try {
-      await sendPasswordResetEmail(auth, email);
-      setSuccess(
-        "Password reset email sent! Check your inbox (or spam folder).",
-      );
-    } catch (err) {
-      setError("Could not send reset email. Check the address and try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (checkingSession) {
-    return (
-      <div className="w-full min-h-screen bg-white flex items-center justify-center">
-        <div className="w-8 h-8 border-[3px] border-gray-200 border-t-[#004AAC] rounded-full animate-spin" />
-      </div>
-    );
-  }
+  const loginHref =
+    redirectTarget && redirectTarget !== "/dashboard"
+      ? `/login?redirect=${encodeURIComponent(redirectTarget)}`
+      : "/login";
 
   return (
     <div className="relative w-full min-h-screen bg-white flex flex-col md:flex-row font-sans">
@@ -181,11 +201,11 @@ const Login = () => {
                 animate="visible"
               >
                 <p className="text-white/60 text-xs font-semibold tracking-widest uppercase mb-3">
-                  Why Jobs Abroad?
+                  Join Jobs Abroad
                 </p>
                 <h2 className="font-display text-white text-3xl lg:text-4xl font-semibold leading-tight">
-                  Stop Struggling. <br />
-                  <span className="text-[#004aac]">Start Working.</span>
+                  Your Global Career <br />
+                  <span className="text-white">Starts Here.</span>
                 </h2>
               </motion.div>
 
@@ -198,10 +218,10 @@ const Login = () => {
                     initial="hidden"
                     animate="visible"
                   >
-                    <p className="text-white/85 text-sm leading-relaxed italic">
+                    <p className="text-white/90 text-sm leading-relaxed italic">
                       &ldquo;{q.text}&rdquo;
                     </p>
-                    <p className="text-[#004acc] text-xs font-semibold mt-1.5">
+                    <p className="text-white/70 text-xs font-semibold mt-1.5">
                       — {q.author}
                     </p>
                   </motion.div>
@@ -243,7 +263,7 @@ const Login = () => {
               variants={leftFade}
               initial="hidden"
               animate="visible"
-              className="text-white/40 text-xs"
+              className="text-white/50 text-xs"
             >
               © {new Date().getFullYear()} Jobs Abroad. All rights reserved.
             </motion.p>
@@ -289,7 +309,7 @@ const Login = () => {
             animate="visible"
             className="font-display text-white text-2xl sm:text-3xl font-semibold tracking-tight mb-2"
           >
-            Login to your account
+            Create your account
           </motion.h1>
           <motion.p
             custom={2}
@@ -298,12 +318,12 @@ const Login = () => {
             animate="visible"
             className="text-white/85 text-sm max-w-xs"
           >
-            Welcome back! Enter your details to log in to your account.
+            Join Jobs Abroad and get started in minutes.
           </motion.p>
         </div>
       </div>
 
-      <div className="relative z-10 w-full md:w-1/2 flex items-center justify-center px-6 sm:px-10 lg:px-16 py-10 md:py-12 -mt-8 md:mt-0 rounded-t-3xl md:rounded-none bg-white">
+      <div className="relative z-10 w-full md:w-1/2 flex items-center justify-center px-6 sm:px-10 lg:px-16 py-10 -mt-8 md:mt-0 rounded-t-3xl md:rounded-none bg-white">
         <motion.div
           initial="hidden"
           animate="visible"
@@ -312,7 +332,7 @@ const Login = () => {
           <motion.div
             custom={0}
             variants={fadeUp}
-            className="hidden md:flex justify-center mb-8"
+            className="hidden md:flex justify-center mb-6"
           >
             <div className="inline-flex">
               <Image
@@ -330,43 +350,50 @@ const Login = () => {
             variants={fadeUp}
             className="hidden md:block font-display text-[#0A0E17] text-3xl sm:text-4xl font-semibold mb-1.5 tracking-tight text-center"
           >
-            Login to your account
+            Create your account
           </motion.h1>
           <motion.p
             custom={2}
             variants={fadeUp}
-            className="hidden md:block text-gray-400 text-sm mb-8 text-center"
+            className="hidden md:block text-gray-400 text-sm mb-7 text-center"
           >
-            Welcome back! Enter your details to log in to your account.
+            Join Jobs Abroad and get started in minutes.
           </motion.p>
 
           {error && (
             <motion.p
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
+              custom={0}
+              variants={fadeUp}
               className="text-red-600 text-sm mb-4 bg-red-50 border border-red-100 rounded-xl px-4 py-2.5"
             >
               {error}
             </motion.p>
           )}
 
-          {success && (
-            <motion.p
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-green-700 text-sm mb-4 bg-green-50 border border-green-100 rounded-xl px-4 py-2.5"
-            >
-              {success}
-            </motion.p>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <motion.div custom={3} variants={fadeUp}>
-              <label className="block text-[#0A0E17] text-sm font-medium mb-2">
+              <label className="block text-[#0A0E17] text-xs font-medium mb-1.5">
+                Full Name
+              </label>
+              <div className={inputClass}>
+                <IoPersonOutline className="text-gray-400 shrink-0" size={17} />
+                <input
+                  type="text"
+                  placeholder="Enter your full name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                  className="flex-1 bg-transparent text-[#0A0E17] placeholder-gray-400 text-sm outline-none"
+                />
+              </div>
+            </motion.div>
+
+            <motion.div custom={4} variants={fadeUp}>
+              <label className="block text-[#0A0E17] text-xs font-medium mb-1.5">
                 Email
               </label>
-              <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-full px-5 py-3.5 focus-within:border-[#004AAC] focus-within:bg-white transition-all">
-                <IoMailOutline className="text-gray-400 shrink-0" size={18} />
+              <div className={inputClass}>
+                <IoMailOutline className="text-gray-400 shrink-0" size={17} />
                 <input
                   type="email"
                   placeholder="Enter your email"
@@ -378,18 +405,34 @@ const Login = () => {
               </div>
             </motion.div>
 
-            <motion.div custom={4} variants={fadeUp}>
-              <label className="block text-[#0A0E17] text-sm font-medium mb-2">
+            <motion.div custom={5} variants={fadeUp}>
+              <label className="block text-[#0A0E17] text-xs font-medium mb-1.5">
+                Phone Number
+              </label>
+              <div className={inputClass}>
+                <IoCallOutline className="text-gray-400 shrink-0" size={17} />
+                <input
+                  type="tel"
+                  placeholder="Enter your phone number"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="flex-1 bg-transparent text-[#0A0E17] placeholder-gray-400 text-sm outline-none"
+                />
+              </div>
+            </motion.div>
+
+            <motion.div custom={6} variants={fadeUp}>
+              <label className="block text-[#0A0E17] text-xs font-medium mb-1.5">
                 Password
               </label>
-              <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-full px-5 py-3.5 focus-within:border-[#004AAC] focus-within:bg-white transition-all">
+              <div className={inputClass}>
                 <IoLockClosedOutline
                   className="text-gray-400 shrink-0"
-                  size={18}
+                  size={17}
                 />
                 <input
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder="Create a password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -401,44 +444,52 @@ const Login = () => {
                   className="text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   {showPassword ? (
-                    <IoEyeOutline size={18} />
+                    <IoEyeOutline size={17} />
                   ) : (
-                    <IoEyeOffOutline size={18} />
+                    <IoEyeOffOutline size={17} />
                   )}
                 </button>
               </div>
             </motion.div>
 
-            <motion.div
-              custom={5}
-              variants={fadeUp}
-              className="flex items-center justify-between"
-            >
-              <label className="flex items-center gap-2 text-gray-500 text-xs cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                  className="w-3.5 h-3.5 rounded border-gray-300 text-[#004AAC] focus:ring-[#004AAC]"
-                />
-                Remember login
+            <motion.div custom={7} variants={fadeUp}>
+              <label className="block text-[#0A0E17] text-xs font-medium mb-1.5">
+                Confirm Password
               </label>
-              <button
-                type="button"
-                onClick={handleForgotPassword}
-                className="text-[#004AAC] text-xs font-medium hover:text-[#003785] transition-colors"
-              >
-                Forgot password?
-              </button>
+              <div className={inputClass}>
+                <IoLockClosedOutline
+                  className="text-gray-400 shrink-0"
+                  size={17}
+                />
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  placeholder="Confirm your password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  className="flex-1 bg-transparent text-[#0A0E17] placeholder-gray-400 text-sm outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showConfirm ? (
+                    <IoEyeOutline size={17} />
+                  ) : (
+                    <IoEyeOffOutline size={17} />
+                  )}
+                </button>
+              </div>
             </motion.div>
 
-            <motion.div custom={6} variants={fadeUp}>
+            <motion.div custom={8} variants={fadeUp}>
               <button
                 type="submit"
                 disabled={loading}
                 className="group w-full bg-[#004AAC] hover:bg-[#003785] text-white font-bold text-sm py-4 rounded-full flex items-center justify-center gap-3 transition-all duration-300 shadow-lg shadow-[#004AAC]/20 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:scale-100 cursor-pointer"
               >
-                {loading ? "Please wait..." : "Login"}
+                {loading ? "Please wait..." : "Create Account"}
                 {!loading && (
                   <FiArrowRight
                     size={18}
@@ -449,7 +500,7 @@ const Login = () => {
             </motion.div>
 
             <motion.div
-              custom={7}
+              custom={9}
               variants={fadeUp}
               className="flex items-center gap-3"
             >
@@ -460,7 +511,7 @@ const Login = () => {
               <div className="flex-1 h-px bg-gray-200" />
             </motion.div>
 
-            <motion.div custom={8} variants={fadeUp}>
+            <motion.div custom={10} variants={fadeUp}>
               <button
                 type="button"
                 onClick={handleGoogle}
@@ -486,22 +537,22 @@ const Login = () => {
                   />
                 </svg>
                 <span className="text-[#0A0E17] text-sm font-semibold">
-                  Sign in with Google
+                  Sign up with Google
                 </span>
               </button>
             </motion.div>
 
             <motion.p
-              custom={9}
+              custom={11}
               variants={fadeUp}
               className="text-center text-gray-400 text-xs"
             >
-              New here?{" "}
+              Already have an account?{" "}
               <Link
-                href="/signup"
+                href={loginHref}
                 className="text-[#004AAC] font-semibold hover:text-[#003785] transition-colors"
               >
-                Create account
+                Login here
               </Link>
             </motion.p>
           </form>
@@ -509,6 +560,18 @@ const Login = () => {
       </div>
     </div>
   );
-};
+}
 
-export default Login;
+export default function Signup() {
+  return (
+    <Suspense
+      fallback={
+        <div className="w-full min-h-screen bg-white flex items-center justify-center">
+          <div className="w-8 h-8 border-[3px] border-gray-200 border-t-[#004AAC] rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <SignupInner />
+    </Suspense>
+  );
+}

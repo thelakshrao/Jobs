@@ -87,7 +87,14 @@ export default function Navbar() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 md:gap-4">
+          <Link
+            href="/employer"
+            className="hidden sm:inline-flex items-center gap-1.5 text-[#004AAC] text-xs md:text-sm font-semibold px-3 md:px-4 py-2 md:py-2.5 rounded-full border border-[#004AAC]/25 hover:bg-[#eaf1fb] transition-all duration-300"
+          >
+            For Employers
+          </Link>
+
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}

@@ -1,8 +1,9 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { db, auth } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { auth } from "@/lib/firebase";
+import { getEmployerDestination } from "@/lib/employerRouting";
+import EmployerAuthModal from "@/employerComponets/EmployerAuthModal";
 import { motion, AnimatePresence } from "framer-motion";
 import LogoEmp from "@/images/logoemp.png";
 import { Bell, User } from "lucide-react";
@@ -47,6 +48,8 @@ function CloseIcon() {
 export default function EmpNavbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [onDark, setOnDark] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const pendingRedirectRef = useRef(null);
   const navHeightRef = useRef(80);
   const router = useRouter();
 
@@ -81,69 +84,50 @@ export default function EmpNavbar() {
     };
   }, []);
 
+  const openAuthModal = (redirect = null) => {
+    pendingRedirectRef.current = redirect;
+    setAuthModalOpen(true);
+  };
+
+  const handleAuthed = async (user) => {
+    setAuthModalOpen(false);
+    const dest = await getEmployerDestination(user.uid, {
+      redirect: pendingRedirectRef.current,
+    });
+    pendingRedirectRef.current = null;
+    router.push(dest);
+  };
+
   const handleProfileClick = async () => {
     const user = auth.currentUser;
     if (!user) {
-      router.push("/employer/onboarding");
+      openAuthModal();
       return;
     }
-    const empLoggedOut = sessionStorage.getItem("empLoggedOut");
-    if (empLoggedOut === "true") {
-      router.push("/employer/onboarding?mode=switch");
-      return;
-    }
-    try {
-      const empDoc = await getDoc(doc(db, "employers", user.uid));
-      router.push(
-        empDoc.exists() ? "/employer/dashboard" : "/employer/onboarding",
-      );
-    } catch (error) {
-      console.error("Firestore error:", error.message);
-    }
+    const dest = await getEmployerDestination(user.uid);
+    router.push(dest);
   };
 
   const handleDashboardClick = async () => {
     const user = auth.currentUser;
     if (!user) {
-      router.push("/employer/onboarding");
+      openAuthModal();
       return;
     }
-    const empLoggedOut = sessionStorage.getItem("empLoggedOut");
-    if (empLoggedOut === "true") {
-      router.push("/employer/onboarding?mode=switch");
-      return;
-    }
-    try {
-      const empDoc = await getDoc(doc(db, "employers", user.uid));
-      router.push(
-        empDoc.exists() ? "/employer/dashboard" : "/employer/onboarding",
-      );
-    } catch (error) {
-      console.error("Firestore error:", error.message);
-    }
+    const dest = await getEmployerDestination(user.uid);
+    router.push(dest);
   };
 
   const handlePostJobClick = async () => {
     const user = auth.currentUser;
     if (!user) {
-      router.push("/employer/onboarding?redirect=create-job");
+      openAuthModal("create-job");
       return;
     }
-    const empLoggedOut = sessionStorage.getItem("empLoggedOut");
-    if (empLoggedOut === "true") {
-      router.push("/employer/onboarding?mode=switch&redirect=create-job");
-      return;
-    }
-    try {
-      const empDoc = await getDoc(doc(db, "employers", user.uid));
-      router.push(
-        empDoc.exists()
-          ? "/employer/dashboard/create-job"
-          : "/employer/onboarding?redirect=create-job",
-      );
-    } catch (error) {
-      console.error("Firestore error:", error.message);
-    }
+    const dest = await getEmployerDestination(user.uid, {
+      redirect: "create-job",
+    });
+    router.push(dest);
   };
 
   return (
@@ -330,6 +314,15 @@ export default function EmpNavbar() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <EmployerAuthModal
+        open={authModalOpen}
+        onClose={() => {
+          setAuthModalOpen(false);
+          pendingRedirectRef.current = null;
+        }}
+        onAuthed={handleAuthed}
+      />
     </>
   );
 }
