@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, useInView } from "framer-motion";
+import { motion, useInView, AnimatePresence } from "framer-motion";
+import emailjs from "@emailjs/browser";
 import about1 from "@/images/about1.jpg";
 import about2 from "@/images/about2.jpg";
 import about3 from "@/images/about3.jpg";
@@ -13,6 +14,9 @@ import mainabout from "@/images/mainabout.png";
 
 const BRAND_BLUE = "#004aac";
 
+const EMAILJS_SERVICE_ID = "service_3giimhf";
+const EMAILJS_QUICKAPPLY_TEMPLATE_ID = "template_chbn6wi"; 
+const EMAILJS_PUBLIC_KEY = "UHzBWCtmnhUoZASXL";
 
 const AnimatedLine = ({ children, delay = 0, className = "" }) => (
   <motion.div
@@ -28,21 +32,21 @@ const AnimatedLine = ({ children, delay = 0, className = "" }) => (
 
 const CardWaves = ({ tint = "#ffffff", opacity = 0.35 }) => (
   <svg
-  className="absolute inset-0 w-full h-full pointer-events-none"
-  viewBox="0 0 400 300"
-  preserveAspectRatio="none"
->
-  <path
-    d="M-20,90 C60,50 120,140 200,100 C280,60 320,130 420,95 L420,320 L-20,320 Z"
-    fill="#D6E3F7"
-    opacity={opacity}
-  />
-  <path
-    d="M-20,150 C80,190 140,110 220,150 C300,190 340,140 420,170 L420,320 L-20,320 Z"
-    fill="#9DBFEE"
-    opacity={opacity * 0.7}
-  />
-</svg>
+    className="absolute inset-0 w-full h-full pointer-events-none"
+    viewBox="0 0 400 300"
+    preserveAspectRatio="none"
+  >
+    <path
+      d="M-20,90 C60,50 120,140 200,100 C280,60 320,130 420,95 L420,320 L-20,320 Z"
+      fill="#D6E3F7"
+      opacity={opacity}
+    />
+    <path
+      d="M-20,150 C80,190 140,110 220,150 C300,190 340,140 420,170 L420,320 L-20,320 Z"
+      fill="#9DBFEE"
+      opacity={opacity * 0.7}
+    />
+  </svg>
 );
 
 const CardShell = ({ className = "", children, delay = 0, style }) => (
@@ -58,10 +62,42 @@ const CardShell = ({ className = "", children, delay = 0, style }) => (
   </motion.div>
 );
 
-
 const About = () => {
   const centerRef = useRef(null);
   const isInView = useInView(centerRef, { once: true, margin: "-80px" });
+
+  const [quickForm, setQuickForm] = useState({ name: "", phone: "" });
+  const [quickStatus, setQuickStatus] = useState("idle");
+
+  const handleQuickChange = (e) => {
+    const { name, value } = e.target;
+    setQuickForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleQuickSubmit = async () => {
+    if (!quickForm.name.trim() || !quickForm.phone.trim()) {
+      setQuickStatus("error");
+      return;
+    }
+    setQuickStatus("sending");
+    try {
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_QUICKAPPLY_TEMPLATE_ID,
+        {
+          from_name: quickForm.name,
+          phone: quickForm.phone,
+        },
+        EMAILJS_PUBLIC_KEY,
+      );
+      setQuickStatus("success");
+      setQuickForm({ name: "", phone: "" });
+      setTimeout(() => setQuickStatus("idle"), 4000);
+    } catch (err) {
+      console.error("EmailJS quick-apply error:", err);
+      setQuickStatus("error");
+    }
+  };
 
   return (
     <div
@@ -73,8 +109,16 @@ const About = () => {
         viewBox="0 0 320 320"
         fill="none"
       >
-        <path d="M320 0 C220 0, 320 100, 200 160 S 80 320, 320 320Z" fill="#DCE6FB" opacity="0.9" />
-        <path d="M320 0 C260 0, 320 60, 240 120 S 140 320, 320 320Z" fill="#BFD1F5" opacity="0.6" />
+        <path
+          d="M320 0 C220 0, 320 100, 200 160 S 80 320, 320 320Z"
+          fill="#DCE6FB"
+          opacity="0.9"
+        />
+        <path
+          d="M320 0 C260 0, 320 60, 240 120 S 140 320, 320 320Z"
+          fill="#BFD1F5"
+          opacity="0.6"
+        />
       </svg>
       <svg
         className="absolute bottom-0 left-0 w-40 h-40 md:w-80 md:h-80 pointer-events-none z-0"
@@ -82,8 +126,16 @@ const About = () => {
         fill="none"
         style={{ transform: "rotate(180deg)" }}
       >
-        <path d="M320 0 C220 0, 320 100, 200 160 S 80 320, 320 320Z" fill="#DCE6FB" opacity="0.9" />
-        <path d="M320 0 C260 0, 320 60, 240 120 S 140 320, 320 320Z" fill="#BFD1F5" opacity="0.6" />
+        <path
+          d="M320 0 C220 0, 320 100, 200 160 S 80 320, 320 320Z"
+          fill="#DCE6FB"
+          opacity="0.9"
+        />
+        <path
+          d="M320 0 C260 0, 320 60, 240 120 S 140 320, 320 320Z"
+          fill="#BFD1F5"
+          opacity="0.6"
+        />
       </svg>
 
       <div className="text-center mb-10 md:mb-14 z-10 relative px-5 max-w-3xl mx-auto">
@@ -97,14 +149,16 @@ const About = () => {
         </AnimatedLine>
         <AnimatedLine delay={0.1}>
           <h2 className="text-2xl md:text-4xl lg:text-5xl font-bold text-gray-900 mt-2 md:mt-3 mb-3 md:mb-5 leading-tight">
-            Your Skills. Your Future.<br />
+            Your Skills. Your Future.
+            <br />
             <span style={{ color: BRAND_BLUE }}>Your Place.</span>
           </h2>
         </AnimatedLine>
         <AnimatedLine delay={0.2}>
           <p className="text-gray-500 text-sm md:text-base leading-relaxed">
-            At <strong className="text-gray-900">Jobs Abroad</strong>, we believe everyone — fresher or
-            veteran, cook or engineer — deserves a fair shot at a great opportunity.
+            At <strong className="text-gray-900">Jobs Abroad</strong>, we
+            believe everyone — fresher or veteran, cook or engineer — deserves a
+            fair shot at a great opportunity.
           </p>
         </AnimatedLine>
       </div>
@@ -139,8 +193,9 @@ const About = () => {
               </h3>
             </div>
             <p className="relative z-10 text-gray-500 text-sm md:text-[15px] leading-relaxed">
-              Fresh out of college? We fast-track freshers straight into their very first job —
-              zero experience needed, real employers, no waiting around.
+              Fresh out of college? We fast-track freshers straight into their
+              very first job — zero experience needed, real employers, no
+              waiting around.
             </p>
           </CardShell>
 
@@ -155,31 +210,70 @@ const About = () => {
                 style={{ backgroundColor: BRAND_BLUE }}
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                  <path d="M13.5 2.5a4 4 0 0 1 0 5.7l-2 2-1.4-1.4 2-2a2 2 0 0 0-2.9-2.9l-3 3a2 2 0 0 0 0 2.9l1.4 1.4-1.4 1.4-1.4-1.4a4 4 0 0 1 0-5.7l3-3a4 4 0 0 1 5.7 0Zm-3 9.3 1.4 1.4-3 3a4 4 0 1 1-5.7-5.7l2-2 1.4 1.4-2 2a2 2 0 1 0 2.9 2.9l3-3Z" fill="white"/>
+                  <path
+                    d="M13.5 2.5a4 4 0 0 1 0 5.7l-2 2-1.4-1.4 2-2a2 2 0 0 0-2.9-2.9l-3 3a2 2 0 0 0 0 2.9l1.4 1.4-1.4 1.4-1.4-1.4a4 4 0 0 1 0-5.7l3-3a4 4 0 0 1 5.7 0Zm-3 9.3 1.4 1.4-3 3a4 4 0 1 1-5.7-5.7l2-2 1.4 1.4-2 2a2 2 0 1 0 2.9 2.9l3-3Z"
+                    fill="white"
+                  />
                 </svg>
               </div>
-              <h3 className="text-lg md:text-xl font-bold text-gray-900">Get Hired Fast</h3>
+              <h3 className="text-lg md:text-xl font-bold text-gray-900">
+                Get Hired Fast
+              </h3>
             </div>
 
             <div className="relative z-10 space-y-2">
               <input
                 type="text"
+                name="name"
                 placeholder="Your name"
+                value={quickForm.name}
+                onChange={handleQuickChange}
                 className="w-full rounded-full bg-slate-100 placeholder-gray-400 text-sm px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-200"
               />
               <div className="flex items-center gap-2 bg-slate-100 rounded-full px-4 py-2.5">
                 <input
                   type="tel"
+                  name="phone"
                   placeholder="Phone number"
+                  value={quickForm.phone}
+                  onChange={handleQuickChange}
                   className="flex-1 bg-transparent placeholder-gray-400 text-sm outline-none"
                 />
                 <button
-                  className="shrink-0 text-white text-xs font-semibold px-3.5 py-1.5 rounded-full whitespace-nowrap cursor-pointer"
+                  type="button"
+                  onClick={handleQuickSubmit}
+                  disabled={quickStatus === "sending"}
+                  className="shrink-0 text-white text-xs font-semibold px-3.5 py-1.5 rounded-full whitespace-nowrap cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   style={{ backgroundColor: BRAND_BLUE }}
                 >
-                  Notify Us
+                  {quickStatus === "sending" ? "Sending…" : "Notify Us"}
                 </button>
               </div>
+
+              <AnimatePresence>
+                {quickStatus === "success" && (
+                  <motion.p
+                    key="qsuccess"
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    className="text-green-600 text-xs font-medium px-1"
+                  >
+                    ✅ Got it! We'll reach out shortly.
+                  </motion.p>
+                )}
+                {quickStatus === "error" && (
+                  <motion.p
+                    key="qerror"
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    className="text-red-500 text-xs font-medium px-1"
+                  >
+                    ❌ Please fill in your name and phone number.
+                  </motion.p>
+                )}
+              </AnimatePresence>
             </div>
 
             <p className="relative z-10 text-gray-500 text-xs md:text-sm mt-3">
@@ -215,14 +309,18 @@ const About = () => {
                 style={{ backgroundColor: BRAND_BLUE }}
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 2 15 9 22 12 15 15 12 22 9 15 2 12 9 9Z" fill="white" />
+                  <path
+                    d="M12 2 15 9 22 12 15 15 12 22 9 15 2 12 9 9Z"
+                    fill="white"
+                  />
                 </svg>
               </div>
               <h3 className="text-base md:text-xl font-bold text-gray-900 leading-snug">
                 Every Talent Welcome
               </h3>
               <p className="text-gray-500 text-xs md:text-sm leading-relaxed mt-2">
-                We help every kind of talent land a job — not just here, everywhere.
+                We help every kind of talent land a job — not just here,
+                everywhere.
               </p>
             </div>
 
@@ -246,7 +344,12 @@ const About = () => {
                 style={{ marginTop: -14, backgroundColor: BRAND_BLUE }}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 5v14M5 12h14" stroke="white" strokeWidth="2.4" strokeLinecap="round" />
+                  <path
+                    d="M12 5v14M5 12h14"
+                    stroke="white"
+                    strokeWidth="2.4"
+                    strokeLinecap="round"
+                  />
                 </svg>
               </button>
             </motion.div>
@@ -276,7 +379,13 @@ const About = () => {
                   style={{ backgroundColor: BRAND_BLUE }}
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                    <path d="M5 8 3 4l4 2 3-5 3 5 4-2-2 4M5 8h14l-1.5 11h-11L5 8Z" stroke="white" strokeWidth="1.6" strokeLinejoin="round" fill="none"/>
+                    <path
+                      d="M5 8 3 4l4 2 3-5 3 5 4-2-2 4M5 8h14l-1.5 11h-11L5 8Z"
+                      stroke="white"
+                      strokeWidth="1.6"
+                      strokeLinejoin="round"
+                      fill="none"
+                    />
                   </svg>
                 </div>
                 <span
@@ -291,8 +400,9 @@ const About = () => {
               </h3>
             </div>
             <p className="relative z-10 text-gray-500 text-sm md:text-[15px] leading-relaxed">
-              Go premium and get a dedicated one-on-one consultant. You focus on your studies —
-              we'll hunt down the right role and land you the interview.
+              Go premium and get a dedicated one-on-one consultant. You focus on
+              your studies — we'll hunt down the right role and land you the
+              interview.
             </p>
           </CardShell>
 
@@ -305,11 +415,24 @@ const About = () => {
             <div className="relative z-10 flex items-center gap-2">
               <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="8" r="3.2" stroke="white" strokeWidth="1.6" />
-                  <path d="M4.5 20c0-4 3.5-6.5 7.5-6.5s7.5 2.5 7.5 6.5" stroke="white" strokeWidth="1.6" strokeLinecap="round" />
+                  <circle
+                    cx="12"
+                    cy="8"
+                    r="3.2"
+                    stroke="white"
+                    strokeWidth="1.6"
+                  />
+                  <path
+                    d="M4.5 20c0-4 3.5-6.5 7.5-6.5s7.5 2.5 7.5 6.5"
+                    stroke="white"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                  />
                 </svg>
               </div>
-              <h3 className="text-lg md:text-xl font-bold text-white">When You Are Ready</h3>
+              <h3 className="text-lg md:text-xl font-bold text-white">
+                When You Are Ready
+              </h3>
             </div>
             <p className="relative z-10 text-white/75 text-sm">
               Your dream job is one click away.
@@ -321,7 +444,13 @@ const About = () => {
             >
               Connect
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                <path d="M5 19 19 5M19 5H9M19 5v10" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                  d="M5 19 19 5M19 5H9M19 5v10"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </Link>
           </CardShell>
