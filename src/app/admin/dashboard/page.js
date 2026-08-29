@@ -6,6 +6,7 @@ import { signOut } from "firebase/auth";
 import {
   doc,
   getDoc,
+  updateDoc,   
   collection,
   query,
   where,
@@ -226,8 +227,34 @@ export default function AdminDashboardPage() {
           limit(6),
         );
         const recentJobsSnap = await getDocs(recentJobsQ);
+        const recentJobsLoaded = recentJobsSnap.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        }));
+
+        const today = new Date().toISOString().split("T")[0];
+        const expiredRecent = recentJobsLoaded.filter(
+          (job) =>
+            job.status === "Open" &&
+            job.applicationDeadline &&
+            job.applicationDeadline < today,
+        );
+        if (expiredRecent.length > 0) {
+          await Promise.all(
+            expiredRecent.map((job) =>
+              updateDoc(doc(db, "jobs", job.id), {
+                status: "Closed",
+                updatedAt: new Date().toISOString(),
+              }),
+            ),
+          );
+        }
         setRecentJobs(
-          recentJobsSnap.docs.map((d) => ({ id: d.id, ...d.data() })),
+          recentJobsLoaded.map((job) =>
+            expiredRecent.some((ej) => ej.id === job.id)
+              ? { ...job, status: "Closed" }
+              : job,
+          ),
         );
 
         const recentAppsQ = query(

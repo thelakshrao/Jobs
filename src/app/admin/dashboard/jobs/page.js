@@ -135,7 +135,34 @@ export default function AdminJobsPage() {
     try {
       const jobsQ = query(collection(db, "jobs"), orderBy("createdAt", "desc"));
       const snap = await getDocs(jobsQ);
-      setJobs(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      const loaded = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+      const today = new Date().toISOString().split("T")[0];
+      const expiredJobs = loaded.filter(
+        (job) =>
+          job.status === "Open" &&
+          job.applicationDeadline &&
+          job.applicationDeadline < today,
+      );
+
+      if (expiredJobs.length > 0) {
+        await Promise.all(
+          expiredJobs.map((job) =>
+            updateDoc(doc(db, "jobs", job.id), {
+              status: "Closed",
+              updatedAt: new Date().toISOString(),
+            }),
+          ),
+        );
+      }
+
+      const finalLoaded = loaded.map((job) =>
+        expiredJobs.some((ej) => ej.id === job.id)
+          ? { ...job, status: "Closed" }
+          : job,
+      );
+
+      setJobs(finalLoaded);
     } catch (err) {
       console.error("Error loading jobs:", err);
     } finally {

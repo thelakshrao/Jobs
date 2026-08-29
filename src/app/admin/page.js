@@ -63,6 +63,15 @@ export default function AdminLoginPage() {
       const cred = await signInWithEmailAndPassword(auth, email, password);
       const uid = cred.user.uid;
 
+      if (!cred.user.emailVerified) {
+        await signOut(auth);
+        setError(
+          "Please verify your email first. Check your inbox for the verification link.",
+        );
+        setLoading(false);
+        return;
+      }
+
       const staffSnap = await getDoc(doc(db, "admin_staff", uid));
       if (!staffSnap.exists()) {
         await signOut(auth);
@@ -76,6 +85,11 @@ export default function AdminLoginPage() {
         await signOut(auth);
         setError("This admin account is suspended. Contact the super admin.");
         setLoading(false);
+        return;
+      }
+
+      if (staffData.mustResetPassword) {
+        router.replace("/admin/reset-password");
         return;
       }
 

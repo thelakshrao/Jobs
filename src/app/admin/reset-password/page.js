@@ -1,11 +1,14 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import {
   verifyPasswordResetCode,
   confirmPasswordReset,
+  updatePassword,
+  signOut,
 } from "firebase/auth";
+import { doc, updateDoc } from "firebase/firestore";
 import { Lock, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import AdminBg from "@/images/admin.jpg";
 import Logo from "@/images/logoemp.png";
@@ -30,10 +33,12 @@ function AdminResetPasswordInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const oobCode = searchParams.get("oobCode");
+  const isLinkFlow = !!oobCode;
 
   const [checking, setChecking] = useState(true);
   const [validCode, setValidCode] = useState(false);
   const [email, setEmail] = useState("");
+  const [forcedFlow, setForcedFlow] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -42,43 +47,78 @@ function AdminResetPasswordInner() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!oobCode) {
-      setError("This reset link is invalid or missing a code.");
-      setChecking(false);
+    if (isLinkFlow) {
+      verifyPasswordResetCode(auth, oobCode)
+        .then((verifiedEmail) => {
+          setEmail(verifiedEmail);
+          setValidCode(true);
+        })
+        .catch(() => {
+          setError("This reset link has expired or already been used.");
+        })
+        .finally(() => setChecking(false));
       return;
     }
-    verifyPasswordResetCode(auth, oobCode)
-      .then((verifiedEmail) => {
-        setEmail(verifiedEmail);
-        setValidCode(true);
-      })
-      .catch(() => {
-        setError("This reset link has expired or already been used.");
-      })
-      .finally(() => setChecking(false));
-  }, [oobCode]);
+
+    // No link — this must be the forced first-login flow.
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (!user) {
+        router.replace("/admin");
+        return;
+      }
+      setEmail(user.email);
+      setForcedFlow(true);
+      setValidCode(true);
+      setChecking(false);
+    });
+    return () => unsubscribe();
+  }, [isLinkFlow, oobCode, router]);
+
+  const validate = () => {
+    if (newPassword.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return false;
+    }
+    if (newPassword !== confirmPassword) {
+      setError("Passwords do not match.");
+      return false;
+    }
+    return true;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
-    if (newPassword.length < 6) {
-      setError("Password must be at least 6 characters.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
+    if (!validate()) return;
 
     setSubmitting(true);
     try {
-      await confirmPasswordReset(auth, oobCode, newPassword);
-      setSuccess(true);
-      setTimeout(() => router.replace("/admin"), 2000);
+      if (isLinkFlow) {
+        await confirmPasswordReset(auth, oobCode, newPassword);
+        setSuccess(true);
+        setTimeout(() => router.replace("/admin"), 2000);
+      } else {
+        await updatePassword(auth.currentUser, newPassword);
+        await updateDoc(doc(db, "admin_staff", auth.currentUser.uid), {
+          mustResetPassword: false,
+          updatedAt: new Date().toISOString(),
+        });
+        setSuccess(true);
+        setTimeout(() => router.replace("/admin/dashboard"), 1200);
+      }
     } catch (err) {
       console.error(err);
-      setError("Could not reset password. Please request a new link.");
+      if (err.code === "auth/requires-recent-login") {
+        setError(
+          "For security, please log in again before changing your password.",
+        );
+        await signOut(auth);
+        setTimeout(() => router.replace("/admin"), 1500);
+      } else if (err.code === "auth/weak-password") {
+        setError("Password is too weak. Choose a stronger one.");
+      } else {
+        setError("Could not reset password. Please try again.");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -147,7 +187,7 @@ function AdminResetPasswordInner() {
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-7">
             {checking ? (
               <p className="text-sm text-slate-500 font-medium text-center py-4">
-                Verifying link…
+                Verifying…
               </p>
             ) : !validCode ? (
               <div>
@@ -164,10 +204,15 @@ function AdminResetPasswordInner() {
               </div>
             ) : success ? (
               <div className="px-3 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-sm font-semibold text-emerald-700 text-center">
-                Password updated. Redirecting to login…
+                Password updated. Redirecting…
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
+                {forcedFlow && (
+                  <div className="px-3 py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-sm font-semibold text-amber-700">
+                    For security, you must set a new password before continuing.
+                  </div>
+                )}
                 {error && (
                   <div className="px-3 py-2.5 rounded-xl bg-rose-50 border border-rose-200 text-sm font-semibold text-rose-600">
                     {error}

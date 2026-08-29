@@ -7,6 +7,7 @@ import { auth, db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import logoFull from "@/images/logo3.png";
 import logoIcon from "@/images/logo.png";
+import { canAdd } from "@/lib/adminRoles";
 import {
   LayoutDashboard,
   Briefcase,
@@ -31,43 +32,43 @@ const navItems = [
     href: "/admin/dashboard",
     icon: LayoutDashboard,
     label: "Dashboard",
-    permission: null,
+    requiresManage: false,
   },
   {
     href: "/admin/dashboard/jobs",
     icon: Briefcase,
     label: "Jobs",
-    permission: "view_jobs",
+    requiresManage: false,
   },
   {
     href: "/admin/dashboard/employers",
     icon: Building2,
     label: "Employers",
-    permission: "manage_employers",
+    requiresManage: false,
   },
   {
     href: "/admin/dashboard/applicants",
     icon: Users,
     label: "Applicants",
-    permission: "view_applicants",
+    requiresManage: false,
   },
   {
     href: "/admin/dashboard/reports",
     icon: BarChart3,
     label: "Reports",
-    permission: "view_reports",
+    requiresManage: false,
   },
   {
     href: "/admin/dashboard/staff",
     icon: UserCog,
     label: "Manage Staff",
-    permission: "manage_staff",
+    requiresManage: true,
   },
   {
     href: "/admin/dashboard/settings",
     icon: Settings,
     label: "Settings",
-    permission: null,
+    requiresManage: false,
   },
 ];
 
@@ -116,11 +117,10 @@ export default function AdminSidebar() {
     window.dispatchEvent(new Event(TOGGLE_EVENT));
   };
 
-  const canSee = (permission) => {
-    if (!permission) return true;
+  const canSee = (requiresManage) => {
+    if (!requiresManage) return true;
     if (!staffData) return false;
-    if (staffData.role === "super_admin") return true;
-    return (staffData.permissions || []).includes(permission);
+    return canAdd(staffData.roles);
   };
 
   const isActive = (href) =>
@@ -155,7 +155,7 @@ export default function AdminSidebar() {
   const NavList = ({ onClick }) => (
     <nav className="flex flex-col gap-1 px-3 py-4 flex-1 overflow-y-auto">
       {navItems
-        .filter((item) => canSee(item.permission))
+        .filter((item) => canSee(item.requiresManage))
         .map(({ href, icon: Icon, label }) => {
           const active = isActive(href);
           return (
