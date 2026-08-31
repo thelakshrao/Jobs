@@ -8,18 +8,16 @@ import { motion } from "framer-motion";
 import premiumImg from "@/images/premium.jpg";
 import logo3 from "@/images/logo3.png";
 import {
-  IoPersonOutline,
   IoMailOutline,
   IoLockClosedOutline,
   IoEyeOffOutline,
   IoEyeOutline,
-  IoCallOutline,
 } from "react-icons/io5";
 import { FiArrowRight } from "react-icons/fi";
 import {
-  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
   signInWithPopup,
-  updateProfile,
+  browserPopupRedirectResolver,
 } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, googleProvider, db } from "@/lib/firebase";
@@ -60,79 +58,75 @@ const quotes = [
 const inputClass =
   "flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-full px-5 py-3 focus-within:border-[#004AAC] focus-within:bg-white transition-all";
 
-function SignupInner() {
+function LoginInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  // Where to go after account creation. Falls back to /dashboard so
-  // existing behavior is unchanged when no redirect is present.
   const redirectTarget = searchParams.get("redirect") || "/dashboard";
 
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
-      return;
-    }
     setLoading(true);
 
-    let userCredential;
     try {
-      userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password,
-      );
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Self-healing: if this account's signup was interrupted before its
+      // Firestore profile doc was created, back-fill it now on login.
+      // merge:true + only touching lastLoginAt on the happy path means
+      // this never clobbers an existing, fully-formed profile.
+      try {
+        await setDoc(
+          doc(db, "users", user.uid),
+          {
+            name: user.displayName || "",
+            email: user.email || "",
+            lastLoginAt: new Date().toISOString(),
+          },
+          { merge: true },
+        );
+      } catch (docErr) {
+        // Don't block login if this write fails — just log it.
+        console.error("Failed to upsert user profile on login:", docErr);
+      }
+
+      router.push(redirectTarget);
     } catch (err) {
-      if (err.code === "auth/email-already-in-use") {
-        setError("This email is already registered. Try logging in.");
+      if (
+        err.code === "auth/user-not-found" ||
+        err.code === "auth/invalid-credential" ||
+        err.code === "auth/wrong-password"
+      ) {
+        setError("Incorrect email or password.");
       } else if (err.code === "auth/invalid-email") {
         setError("Please enter a valid email address.");
-      } else if (err.code === "auth/weak-password") {
-        setError("Password must be at least 6 characters.");
+      } else if (err.code === "auth/too-many-requests") {
+        setError("Too many attempts. Please try again later.");
+      } else if (err.code === "auth/user-disabled") {
+        setError("This account has been disabled.");
       } else {
-        setError("Could not create account. Please try again.");
+        setError("Could not sign in. Please try again.");
       }
       setLoading(false);
-      return;
     }
-
-    try {
-      await updateProfile(userCredential.user, { displayName: fullName });
-      await setDoc(doc(db, "users", userCredential.user.uid), {
-        name: fullName,
-        email: email,
-        phone: phone,
-        createdAt: new Date().toISOString(),
-      });
-    } catch (err) {
-      // Profile/Firestore update failed, but the account exists — still navigate
-      console.error("Profile/Firestore update failed:", err);
-    }
-
-    setLoading(false);
-    router.push(redirectTarget);
   };
 
   const handleGoogle = async () => {
     setError("");
     setLoading(true);
     try {
-      const result = await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(
+        auth,
+        googleProvider,
+        browserPopupRedirectResolver,
+      );
       const user = result.user;
       await setDoc(
         doc(db, "users", user.uid),
@@ -140,22 +134,36 @@ function SignupInner() {
           name: user.displayName || "",
           email: user.email || "",
           phone: user.phoneNumber || "",
-          createdAt: new Date().toISOString(),
+          lastLoginAt: new Date().toISOString(),
         },
         { merge: true },
       );
       router.push(redirectTarget);
     } catch (err) {
-      setError("Google sign-in failed. Please try again.");
+      console.error("Google sign-in error:", err);
+      if (err.code === "auth/popup-closed-by-user") {
+        setError("Sign-in was cancelled.");
+      } else if (err.code === "auth/popup-blocked") {
+        setError("Popup was blocked. Please allow popups and try again.");
+      } else if (err.code === "auth/unauthorized-domain") {
+        setError("This domain isn't authorized for Google sign-in.");
+      } else {
+        setError("Google sign-in failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const loginHref =
+  const signupHref =
     redirectTarget && redirectTarget !== "/dashboard"
-      ? `/login?redirect=${encodeURIComponent(redirectTarget)}`
-      : "/login";
+      ? `/signup?redirect=${encodeURIComponent(redirectTarget)}`
+      : "/signup";
+
+  const resetHref =
+    redirectTarget && redirectTarget !== "/dashboard"
+      ? `/reset-password?redirect=${encodeURIComponent(redirectTarget)}`
+      : "/reset-password";
 
   return (
     <div className="relative w-full min-h-screen bg-white flex flex-col md:flex-row font-sans">
@@ -201,11 +209,11 @@ function SignupInner() {
                 animate="visible"
               >
                 <p className="text-white/60 text-xs font-semibold tracking-widest uppercase mb-3">
-                  Join Jobs Abroad
+                  Welcome Back
                 </p>
                 <h2 className="font-display text-white text-3xl lg:text-4xl font-semibold leading-tight">
-                  Your Global Career <br />
-                  <span className="text-white">Starts Here.</span>
+                  Pick Up Where <br />
+                  <span className="text-white">You Left Off.</span>
                 </h2>
               </motion.div>
 
@@ -309,7 +317,7 @@ function SignupInner() {
             animate="visible"
             className="font-display text-white text-2xl sm:text-3xl font-semibold tracking-tight mb-2"
           >
-            Create your account
+            Welcome back
           </motion.h1>
           <motion.p
             custom={2}
@@ -318,7 +326,7 @@ function SignupInner() {
             animate="visible"
             className="text-white/85 text-sm max-w-xs"
           >
-            Join Jobs Abroad and get started in minutes.
+            Log in to continue your journey with Jobs Abroad.
           </motion.p>
         </div>
       </div>
@@ -350,14 +358,14 @@ function SignupInner() {
             variants={fadeUp}
             className="hidden md:block font-display text-[#0A0E17] text-3xl sm:text-4xl font-semibold mb-1.5 tracking-tight text-center"
           >
-            Create your account
+            Welcome back
           </motion.h1>
           <motion.p
             custom={2}
             variants={fadeUp}
             className="hidden md:block text-gray-400 text-sm mb-7 text-center"
           >
-            Join Jobs Abroad and get started in minutes.
+            Log in to continue your journey with Jobs Abroad.
           </motion.p>
 
           {error && (
@@ -373,23 +381,6 @@ function SignupInner() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <motion.div custom={3} variants={fadeUp}>
               <label className="block text-[#0A0E17] text-xs font-medium mb-1.5">
-                Full Name
-              </label>
-              <div className={inputClass}>
-                <IoPersonOutline className="text-gray-400 shrink-0" size={17} />
-                <input
-                  type="text"
-                  placeholder="Enter your full name"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                  className="flex-1 bg-transparent text-[#0A0E17] placeholder-gray-400 text-sm outline-none"
-                />
-              </div>
-            </motion.div>
-
-            <motion.div custom={4} variants={fadeUp}>
-              <label className="block text-[#0A0E17] text-xs font-medium mb-1.5">
                 Email
               </label>
               <div className={inputClass}>
@@ -400,31 +391,24 @@ function SignupInner() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  autoComplete="email"
                   className="flex-1 bg-transparent text-[#0A0E17] placeholder-gray-400 text-sm outline-none"
                 />
               </div>
             </motion.div>
 
-            <motion.div custom={5} variants={fadeUp}>
-              <label className="block text-[#0A0E17] text-xs font-medium mb-1.5">
-                Phone Number
-              </label>
-              <div className={inputClass}>
-                <IoCallOutline className="text-gray-400 shrink-0" size={17} />
-                <input
-                  type="tel"
-                  placeholder="Enter your phone number"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="flex-1 bg-transparent text-[#0A0E17] placeholder-gray-400 text-sm outline-none"
-                />
+            <motion.div custom={4} variants={fadeUp}>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-[#0A0E17] text-xs font-medium">
+                  Password
+                </label>
+                <Link
+                  href={resetHref}
+                  className="text-[#004AAC] text-xs font-semibold hover:text-[#003785] transition-colors"
+                >
+                  Forgot password?
+                </Link>
               </div>
-            </motion.div>
-
-            <motion.div custom={6} variants={fadeUp}>
-              <label className="block text-[#0A0E17] text-xs font-medium mb-1.5">
-                Password
-              </label>
               <div className={inputClass}>
                 <IoLockClosedOutline
                   className="text-gray-400 shrink-0"
@@ -432,10 +416,11 @@ function SignupInner() {
                 />
                 <input
                   type={showPassword ? "text" : "password"}
-                  placeholder="Create a password"
+                  placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  autoComplete="current-password"
                   className="flex-1 bg-transparent text-[#0A0E17] placeholder-gray-400 text-sm outline-none"
                 />
                 <button
@@ -452,44 +437,13 @@ function SignupInner() {
               </div>
             </motion.div>
 
-            <motion.div custom={7} variants={fadeUp}>
-              <label className="block text-[#0A0E17] text-xs font-medium mb-1.5">
-                Confirm Password
-              </label>
-              <div className={inputClass}>
-                <IoLockClosedOutline
-                  className="text-gray-400 shrink-0"
-                  size={17}
-                />
-                <input
-                  type={showConfirm ? "text" : "password"}
-                  placeholder="Confirm your password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  className="flex-1 bg-transparent text-[#0A0E17] placeholder-gray-400 text-sm outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirm(!showConfirm)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  {showConfirm ? (
-                    <IoEyeOutline size={17} />
-                  ) : (
-                    <IoEyeOffOutline size={17} />
-                  )}
-                </button>
-              </div>
-            </motion.div>
-
-            <motion.div custom={8} variants={fadeUp}>
+            <motion.div custom={5} variants={fadeUp}>
               <button
                 type="submit"
                 disabled={loading}
                 className="group w-full bg-[#004AAC] hover:bg-[#003785] text-white font-bold text-sm py-4 rounded-full flex items-center justify-center gap-3 transition-all duration-300 shadow-lg shadow-[#004AAC]/20 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:scale-100 cursor-pointer"
               >
-                {loading ? "Please wait..." : "Create Account"}
+                {loading ? "Please wait..." : "Log In"}
                 {!loading && (
                   <FiArrowRight
                     size={18}
@@ -500,7 +454,7 @@ function SignupInner() {
             </motion.div>
 
             <motion.div
-              custom={9}
+              custom={6}
               variants={fadeUp}
               className="flex items-center gap-3"
             >
@@ -511,7 +465,7 @@ function SignupInner() {
               <div className="flex-1 h-px bg-gray-200" />
             </motion.div>
 
-            <motion.div custom={10} variants={fadeUp}>
+            <motion.div custom={7} variants={fadeUp}>
               <button
                 type="button"
                 onClick={handleGoogle}
@@ -537,22 +491,22 @@ function SignupInner() {
                   />
                 </svg>
                 <span className="text-[#0A0E17] text-sm font-semibold">
-                  Sign up with Google
+                  Log in with Google
                 </span>
               </button>
             </motion.div>
 
             <motion.p
-              custom={11}
+              custom={8}
               variants={fadeUp}
               className="text-center text-gray-400 text-xs"
             >
-              Already have an account?{" "}
+              Don&apos;t have an account?{" "}
               <Link
-                href={loginHref}
+                href={signupHref}
                 className="text-[#004AAC] font-semibold hover:text-[#003785] transition-colors"
               >
-                Login here
+                Sign up here
               </Link>
             </motion.p>
           </form>
@@ -562,7 +516,7 @@ function SignupInner() {
   );
 }
 
-export default function Signup() {
+export default function Login() {
   return (
     <Suspense
       fallback={
@@ -571,7 +525,7 @@ export default function Signup() {
         </div>
       }
     >
-      <SignupInner />
+      <LoginInner />
     </Suspense>
   );
 }

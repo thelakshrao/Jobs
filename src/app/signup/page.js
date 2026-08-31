@@ -115,7 +115,6 @@ const Signup = () => {
         createdAt: new Date().toISOString(),
       });
     } catch (err) {
-      // Profile/Firestore update failed, but the account exists — still navigate
       console.error("Profile/Firestore update failed:", err);
     }
 
