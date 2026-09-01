@@ -97,7 +97,7 @@ export default function EmployerHero() {
             variants={item}
             className="text-[clamp(36px,7vw,64px)] leading-[1.08] text-white font-extrabold tracking-tight mb-6 flex items-center gap-4"
           >
-            Great Hire
+            Great Talent
             <span className="hidden sm:block w-16 h-px bg-white/30" />
           </motion.h1>
           <motion.p
