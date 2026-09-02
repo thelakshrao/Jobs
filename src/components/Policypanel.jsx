@@ -1,11 +1,15 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 const BRAND_BLUE = "#004AAC";
 
 const PolicyPanel = ({ content, onClose }) => {
   const isOpen = !!content;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -20,7 +24,9 @@ const PolicyPanel = ({ content, onClose }) => {
     };
   }, [isOpen, onClose]);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <>
       <div
         onClick={onClose}
@@ -84,7 +90,8 @@ const PolicyPanel = ({ content, onClose }) => {
           </button>
         </div>
       </aside>
-    </>
+    </>,
+    document.body
   );
 };
 
