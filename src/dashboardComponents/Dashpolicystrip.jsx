@@ -12,7 +12,7 @@ const DashPolicyStrip = () => {
   return (
     <>
       <div
-        className="w-full flex items-center justify-center sm:justify-end gap-5 px-4 sm:px-6 py-2 mb-16 md:mb-0"
+        className="w-full flex items-center justify-center sm:justify-end gap-5 px-4 sm:px-6 py-2 mb-24 md:mb-0"
         style={{ backgroundColor: BRAND_BLUE }}
       >
         <button
