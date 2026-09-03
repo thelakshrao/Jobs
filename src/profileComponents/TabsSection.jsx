@@ -50,7 +50,7 @@ export default function TabsSection({
         <div className="p-4 sm:p-6">
           {safeTab === "About" && <AboutTab about={about} />}
           {safeTab === "Experience" && (
-            <ExperienceTab experiences={experiences} />
+            <ExperienceTab experiences={experiences} about={about} />
           )}
           {safeTab === "Education" && <EducationTab educations={educations} />}
           {safeTab === "Skills" && <SkillsTab skills={skills} />}

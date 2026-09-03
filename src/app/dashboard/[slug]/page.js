@@ -256,7 +256,7 @@ export default function ProfileSlugPage() {
     );
   return (
     <div
-      className="min-h-screen px-4 sm:px-6 lg:pl-6 lg:pr-6 pb-20 lg:pb-10"
+      className="lg:min-h-screen px-4 sm:px-6 lg:pl-6 lg:pr-6 pb-20 lg:pb-10"
       style={{
         paddingTop: "12px",
         backgroundColor: "#ffffff",
@@ -416,6 +416,7 @@ export default function ProfileSlugPage() {
                   setSkillInput={setSkillInput}
                   saveExpToFirebase={saveExpToFirebase}
                   saveEduToFirebase={saveEduToFirebase}
+                  onSave={handleSave}
                 />
               )
             )}

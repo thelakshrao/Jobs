@@ -24,10 +24,17 @@ export function computeCompletedItems({
 
   const isFresher = about.isFresher === true;
 
+  const hasFreelance = about.hasFreelanceExp === true;
+
   const experience = isFresher
-    ? true 
+    ? hasFreelance
+      ? filled(about.freelanceExperience) && filled(about.freelanceRole)
+      : true
     : hasItems(experiences) &&
       experiences.some((e) => filled(e.title) && filled(e.company));
+
+  const desiredRoles =
+    Array.isArray(about.lookingForRoles) && about.lookingForRoles.length >= 3;
 
   const education =
     hasItems(educations) &&
@@ -50,5 +57,6 @@ export function computeCompletedItems({
     links,
     resume,
     fresher: isFresher,
+    desiredRoles,
   };
 }

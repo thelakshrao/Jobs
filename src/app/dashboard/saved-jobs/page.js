@@ -455,8 +455,8 @@ export default function MyJobsPage() {
     profileSlug
       ? router.push(`/dashboard/${profileSlug}`)
       : router.push("/dashboard/profile");
-  return (
-    <main className="min-h-screen bg-[#ffffff] pb-16 md:pb-0">
+    return (
+    <main className="md:min-h-screen bg-[#ffffff] pb-16 md:pb-0">
       <div className="w-full max-w-6xl mx-auto pt-3 md:pt-6">
         <div className="flex flex-col lg:flex-row gap-6 items-start">
           <div className="flex-1 min-w-0 w-full">

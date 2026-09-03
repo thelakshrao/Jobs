@@ -5,7 +5,39 @@ import {
 } from "react-icons/io5";
 import { BLUE } from "./shared";
 
-export default function ExperienceTab({ experiences }) {
+export default function ExperienceTab({ experiences, about }) {
+  const isFreelanceFresher = about?.isFresher && about?.hasFreelanceExp;
+
+  if ((!experiences || experiences.length === 0) && isFreelanceFresher) {
+    return (
+      <div className="flex flex-col gap-5">
+        <h3
+          className="text-sm sm:text-base font-bold"
+          style={{ color: "#0f172a" }}
+        >
+          Work Experience
+        </h3>
+        <div
+          className="p-4 rounded-2xl"
+          style={{ backgroundColor: "#fafafa", border: "1.5px solid #e2e8f0" }}
+        >
+          <p
+            className="text-[9px] sm:text-xs font-bold uppercase tracking-wide"
+            style={{ color: "#94a3b8" }}
+          >
+            Freelance / Part-time
+          </p>
+          <p className="text-sm font-extrabold" style={{ color: "#0f172a" }}>
+            {about.freelanceRole}
+          </p>
+          <p className="text-xs font-semibold mt-1" style={{ color: BLUE }}>
+            {about.freelanceExperience}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (!experiences || experiences.length === 0) {
     return (
       <div className="flex flex-col gap-5">

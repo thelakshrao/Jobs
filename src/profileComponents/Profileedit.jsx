@@ -28,14 +28,19 @@ import {
   SALARY_OPTIONS,
   AVAILABILITY_OPTIONS,
   EDU_TYPE_GRADUATE,
+  FREELANCE_EXPERIENCE_OPTIONS,
+  RolePicker,
+  PhoneField,
 } from "./shared";
 import { usePhotoUpload } from "@/hooks/Usephotoupload";
+
 const SIDEBAR_ITEMS = [
   { key: "profile", label: "Profile Settings", icon: IoPersonOutline },
   { key: "experience", label: "Work Experience", icon: IoBriefcaseOutline },
   { key: "education", label: "Education", icon: IoSchoolOutline },
   { key: "skills", label: "Skills", icon: IoStarOutline },
 ];
+
 function PasteURLModal({ onConfirm, onClose }) {
   const [url, setUrl] = useState("");
   const [error, setError] = useState("");
@@ -191,6 +196,7 @@ function PasteURLModal({ onConfirm, onClose }) {
     </div>
   );
 }
+
 function SectionTitle({ title }) {
   return (
     <h2 className="text-base font-bold mb-5" style={{ color: "#0f172a" }}>
@@ -198,11 +204,13 @@ function SectionTitle({ title }) {
     </h2>
   );
 }
+
 function Divider() {
   return (
     <div style={{ height: 1, backgroundColor: "#f1f5f9", margin: "24px 0" }} />
   );
 }
+
 function FormLabel({ children, required }) {
   return (
     <label
@@ -214,6 +222,7 @@ function FormLabel({ children, required }) {
     </label>
   );
 }
+
 function StyledInput({
   value,
   onChange,
@@ -240,6 +249,7 @@ function StyledInput({
     />
   );
 }
+
 function StyledTextarea({ value, onChange, placeholder, rows = 3 }) {
   return (
     <textarea
@@ -259,6 +269,7 @@ function StyledTextarea({ value, onChange, placeholder, rows = 3 }) {
     />
   );
 }
+
 function GenderRadio({ value, onChange }) {
   const options = ["Male", "Female", "Other", "Prefer not to say"];
   return (
@@ -300,12 +311,13 @@ function GenderRadio({ value, onChange }) {
     </div>
   );
 }
+
 function SaveButton({ onClick, loading }) {
   return (
     <button
       onClick={onClick}
       disabled={loading}
-      className="px-6 py-2.5 rounded-xl text-sm font-bold text-white transition-all cursor-pointer"
+      className="w-full sm:w-auto px-6 py-2.5 rounded-xl text-sm font-bold text-white transition-all cursor-pointer"
       style={{
         backgroundColor: BLUE,
         opacity: loading ? 0.7 : 1,
@@ -316,6 +328,44 @@ function SaveButton({ onClick, loading }) {
     </button>
   );
 }
+
+function SavedToast({ show }) {
+  if (!show) return null;
+  return (
+    <div className="fixed inset-0 z-60 flex items-center justify-center pointer-events-none px-4">
+      <div
+        className="flex items-center gap-2 px-5 py-3 rounded-2xl shadow-2xl"
+        style={{
+          backgroundColor: "#16a34a",
+          color: "#ffffff",
+          animation: "fadeInOut 2.5s ease forwards",
+        }}
+      >
+        <IoCheckmarkOutline size={18} />
+        <span className="text-sm font-bold">Saved</span>
+      </div>
+      <style jsx>{`
+        @keyframes fadeInOut {
+          0% {
+            opacity: 0;
+            transform: translateY(-8px);
+          }
+          10% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+          85% {
+            opacity: 1;
+          }
+          100% {
+            opacity: 0;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 function MiniExpRow({ exp, onEdit, onDelete }) {
   return (
     <div
@@ -370,6 +420,7 @@ function MiniExpRow({ exp, onEdit, onDelete }) {
     </div>
   );
 }
+
 function MiniEduRow({ edu, onEdit, onDelete }) {
   return (
     <div
@@ -413,6 +464,7 @@ function MiniEduRow({ edu, onEdit, onDelete }) {
     </div>
   );
 }
+
 function ExpForm({ value, onChange, onSave, onCancel }) {
   return (
     <div
@@ -445,7 +497,7 @@ function ExpForm({ value, onChange, onSave, onCancel }) {
           />
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <FormLabel>Start Month</FormLabel>
           <input
@@ -511,6 +563,7 @@ function ExpForm({ value, onChange, onSave, onCancel }) {
     </div>
   );
 }
+
 function EduForm({ value, onChange, onSave, onCancel }) {
   return (
     <div
@@ -540,7 +593,7 @@ function EduForm({ value, onChange, onSave, onCancel }) {
           onChange={(v) => onChange({ ...value, stream: v })}
         />
       </div>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         <div>
           <FormLabel>Start Year</FormLabel>
           <StyledInput
@@ -585,6 +638,7 @@ function EduForm({ value, onChange, onSave, onCancel }) {
     </div>
   );
 }
+
 export default function ProfileEdit({
   form,
   setForm,
@@ -606,14 +660,31 @@ export default function ProfileEdit({
   setSkillInput,
   saveExpToFirebase,
   saveEduToFirebase,
+  onSave,
 }) {
   const [activeTab, setActiveTab] = useState("profile");
   const [langInput, setLangInput] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const [showURLModal, setShowURLModal] = useState(false);
+  const [showSaved, setShowSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
   const fileInputRef = useRef(null);
   const { uploading, error, upload } = usePhotoUpload(setForm);
   const isFresher = !!aboutForm.isFresher;
+
+  const handleSaveClick = async () => {
+    setSaving(true);
+    try {
+      await onSave();
+      setShowSaved(true);
+      setTimeout(() => setShowSaved(false), 2500);
+    } catch (err) {
+      console.error("Save failed:", err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const onDragOver = (e) => {
     e.preventDefault();
     setDragOver(true);
@@ -657,8 +728,10 @@ export default function ProfileEdit({
       ...aboutForm,
       languages: langList.filter((l) => l !== lang),
     });
+
   return (
     <>
+      <SavedToast show={showSaved} />
       {showURLModal && (
         <PasteURLModal
           onConfirm={(url) => {
@@ -668,53 +741,58 @@ export default function ProfileEdit({
           onClose={() => setShowURLModal(false)}
         />
       )}
-      <div className="flex gap-5 items-start mb-10">
+
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-5 items-stretch lg:items-start mb-10 w-full">
         <aside
-          className="shrink-0 rounded-2xl overflow-hidden"
+          className="w-full lg:w-52.5 lg:shrink-0 rounded-2xl overflow-hidden"
           style={{
-            width: 210,
             backgroundColor: "#ffffff",
             border: "1.5px solid #e5e7eb",
             boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
           }}
         >
-          {SIDEBAR_ITEMS.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.key;
-            return (
-              <button
-                key={item.key}
-                onClick={() => setActiveTab(item.key)}
-                className="w-full flex items-center gap-3 px-4 py-3.5 text-left transition-all cursor-pointer"
-                style={{
-                  backgroundColor: isActive ? BLUE_BG : "transparent",
-                  borderLeft: isActive
-                    ? `3px solid ${BLUE}`
-                    : "3px solid transparent",
-                  color: isActive ? BLUE : "#6b7280",
-                  fontSize: 13,
-                  fontWeight: isActive ? 700 : 500,
-                }}
-              >
-                <Icon size={16} />
-                {item.label}
-              </button>
-            );
-          })}
+          {/* 2x2 grid on mobile, vertical list on desktop */}
+          <div className="grid grid-cols-2 lg:flex lg:flex-col">
+            {SIDEBAR_ITEMS.map((item, idx) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.key;
+              const isTopRow = idx < 2;
+              const isLeftCol = idx % 2 === 0;
+              return (
+                <button
+                  key={item.key}
+                  onClick={() => setActiveTab(item.key)}
+                  className="flex flex-col lg:flex-row items-center lg:items-center justify-center lg:justify-start gap-1.5 lg:gap-3 px-2 lg:px-4 py-3 lg:py-3.5 text-center lg:text-left transition-all cursor-pointer"
+                  style={{
+                    backgroundColor: isActive ? BLUE_BG : "transparent",
+                    borderBottom: isTopRow ? "1px solid #f1f5f9" : "none",
+                    borderRight: isLeftCol ? "1px solid #f1f5f9" : "none",
+                    color: isActive ? BLUE : "#6b7280",
+                    fontSize: 12,
+                    fontWeight: isActive ? 700 : 500,
+                  }}
+                >
+                  <Icon size={16} />
+                  <span className="lg:text-[13px]">{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </aside>
+
         <main
-          className="flex-1 rounded-2xl overflow-hidden"
+          className="flex-1 min-w-0 w-full rounded-2xl overflow-hidden"
           style={{
             backgroundColor: "#ffffff",
             border: "1.5px solid #e5e7eb",
             boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
           }}
         >
-          <div className="px-6 py-6">
+          <div className="px-4 py-5 sm:px-6 sm:py-6 w-full overflow-x-hidden">
             {activeTab === "profile" && (
               <div>
                 <SectionTitle title="Profile Settings" />
-                <div className="flex items-center gap-5 mb-6">
+                <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 sm:gap-5 mb-6">
                   <div className="relative shrink-0">
                     {form.photoURL ? (
                       <img
@@ -761,7 +839,7 @@ export default function ProfileEdit({
                       onChange={(e) => upload(e.target.files?.[0])}
                     />
                   </div>
-                  <div className="flex gap-2 flex-wrap">
+                  <div className="flex gap-2 flex-wrap justify-center sm:justify-start">
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
@@ -870,13 +948,13 @@ export default function ProfileEdit({
                   </div>
                   <div>
                     <FormLabel required>Mobile Number</FormLabel>
-                    <StyledInput
-                      value={form.phone || ""}
-                      onChange={(e) =>
-                        setForm({ ...form, phone: e.target.value })
+                    <PhoneField
+                      countryCode={form.countryCode}
+                      phone={form.phone}
+                      onCountryChange={(code) =>
+                        setForm({ ...form, countryCode: code })
                       }
-                      placeholder="+91 9876543210"
-                      type="tel"
+                      onPhoneChange={(num) => setForm({ ...form, phone: num })}
                     />
                   </div>
                 </div>
@@ -976,10 +1054,11 @@ export default function ProfileEdit({
                   I am looking for a job right now (Open to Work)
                 </label>
                 <div className="flex justify-start">
-                  <SaveButton />
+                  <SaveButton onClick={handleSaveClick} loading={saving} />
                 </div>
               </div>
             )}
+
             {activeTab === "experience" && (
               <div>
                 <SectionTitle title="Work Experience" />
@@ -988,12 +1067,20 @@ export default function ProfileEdit({
                     <input
                       type="checkbox"
                       checked={isFresher}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        const checked = e.target.checked;
                         setAboutForm({
                           ...aboutForm,
-                          isFresher: e.target.checked,
-                        })
-                      }
+                          isFresher: checked,
+                          ...(checked
+                            ? { experience: "", currentRole: "" }
+                            : {
+                                hasFreelanceExp: false,
+                                freelanceExperience: "",
+                                freelanceRole: "",
+                              }),
+                        });
+                      }}
                       className="accent-blue-500 w-4 h-4"
                     />
                     I am a Fresher / Student (no work experience yet)
@@ -1013,7 +1100,7 @@ export default function ProfileEdit({
                 </div>
                 {!isFresher && (
                   <>
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                       <p
                         className="text-sm font-bold"
                         style={{ color: "#374151" }}
@@ -1106,33 +1193,126 @@ export default function ProfileEdit({
                   </>
                 )}
                 <Divider />
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-4">
-                  <div>
-                    <FormLabel>Years of Experience</FormLabel>
-                    <NativeSelect
-                      value={aboutForm.experience || ""}
-                      onChange={(e) =>
-                        setAboutForm({
-                          ...aboutForm,
-                          experience: e.target.value,
-                        })
-                      }
-                      options={EXPERIENCE_OPTIONS}
-                    />
+                {!isFresher && (
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-4">
+                    <div>
+                      <FormLabel>Total Professional Experience</FormLabel>
+                      <NativeSelect
+                        value={aboutForm.experience || ""}
+                        onChange={(e) =>
+                          setAboutForm({
+                            ...aboutForm,
+                            experience: e.target.value,
+                          })
+                        }
+                        options={EXPERIENCE_OPTIONS}
+                      />
+                    </div>
+                    <div>
+                      <FormLabel>Current or Last Job Title</FormLabel>
+                      <StyledInput
+                        value={aboutForm.currentRole || ""}
+                        onChange={(e) =>
+                          setAboutForm({
+                            ...aboutForm,
+                            currentRole: e.target.value,
+                          })
+                        }
+                        placeholder="e.g. Cashier, Driver…"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <FormLabel>Current or Last Job Title</FormLabel>
-                    <StyledInput
-                      value={aboutForm.currentRole || ""}
-                      onChange={(e) =>
-                        setAboutForm({
-                          ...aboutForm,
-                          currentRole: e.target.value,
-                        })
-                      }
-                      placeholder="e.g. Cashier, Driver…"
-                    />
+                )}
+
+                {isFresher && (
+                  <div className="mb-4">
+                    <FormLabel>
+                      Do you have any freelance / part-time experience?
+                    </FormLabel>
+                    <div className="flex gap-2 flex-wrap">
+                      {["Yes", "No"].map((opt) => {
+                        const active =
+                          (aboutForm.hasFreelanceExp ? "Yes" : "No") === opt;
+                        return (
+                          <button
+                            key={opt}
+                            type="button"
+                            onClick={() =>
+                              setAboutForm({
+                                ...aboutForm,
+                                hasFreelanceExp: opt === "Yes",
+                                ...(opt === "No" && {
+                                  freelanceExperience: "",
+                                  freelanceRole: "",
+                                }),
+                              })
+                            }
+                            className="px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer"
+                            style={{
+                              border: `1.5px solid ${active ? BLUE : "#e5e7eb"}`,
+                              backgroundColor: active ? BLUE_BG : "#fff",
+                              color: active ? BLUE : "#374151",
+                            }}
+                          >
+                            {opt}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {aboutForm.hasFreelanceExp && (
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-3">
+                        <div>
+                          <FormLabel>
+                            Freelance / Part-time Experience
+                          </FormLabel>
+                          <NativeSelect
+                            value={aboutForm.freelanceExperience || ""}
+                            onChange={(e) =>
+                              setAboutForm({
+                                ...aboutForm,
+                                freelanceExperience: e.target.value,
+                              })
+                            }
+                            options={FREELANCE_EXPERIENCE_OPTIONS}
+                          />
+                        </div>
+                        {aboutForm.freelanceExperience && (
+                          <div>
+                            <FormLabel>
+                              What was your role during this work?
+                            </FormLabel>
+                            <StyledInput
+                              value={aboutForm.freelanceRole || ""}
+                              onChange={(e) =>
+                                setAboutForm({
+                                  ...aboutForm,
+                                  freelanceRole: e.target.value,
+                                })
+                              }
+                              placeholder="e.g. Full Stack Developer, Graphic Designer"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
+                )}
+
+                <div className="mb-4">
+                  <FormLabel required>
+                    What role(s) are you looking for?
+                  </FormLabel>
+                  <p className="text-xs mb-2" style={{ color: "#9ca3af" }}>
+                    This is how employers find you — select roles you're
+                    genuinely interested in.
+                  </p>
+                  <RolePicker
+                    value={aboutForm.lookingForRoles || []}
+                    onChange={(roles) =>
+                      setAboutForm({ ...aboutForm, lookingForRoles: roles })
+                    }
+                  />
                 </div>
                 <div className="mb-4">
                   <FormLabel>About You — for employers</FormLabel>
@@ -1189,16 +1369,17 @@ export default function ProfileEdit({
                   />
                 </div>
                 <div className="flex justify-start">
-                  <SaveButton />
+                  <SaveButton onClick={handleSaveClick} loading={saving} />
                 </div>
               </div>
             )}
+
             {activeTab === "education" && (
               <div>
                 <SectionTitle title="Education" />
                 {isGraduate ? (
                   <>
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                       <p
                         className="text-sm font-bold"
                         style={{ color: "#374151" }}
@@ -1309,10 +1490,11 @@ export default function ProfileEdit({
                   </div>
                 )}
                 <div className="flex justify-start mt-4">
-                  <SaveButton />
+                  <SaveButton onClick={handleSaveClick} loading={saving} />
                 </div>
               </div>
             )}
+
             {activeTab === "skills" && (
               <div>
                 <SectionTitle title="Skills" />
@@ -1350,7 +1532,7 @@ export default function ProfileEdit({
                     </span>
                   ))}
                 </div>
-                <div className="flex gap-2 mb-6">
+                <div className="flex flex-col sm:flex-row gap-2 mb-6">
                   <StyledInput
                     value={skillInput}
                     onChange={(e) => setSkillInput(e.target.value)}
@@ -1359,7 +1541,7 @@ export default function ProfileEdit({
                   />
                   <button
                     onClick={onAddSkill}
-                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-white shrink-0 cursor-pointer"
+                    className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-white shrink-0 cursor-pointer"
                     style={{ backgroundColor: BLUE }}
                   >
                     <IoAddOutline size={15} /> Add
@@ -1393,7 +1575,7 @@ export default function ProfileEdit({
                       ))}
                     </div>
                   )}
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <StyledInput
                       value={langInput}
                       onChange={(e) => {
@@ -1417,7 +1599,7 @@ export default function ProfileEdit({
                     />
                     <button
                       onClick={() => addLanguage(langInput)}
-                      className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-white shrink-0 cursor-pointer"
+                      className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-white shrink-0 cursor-pointer"
                       style={{ backgroundColor: "#16a34a" }}
                     >
                       <IoAddOutline size={15} /> Add
@@ -1431,7 +1613,7 @@ export default function ProfileEdit({
                   </p>
                 </div>
                 <div className="flex justify-start">
-                  <SaveButton />
+                  <SaveButton onClick={handleSaveClick} loading={saving} />
                 </div>
               </div>
             )}

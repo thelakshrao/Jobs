@@ -5,10 +5,11 @@ import DashPolicyStrip from "@/dashboardComponents/Dashpolicystrip";
 export default function DashboardLayout({ children }) {
   return (
     <div
-      className="min-h-screen bg-white md:grid"
+      className="bg-white md:min-h-screen md:grid"
       style={{
         gridTemplateColumns: "auto 1fr",
         gridTemplateRows: "auto auto",
+        alignContent: "start",
       }}
     >
       <div

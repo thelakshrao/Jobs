@@ -1,9 +1,9 @@
 import { BLUE } from "./shared";
 
 export default function AboutTab({ about }) {
-  const languages = Array.isArray(about.languages)
+  const languages = Array.isArray(about?.languages)
     ? about.languages
-    : about.languages
+    : about?.languages
       ? about.languages
           .split(",")
           .map((l) => l.trim())
@@ -19,7 +19,7 @@ export default function AboutTab({ about }) {
         About Me
       </h3>
 
-      {about.description ? (
+      {about?.description ? (
         <p
           className="text-xs sm:text-sm font-medium leading-relaxed"
           style={{ color: "#1e293b" }}
@@ -39,41 +39,51 @@ export default function AboutTab({ about }) {
           borderBottom: "0.5px solid #e2e8f0",
         }}
       >
-        
-        {[
-          { label: "Experience", value: about.experience },
-          { label: "Current Role", value: about.currentRole },
-          { label: "Expected Salary", value: about.expectedSalary },
-        ].map(({ label, value }) => (
-          <div
-            key={label}
-            className={
-              label === "Expected Salary" ? "col-span-1 sm:col-span-1" : ""
-            }
-          >
-            <p
-              className="text-[9px] sm:text-[11px] font-bold uppercase tracking-wide mb-1"
-              style={{ color: "#94a3b8" }}
+        {(() => {
+          const isFreelanceFresher = about?.isFresher && about?.hasFreelanceExp;
+          const fields = isFreelanceFresher
+            ? [
+                { label: "Freelance Experience", value: about?.freelanceExperience },
+                { label: "Freelance Role", value: about?.freelanceRole },
+                { label: "Expected Salary", value: about?.expectedSalary },
+              ]
+            : [
+                { label: "Experience", value: about?.experience },
+                { label: "Current Role", value: about?.currentRole },
+                { label: "Expected Salary", value: about?.expectedSalary },
+              ];
+
+          return fields.map(({ label, value }) => (
+            <div
+              key={label}
+              className={
+                label === "Expected Salary" ? "col-span-1 sm:col-span-1" : ""
+              }
             >
-              {label}
-            </p>
-            {value ? (
               <p
-                className="text-[11px] sm:text-sm font-semibold"
-                style={{ color: "#0f172a" }}
+                className="text-[9px] sm:text-[11px] font-bold uppercase tracking-wide mb-1"
+                style={{ color: "#94a3b8" }}
               >
-                {value}
+                {label}
               </p>
-            ) : (
-              <p
-                className="text-[11px] sm:text-sm italic"
-                style={{ color: "#cbd5e1" }}
-              >
-                Not added
-              </p>
-            )}
-          </div>
-        ))}
+              {value ? (
+                <p
+                  className="text-[11px] sm:text-sm font-semibold"
+                  style={{ color: "#0f172a" }}
+                >
+                  {value}
+                </p>
+              ) : (
+                <p
+                  className="text-[11px] sm:text-sm italic"
+                  style={{ color: "#cbd5e1" }}
+                >
+                  Not added
+                </p>
+              )}
+            </div>
+          ));
+        })()}
 
         <div>
           <p
@@ -82,7 +92,7 @@ export default function AboutTab({ about }) {
           >
             Availability
           </p>
-          {about.availability ? (
+          {about?.availability ? (
             <p
               className="text-[11px] sm:text-sm font-semibold"
               style={{ color: "#0f172a" }}
@@ -106,7 +116,7 @@ export default function AboutTab({ about }) {
           >
             Job Preferences
           </p>
-          {about.jobPreferences ? (
+          {about?.jobPreferences ? (
             <p
               className="text-[11px] sm:text-sm font-semibold"
               style={{ color: "#0f172a" }}

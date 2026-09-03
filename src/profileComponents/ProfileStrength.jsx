@@ -31,6 +31,11 @@ export const STRENGTH_ITEMS = [
   { key: "education", label: "Education added", Icon: IoSchoolOutline },
   { key: "links", label: "Social / portfolio links", Icon: IoLinkOutline },
   { key: "resume", label: "Resume uploaded", Icon: IoCloudUploadOutline },
+  {
+    key: "desiredRoles",
+    label: "Desired roles selected",
+    Icon: IoBriefcaseOutline,
+  },
 ];
 
 function StrengthBar({ percent }) {

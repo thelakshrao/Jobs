@@ -148,7 +148,7 @@ export default function ProfileCard({ profile }) {
               <InfoPill
                 icon={<IoCallOutline size={12} />}
                 label="Phone"
-                value={profile.phone}
+                value={profile.countryCode ? `${profile.countryCode} ${profile.phone}` : profile.phone}
               />
             )}
           </div>
