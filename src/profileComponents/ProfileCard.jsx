@@ -130,12 +130,22 @@ export default function ProfileCard({ profile }) {
           )}
 
           <div className="flex flex-col gap-1 sm:gap-1.5">
-            {profile.location && (
+            {(profile.city || profile.state || profile.country) ? (
               <InfoPill
                 icon={<IoLocationOutline size={12} />}
                 label="Location"
-                value={profile.location}
+                value={[profile.city, profile.state, profile.country]
+                  .filter(Boolean)
+                  .join(", ")}
               />
+            ) : (
+              profile.location && (
+                <InfoPill
+                  icon={<IoLocationOutline size={12} />}
+                  label="Location"
+                  value={profile.location}
+                />
+              )
             )}
             {profile.email && (
               <InfoPill

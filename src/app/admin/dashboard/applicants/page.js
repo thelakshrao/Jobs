@@ -16,6 +16,7 @@ import AdminSidebar, {
   getStoredSidebarCollapsed,
   TOGGLE_EVENT,
 } from "@/adminComponents/AdminSidebar";
+import { Country } from "country-state-city";
 import {
   Search,
   ChevronUp,
@@ -112,6 +113,152 @@ function applicantName(applicant) {
 function applicantStatus(applicant) {
   return applicant.blocked ? "Blocked" : "Active";
 }
+function getApplicantRoles(a) {
+  const looking = Array.isArray(a.about?.lookingForRoles)
+    ? a.about.lookingForRoles
+    : [];
+  if (looking.length > 0) return looking;
+  const fallback = a.title || a.about?.currentRole || a.about?.freelanceRole;
+  return fallback ? [fallback] : [];
+}
+const ALL_COUNTRY_NAMES = Country.getAllCountries().map((c) => c.name);
+
+function guessCountryFromLocation(location) {
+  if (!location) return "";
+  const trimmed = location.trim();
+  const match = ALL_COUNTRY_NAMES.find(
+    (name) => name.toLowerCase() === trimmed.toLowerCase(),
+  );
+  return match || "";
+}
+
+function getApplicantCountry(a) {
+  if (a.country) return a.country;
+  return guessCountryFromLocation(a.location);
+}
+function getApplicantState(a) {
+  return a.state || "";
+}
+function getApplicantCity(a) {
+  if (a.city) return a.city;
+  if (a.location && !guessCountryFromLocation(a.location)) {
+    return a.location.trim();
+  }
+  return "";
+}
+
+function parseExperienceYears(str) {
+  if (!str) return 0;
+  const match = String(str).match(/(\d+(\.\d+)?)/);
+  return match ? parseFloat(match[1]) : 0;
+}
+
+function getExperienceType(a) {
+  if (a.about?.isFresher) {
+    return a.about?.hasFreelanceExp
+      ? "Freelance/Part-time Experience"
+      : "Fresher";
+  }
+  return "Professional Experience";
+}
+
+function getExperienceYears(a) {
+  if (a.about?.isFresher) {
+    return a.about?.hasFreelanceExp
+      ? parseExperienceYears(a.about.freelanceExperience)
+      : 0;
+  }
+  return parseExperienceYears(a.about?.experience);
+}
+
+const EXPERIENCE_FILTER_OPTIONS = [
+  { label: "Any Experience", type: null, min: 0, max: Infinity },
+  { label: "Fresher", type: "Fresher", min: 0, max: Infinity },
+  {
+    label: "Professional · 0-1 yrs",
+    type: "Professional Experience",
+    min: 0,
+    max: 1,
+  },
+  {
+    label: "Professional · 1-2 yrs",
+    type: "Professional Experience",
+    min: 1,
+    max: 2,
+  },
+  {
+    label: "Professional · 2-3 yrs",
+    type: "Professional Experience",
+    min: 2,
+    max: 3,
+  },
+  {
+    label: "Professional · 3-4 yrs",
+    type: "Professional Experience",
+    min: 3,
+    max: 4,
+  },
+  {
+    label: "Professional · 4-5 yrs",
+    type: "Professional Experience",
+    min: 4,
+    max: 5,
+  },
+  {
+    label: "Professional · 5-6 yrs",
+    type: "Professional Experience",
+    min: 5,
+    max: 6,
+  },
+  {
+    label: "Professional · 6-7 yrs",
+    type: "Professional Experience",
+    min: 6,
+    max: 7,
+  },
+  {
+    label: "Professional · 7-8 yrs",
+    type: "Professional Experience",
+    min: 7,
+    max: 8,
+  },
+  {
+    label: "Professional · 8-9 yrs",
+    type: "Professional Experience",
+    min: 8,
+    max: 9,
+  },
+  {
+    label: "Professional · 9-10 yrs",
+    type: "Professional Experience",
+    min: 9,
+    max: 10,
+  },
+  {
+    label: "Professional · 10+ yrs",
+    type: "Professional Experience",
+    min: 10,
+    max: Infinity,
+  },
+  {
+    label: "Freelance/Part-time · 0-1 yrs",
+    type: "Freelance/Part-time Experience",
+    min: 0,
+    max: 1,
+  },
+  {
+    label: "Freelance/Part-time · 1-2 yrs",
+    type: "Freelance/Part-time Experience",
+    min: 1,
+    max: 2,
+  },
+  {
+    label: "Freelance/Part-time · 2-3 yrs",
+    type: "Freelance/Part-time Experience",
+    min: 2,
+    max: 3,
+  },
+];
 
 function SortHeader({ label, field, sortField, sortDir, onSort }) {
   const active = sortField === field;
@@ -147,6 +294,12 @@ export default function AdminApplicantsPage() {
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
+  const [expFilter, setExpFilter] = useState("Any Experience");
+  const [roleFilter, setRoleFilter] = useState("All Roles");
+  const [locCountry, setLocCountry] = useState("");
+  const [locState, setLocState] = useState("");
+  const [locCity, setLocCity] = useState("");
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [sortField, setSortField] = useState("createdAt");
   const [sortDir, setSortDir] = useState("desc");
   const [page, setPage] = useState(1);
@@ -230,9 +383,58 @@ export default function AdminApplicantsPage() {
         applicationsCount: apps.length,
         applicationsList: apps,
         profileSlug: profileSlug(applicant),
+        country: getApplicantCountry(applicant),
+        roles: getApplicantRoles(applicant),
+        state: getApplicantState(applicant),
+        city: getApplicantCity(applicant),
+        experienceType: getExperienceType(applicant),
+        experienceYears: getExperienceYears(applicant),
       };
     });
   }, [applicants, applicationsByApplicant]);
+
+  const countryOptions = useMemo(() => {
+    const counts = new Map();
+    rows.forEach((r) => {
+      if (r.country) counts.set(r.country, (counts.get(r.country) || 0) + 1);
+    });
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+  }, [rows]);
+
+  const roleOptions = useMemo(() => {
+    const counts = new Map();
+    rows.forEach((r) => {
+      r.roles.forEach((role) => {
+        counts.set(role, (counts.get(role) || 0) + 1);
+      });
+    });
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+  }, [rows]);
+
+  const stateOptions = useMemo(() => {
+    const counts = new Map();
+    rows.forEach((r) => {
+      if (!r.state) return;
+      if (locCountry && r.country !== locCountry) return;
+      counts.set(r.state, (counts.get(r.state) || 0) + 1);
+    });
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+  }, [rows, locCountry]);
+
+  const cityOptions = useMemo(() => {
+    const counts = new Map();
+    rows.forEach((r) => {
+      if (!r.city) return;
+      if (locCountry && r.country !== locCountry) return;
+      if (locState && r.state !== locState) return;
+      counts.set(r.city, (counts.get(r.city) || 0) + 1);
+    });
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+  }, [rows, locCountry, locState]);
+
+  const activeLocationCount = [locCountry, locState, locCity].filter(
+    Boolean,
+  ).length;
 
   const filtered = useMemo(() => {
     let out = [...rows];
@@ -249,6 +451,28 @@ export default function AdminApplicantsPage() {
     if (statusFilter !== "All Status") {
       out = out.filter((a) => a.status === statusFilter);
     }
+
+    if (expFilter !== "Any Experience") {
+      const opt = EXPERIENCE_FILTER_OPTIONS.find((o) => o.label === expFilter);
+      if (opt) {
+        out = out.filter((a) => {
+          if (opt.type === "Fresher") return a.experienceType === "Fresher";
+          return (
+            a.experienceType === opt.type &&
+            a.experienceYears >= opt.min &&
+            a.experienceYears < opt.max
+          );
+        });
+      }
+    }
+
+    if (roleFilter !== "All Roles") {
+      out = out.filter((a) => a.roles.includes(roleFilter));
+    }
+
+    if (locCountry) out = out.filter((a) => a.country === locCountry);
+    if (locState) out = out.filter((a) => a.state === locState);
+    if (locCity) out = out.filter((a) => a.city === locCity);
 
     out.sort((a, b) => {
       let cmp = 0;
@@ -271,7 +495,18 @@ export default function AdminApplicantsPage() {
     });
 
     return out;
-  }, [rows, search, statusFilter, sortField, sortDir]);
+  }, [
+    rows,
+    search,
+    statusFilter,
+    roleFilter,
+    expFilter,
+    locCountry,
+    locState,
+    locCity,
+    sortField,
+    sortDir,
+  ]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = filtered.slice(
@@ -281,7 +516,15 @@ export default function AdminApplicantsPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [search, statusFilter]);
+  }, [
+    search,
+    statusFilter,
+    roleFilter,
+    expFilter,
+    locCountry,
+    locState,
+    locCity,
+  ]);
 
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
@@ -448,6 +691,131 @@ export default function AdminApplicantsPage() {
                 </option>
               ))}
             </select>
+
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#003882]/20 focus:border-[#003882] cursor-pointer"
+            >
+              <option value="All Roles">All Roles ({rows.length})</option>
+              {roleOptions.map(([role, count]) => (
+                <option key={role} value={role}>
+                  {role} ({count})
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={expFilter}
+              onChange={(e) => setExpFilter(e.target.value)}
+              className="bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#003882]/20 focus:border-[#003882] cursor-pointer"
+            >
+              {EXPERIENCE_FILTER_OPTIONS.map((o) => (
+                <option key={o.label} value={o.label}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+
+            <div className="relative">
+              <button
+                onClick={() => setShowLocationPicker((v) => !v)}
+                className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#003882]/20 hover:border-[#003882] cursor-pointer whitespace-nowrap"
+              >
+                Location
+                {activeLocationCount > 0 && (
+                  <span
+                    className="text-[10px] font-bold text-white rounded-full w-4 h-4 flex items-center justify-center"
+                    style={{ backgroundColor: BRAND }}
+                  >
+                    {activeLocationCount}
+                  </span>
+                )}
+              </button>
+
+              {showLocationPicker && (
+                <div
+                  className="absolute right-0 z-20 mt-2 w-72 max-w-[calc(100vw-2rem)] bg-white rounded-xl border border-slate-200 shadow-lg p-4 flex flex-col gap-3"
+                  onMouseLeave={() => setShowLocationPicker(false)}
+                >
+                  <div>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase mb-1">
+                      Country
+                    </p>
+                    <select
+                      value={locCountry}
+                      onChange={(e) => {
+                        setLocCountry(e.target.value);
+                        setLocState("");
+                        setLocCity("");
+                      }}
+                      className="w-full border border-slate-200 rounded-lg px-2.5 py-2 text-sm font-medium cursor-pointer"
+                    >
+                      <option value="">All Countries ({rows.length})</option>
+                      {countryOptions.map(([c, count]) => (
+                        <option key={c} value={c}>
+                          {c} ({count})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {stateOptions.length > 0 && (
+                    <div>
+                      <p className="text-[11px] font-bold text-slate-400 uppercase mb-1">
+                        State
+                      </p>
+                      <select
+                        value={locState}
+                        onChange={(e) => {
+                          setLocState(e.target.value);
+                          setLocCity("");
+                        }}
+                        className="w-full border border-slate-200 rounded-lg px-2.5 py-2 text-sm font-medium cursor-pointer"
+                      >
+                        <option value="">All States</option>
+                        {stateOptions.map(([s, count]) => (
+                          <option key={s} value={s}>
+                            {s} ({count})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  <div>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase mb-1">
+                      City
+                    </p>
+                    <select
+                      value={locCity}
+                      onChange={(e) => setLocCity(e.target.value)}
+                      className="w-full border border-slate-200 rounded-lg px-2.5 py-2 text-sm font-medium cursor-pointer"
+                    >
+                      <option value="">All Cities</option>
+                      {cityOptions.map(([c, count]) => (
+                        <option key={c} value={c}>
+                          {c} ({count})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {activeLocationCount > 0 && (
+                    <button
+                      onClick={() => {
+                        setLocCountry("");
+                        setLocState("");
+                        setLocCity("");
+                      }}
+                      className="text-xs font-bold text-rose-600 self-start cursor-pointer"
+                    >
+                      Clear location filter
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {selected.size > 0 && (

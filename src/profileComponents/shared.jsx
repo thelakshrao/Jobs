@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { Country, State, City } from "country-state-city";
 import { IoChevronDownOutline, IoCloseOutline } from "react-icons/io5";
 
 export const BLUE = "#004AAC";
@@ -112,6 +113,9 @@ export const DEFAULT_PROFILE = {
   title: "",
   bio: "",
   location: "",
+  country: "",
+  state: "",
+  city: "",
   email: "",
   phone: "",
   countryCode: "",
@@ -666,6 +670,75 @@ export function PhoneField({
           color: "#111827",
           fontFamily: "inherit",
         }}
+      />
+    </div>
+  );
+}
+
+export function LocationField({ country, state, city, onChange }) {
+  const countries = useMemo(() => Country.getAllCountries(), []);
+
+  const countryObj = useMemo(
+    () => countries.find((c) => c.name === country),
+    [countries, country],
+  );
+
+  const states = useMemo(
+    () => (countryObj ? State.getStatesOfCountry(countryObj.isoCode) : []),
+    [countryObj],
+  );
+
+  const stateObj = useMemo(
+    () => states.find((s) => s.name === state),
+    [states, state],
+  );
+
+  const cities = useMemo(() => {
+    if (!countryObj) return [];
+    // country has states -> only load cities once a state is picked
+    if (states.length > 0) {
+      return stateObj
+        ? City.getCitiesOfState(countryObj.isoCode, stateObj.isoCode) || []
+        : [];
+    }
+    // country has no states (e.g. Singapore, UAE) -> load cities directly
+    return City.getCitiesOfCountry(countryObj.isoCode) || [];
+  }, [countryObj, stateObj, states.length]);
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <NativeSelect
+        label="Country"
+        value={country || ""}
+        onChange={(e) =>
+          onChange({ country: e.target.value, state: "", city: "" })
+        }
+        options={countries.map((c) => c.name)}
+        placeholder="Select country…"
+      />
+      {states.length > 0 && (
+        <NativeSelect
+          label="State"
+          value={state || ""}
+          onChange={(e) =>
+            onChange({ country, state: e.target.value, city: "" })
+          }
+          options={states.map((s) => s.name)}
+          placeholder="Select state…"
+        />
+      )}
+      <NativeSelect
+        label="City"
+        value={city || ""}
+        onChange={(e) => onChange({ country, state, city: e.target.value })}
+        options={cities.map((c) => c.name)}
+        placeholder={
+          !countryObj
+            ? "Select country first"
+            : states.length > 0 && !stateObj
+              ? "Select state first"
+              : "Select city…"
+        }
       />
     </div>
   );

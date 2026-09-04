@@ -31,6 +31,7 @@ import {
   FREELANCE_EXPERIENCE_OPTIONS,
   RolePicker,
   PhoneField,
+  LocationField,
 } from "./shared";
 import { usePhotoUpload } from "@/hooks/Usephotoupload";
 
@@ -978,16 +979,17 @@ export default function ProfileEdit({
                       placeholder="e.g. Sales Executive"
                     />
                   </div>
-                  <div>
-                    <FormLabel>City / Location</FormLabel>
-                    <StyledInput
-                      value={form.location || ""}
-                      onChange={(e) =>
-                        setForm({ ...form, location: e.target.value })
-                      }
-                      placeholder="e.g. Mumbai"
-                    />
-                  </div>
+                </div>
+                <div className="mt-4">
+                  <FormLabel required>Location</FormLabel>
+                  <LocationField
+                    country={form.country}
+                    state={form.state}
+                    city={form.city}
+                    onChange={({ country, state, city }) =>
+                      setForm({ ...form, country, state, city })
+                    }
+                  />
                 </div>
                 <div className="mt-4">
                   <FormLabel>Short Bio</FormLabel>
