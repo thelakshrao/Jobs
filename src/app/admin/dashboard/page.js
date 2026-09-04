@@ -1,12 +1,12 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import {
   doc,
   getDoc,
-  updateDoc,   
+  updateDoc,
   collection,
   query,
   where,
@@ -29,9 +29,13 @@ import {
   Clock,
   X,
   ArrowRight,
+  Search,
+  CalendarDays,
+  SearchX,
 } from "lucide-react";
 
 const BRAND = "#003882";
+const BRAND_TINT = "#eaf1fb";
 
 const STATUS_PILL = {
   Open: "bg-emerald-50 text-emerald-700",
@@ -70,14 +74,19 @@ function ActivityIcon({ type }) {
   const isJob = type === "job";
   return (
     <div
-      className="relative w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-      style={{ backgroundColor: "#eaf1fb" }}
+      className="relative w-9 h-9 rounded-xl flex items-center justify-center shrink-0 z-10 bg-white"
+      style={{ boxShadow: `0 0 0 1px ${BRAND_TINT}` }}
     >
-      {isJob ? (
-        <Briefcase size={13} style={{ color: BRAND }} />
-      ) : (
-        <UserPlus size={13} style={{ color: BRAND }} />
-      )}
+      <div
+        className="w-full h-full rounded-xl flex items-center justify-center"
+        style={{ backgroundColor: BRAND_TINT }}
+      >
+        {isJob ? (
+          <Briefcase size={14} style={{ color: BRAND }} />
+        ) : (
+          <UserPlus size={14} style={{ color: BRAND }} />
+        )}
+      </div>
       {isJob && (
         <span
           className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full flex items-center justify-center ring-2 ring-white"
@@ -90,11 +99,17 @@ function ActivityIcon({ type }) {
   );
 }
 
-function ActivityRow({ event }) {
+function ActivityRow({ event, showConnector }) {
   return (
-    <div className="px-5 py-4 flex gap-3">
+    <div className="relative px-5 py-4 flex gap-3">
+      {showConnector && (
+        <span
+          className="absolute left-9.5 top-13 bottom-0 w-px"
+          style={{ backgroundColor: "#e2e8f0" }}
+        />
+      )}
       <ActivityIcon type={event.type} />
-      <div className="min-w-0">
+      <div className="min-w-0 pt-0.5">
         <p className="text-sm font-semibold text-slate-700 leading-snug">
           {event.text}
         </p>
@@ -135,8 +150,12 @@ function ActivityModal({ events, onClose }) {
               No activity yet.
             </div>
           ) : (
-            events.map((event) => (
-              <ActivityRow key={`${event.type}-${event.id}`} event={event} />
+            events.map((event, i) => (
+              <ActivityRow
+                key={`${event.type}-${event.id}`}
+                event={event}
+                showConnector={i < events.length - 1}
+              />
             ))
           )}
         </div>
@@ -161,6 +180,7 @@ export default function AdminDashboardPage() {
   const [recentJobs, setRecentJobs] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
   const [showActivityModal, setShowActivityModal] = useState(false);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     setCollapsed(getStoredSidebarCollapsed());
@@ -224,7 +244,7 @@ export default function AdminDashboardPage() {
         const recentJobsQ = query(
           jobsCol,
           orderBy("createdAt", "desc"),
-          limit(6),
+          limit(8),
         );
         const recentJobsSnap = await getDocs(recentJobsQ);
         const recentJobsLoaded = recentJobsSnap.docs.map((d) => ({
@@ -309,6 +329,26 @@ export default function AdminDashboardPage() {
     loadData();
   }, [checking]);
 
+  const todayLabel = useMemo(
+    () =>
+      new Date().toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }),
+    [],
+  );
+
+  const filteredJobs = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return recentJobs;
+    return recentJobs.filter((job) =>
+      [job.title, job.companyName, job.department]
+        .filter(Boolean)
+        .some((field) => field.toLowerCase().includes(term)),
+    );
+  }, [recentJobs, search]);
+
   if (checking) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -354,32 +394,55 @@ export default function AdminDashboardPage() {
           collapsed ? "md:ml-20" : "md:ml-60"
         }`}
       >
-        <div className="px-4 sm:px-8 py-8">
-          <div className="mb-8">
+        <div className="px-4 sm:px-8 py-6 sm:py-8">
+          {/* Utility bar */}
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between mb-5">
+            <div className="relative w-full sm:max-w-xs">
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+              />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search recent jobs..."
+                className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 transition"
+                style={{ "--tw-ring-color": `${BRAND}33` }}
+              />
+            </div>
+            <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+              <div className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-white border border-slate-200 rounded-xl px-3 py-2.5 whitespace-nowrap">
+                <CalendarDays size={14} />
+                {todayLabel}
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-7">
             <h1 className="text-2xl font-extrabold text-[#003882] tracking-tight">
-              Dashboard
+              Welcome back, {staffData?.name?.split(" ")[0] || "Admin"}
             </h1>
             <p className="text-sm text-slate-500 mt-0.5 font-medium">
-              Welcome back, {staffData?.name?.split(" ")[0] || "Admin"}. Here's
-              what's happening today.
+              Here's what's happening with your job portal today.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
             {statCards.map(({ label, value, icon: Icon, note }) => (
               <div
                 key={label}
-                className="bg-white rounded-2xl px-5 py-5 border border-slate-200/80 shadow-sm"
+                className="bg-white rounded-2xl px-4 sm:px-5 py-4 sm:py-5 border border-slate-200/80 shadow-sm"
               >
                 <div className="flex items-center justify-between mb-3">
                   <div
                     className="w-9 h-9 rounded-xl flex items-center justify-center"
-                    style={{ backgroundColor: "#eaf1fb" }}
+                    style={{ backgroundColor: BRAND_TINT }}
                   >
                     <Icon size={16} style={{ color: BRAND }} />
                   </div>
                 </div>
-                <p className="text-2xl font-extrabold text-slate-900">
+                <p className="text-xl sm:text-2xl font-extrabold text-slate-900 tabular-nums">
                   {loadingStats ? "—" : value.toLocaleString()}
                 </p>
                 <p className="text-xs font-semibold text-slate-500 mt-1">
@@ -392,10 +455,16 @@ export default function AdminDashboardPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-              <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-                <h2 className="text-sm font-extrabold text-slate-900">
+              <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-3">
+                <h2 className="text-sm font-extrabold text-slate-900 whitespace-nowrap">
                   Recent Job Listings
                 </h2>
+                {search && (
+                  <span className="text-[11px] font-semibold text-slate-400 truncate">
+                    {filteredJobs.length} match
+                    {filteredJobs.length === 1 ? "" : "es"} for "{search}"
+                  </span>
+                )}
               </div>
               {loadingStats ? (
                 <div className="p-8 text-center text-sm text-slate-400 font-medium">
@@ -405,6 +474,13 @@ export default function AdminDashboardPage() {
                 <div className="p-8 text-center text-sm text-slate-400 font-medium">
                   No jobs posted yet.
                 </div>
+              ) : filteredJobs.length === 0 ? (
+                <div className="p-8 flex flex-col items-center text-center gap-2">
+                  <SearchX size={20} className="text-slate-300" />
+                  <p className="text-sm text-slate-400 font-medium">
+                    No jobs match "{search}".
+                  </p>
+                </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -412,26 +488,31 @@ export default function AdminDashboardPage() {
                       <tr className="text-left text-[11px] font-bold text-slate-400 uppercase tracking-wide">
                         <th className="px-5 py-3">Job Title</th>
                         <th className="px-5 py-3">Employer</th>
-                        <th className="px-5 py-3">Department</th>
+                        <th className="px-5 py-3 hidden sm:table-cell">
+                          Department
+                        </th>
                         <th className="px-5 py-3">Status</th>
                         <th className="px-5 py-3">Applicants</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {recentJobs.map((job) => (
-                        <tr key={job.id} className="hover:bg-slate-50">
-                          <td className="px-5 py-3.5 font-bold text-slate-800">
+                      {filteredJobs.map((job) => (
+                        <tr
+                          key={job.id}
+                          className="hover:bg-slate-50 transition-colors"
+                        >
+                          <td className="px-5 py-3.5 font-bold text-slate-800 whitespace-nowrap">
                             {job.title || "Untitled"}
                           </td>
-                          <td className="px-5 py-3.5 text-slate-500 font-medium">
+                          <td className="px-5 py-3.5 text-slate-500 font-medium whitespace-nowrap">
                             {job.companyName || "—"}
                           </td>
-                          <td className="px-5 py-3.5 text-slate-500 font-medium">
+                          <td className="px-5 py-3.5 text-slate-500 font-medium hidden sm:table-cell whitespace-nowrap">
                             {job.department || "—"}
                           </td>
                           <td className="px-5 py-3.5">
                             <span
-                              className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                              className={`text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${
                                 STATUS_PILL[job.status] ||
                                 "bg-slate-100 text-slate-600"
                               }`}
@@ -476,10 +557,11 @@ export default function AdminDashboardPage() {
                 </div>
               ) : (
                 <div className="divide-y divide-slate-100 max-h-105 overflow-y-auto">
-                  {activityForCard.map((event) => (
+                  {activityForCard.map((event, i) => (
                     <ActivityRow
                       key={`${event.type}-${event.id}`}
                       event={event}
+                      showConnector={i < activityForCard.length - 1}
                     />
                   ))}
                 </div>

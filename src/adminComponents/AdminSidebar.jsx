@@ -77,6 +77,13 @@ export function getStoredSidebarCollapsed() {
   return localStorage.getItem(STORAGE_KEY) === "true";
 }
 
+function initials(name) {
+  if (!name) return "A";
+  const parts = name.trim().split(" ").filter(Boolean);
+  if (parts.length === 1) return parts[0][0].toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 export default function AdminSidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -134,8 +141,8 @@ export default function AdminSidebar() {
         <Image
           src={logoIcon}
           alt="Jobs Abroad"
-          width={28}
-          height={28}
+          width={40}
+          height={40}
           className="rounded-lg shrink-0 object-contain"
           priority
         />
@@ -143,9 +150,9 @@ export default function AdminSidebar() {
         <Image
           src={logoFull}
           alt="the Jobs Abroad"
-          width={120}
-          height={28}
-          className="object-contain h-7 w-auto"
+          width={160}
+          height={40}
+          className="object-contain h-10 w-auto"
           priority
         />
       )}
@@ -153,7 +160,7 @@ export default function AdminSidebar() {
   );
 
   const NavList = ({ onClick }) => (
-    <nav className="flex flex-col gap-1 px-3 py-4 flex-1 overflow-y-auto">
+    <nav className="flex flex-col gap-0.5 px-3 py-4 flex-1 overflow-y-auto">
       {navItems
         .filter((item) => canSee(item.requiresManage))
         .map(({ href, icon: Icon, label }) => {
@@ -164,21 +171,62 @@ export default function AdminSidebar() {
               href={href}
               onClick={onClick}
               title={collapsed ? label : undefined}
-              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors no-underline ${
+              className={`group relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors no-underline ${
                 collapsed ? "justify-center" : ""
-              }`}
+              } ${active ? "" : "hover:bg-slate-50"}`}
               style={{
                 backgroundColor: active ? ACTIVE_BG : "transparent",
                 color: active ? BRAND : "#64748b",
               }}
             >
-              <Icon size={18} className="shrink-0" />
-              {!collapsed && label}
+              {active && !collapsed && (
+                <span
+                  className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full"
+                  style={{ backgroundColor: BRAND }}
+                />
+              )}
+              <Icon
+                size={18}
+                className="shrink-0"
+                strokeWidth={active ? 2.4 : 2}
+              />
+              {!collapsed && <span className="truncate">{label}</span>}
             </Link>
           );
         })}
     </nav>
   );
+
+  const ProfileBlock = () => {
+    if (!staffData) return null;
+    return (
+      <div
+        className={`flex items-center gap-2.5 px-2 py-2 rounded-xl bg-slate-50 ${
+          collapsed ? "justify-center px-0" : ""
+        }`}
+        title={collapsed ? staffData.name : undefined}
+      >
+        <div
+          className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-[11px] font-bold text-white"
+          style={{ backgroundColor: BRAND }}
+        >
+          {initials(staffData.name)}
+        </div>
+        {!collapsed && (
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-slate-700 truncate">
+              {staffData.name || "Admin"}
+            </p>
+            <p className="text-[11px] text-slate-400 font-medium truncate">
+              {Array.isArray(staffData.roles)
+                ? staffData.roles.join(", ")
+                : "Admin"}
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <>
@@ -187,16 +235,21 @@ export default function AdminSidebar() {
           collapsed ? "w-20" : "w-60"
         }`}
       >
-        <div className="flex items-center px-4 h-14 shrink-0 border-b border-slate-100">
+        <div
+          className={`flex items-center h-14 shrink-0 border-b border-slate-100 ${
+            collapsed ? "justify-center px-2" : "px-4"
+          }`}
+        >
           <LogoMark />
         </div>
-
         <NavList />
-
-        <div className="px-3 pb-4 pt-3 shrink-0 border-t border-slate-100">
+        <div className="px-3 pb-3 shrink-0">
+          <ProfileBlock />
+        </div>
+        <div className="px-3 pb-4 pt-2 shrink-0 border-t border-slate-100">
           <button
             onClick={toggleCollapse}
-            className={`flex items-center gap-2 w-full px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors ${
+            className={`flex items-center gap-2 w-full px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors cursor-pointer ${
               collapsed ? "justify-center" : ""
             }`}
           >
@@ -206,14 +259,25 @@ export default function AdminSidebar() {
         </div>
       </aside>
 
-      <div className="md:hidden fixed top-0 left-0 right-0 z-50 h-14 flex items-center px-4 bg-white border-b border-slate-200">
-        <button
-          onClick={() => setMobileOpen(true)}
-          className="flex items-center justify-center w-9 h-9 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors mr-3"
-        >
-          <Menu size={22} />
-        </button>
-        <LogoMark />
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 h-14 flex items-center justify-between px-4 bg-white border-b border-slate-200">
+        <div className="flex items-center">
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="flex items-center justify-center w-9 h-9 -ml-1.5 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors mr-3 cursor-pointer"
+            aria-label="Open menu"
+          >
+            <Menu size={22} />
+          </button>
+          <LogoMark />
+        </div>
+        {staffData && (
+          <div
+            className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-[11px] font-bold text-white"
+            style={{ backgroundColor: BRAND }}
+          >
+            {initials(staffData.name)}
+          </div>
+        )}
       </div>
 
       <div
@@ -221,8 +285,10 @@ export default function AdminSidebar() {
           ${mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
         onClick={() => setMobileOpen(false)}
       />
+
+      {/* Mobile drawer */}
       <div
-        className={`md:hidden fixed top-0 left-0 bottom-0 z-70 w-64 flex flex-col bg-white border-r border-slate-200
+        className={`md:hidden fixed top-0 left-0 bottom-0 z-70 w-72 max-w-[85vw] flex flex-col bg-white border-r border-slate-200
           transition-transform duration-300 ease-in-out
           ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
@@ -230,12 +296,16 @@ export default function AdminSidebar() {
           <LogoMark />
           <button
             onClick={() => setMobileOpen(false)}
-            className="flex items-center justify-center w-9 h-9 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors"
+            className="flex items-center justify-center w-9 h-9 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
+            aria-label="Close menu"
           >
             <X size={20} />
           </button>
         </div>
         <NavList onClick={() => setMobileOpen(false)} />
+        <div className="px-3 pb-4 shrink-0 border-t border-slate-100 pt-3">
+          <ProfileBlock />
+        </div>
       </div>
     </>
   );
