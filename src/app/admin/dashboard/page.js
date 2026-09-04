@@ -395,7 +395,6 @@ export default function AdminDashboardPage() {
         }`}
       >
         <div className="px-4 sm:px-8 py-6 sm:py-8">
-          {/* Utility bar */}
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between mb-5">
             <div className="relative w-full sm:max-w-xs">
               <Search

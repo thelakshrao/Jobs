@@ -89,14 +89,15 @@ export default function AdminJobsPage() {
   const router = useRouter();
   const [checking, setChecking] = useState(true);
   const [collapsed, setCollapsed] = useState(false);
-
   const [loading, setLoading] = useState(true);
   const [jobs, setJobs] = useState([]);
   const [selected, setSelected] = useState(new Set());
-
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [deptFilter, setDeptFilter] = useState("All Categories");
+  const [locationQuery, setLocationQuery] = useState("");
+  const [jobTypeFilter, setJobTypeFilter] = useState("All Job Types");
+  const [workTypeFilter, setWorkTypeFilter] = useState("All Work Types");
   const [sortField, setSortField] = useState("createdAt");
   const [sortDir, setSortDir] = useState("desc");
   const [page, setPage] = useState(1);
@@ -182,6 +183,20 @@ export default function AdminJobsPage() {
     return ["All Categories", ...Array.from(set).sort()];
   }, [jobs]);
 
+  const jobTypes = useMemo(() => {
+    const set = new Set(
+      jobs.map((j) => j.jobType).filter((v) => v && v.trim()),
+    );
+    return ["All Job Types", ...Array.from(set).sort()];
+  }, [jobs]);
+
+  const workTypes = useMemo(() => {
+    const set = new Set(
+      jobs.map((j) => j.workType).filter((v) => v && v.trim()),
+    );
+    return ["All Work Types", ...Array.from(set).sort()];
+  }, [jobs]);
+
   const filtered = useMemo(() => {
     let rows = [...jobs];
 
@@ -200,6 +215,23 @@ export default function AdminJobsPage() {
 
     if (deptFilter !== "All Categories") {
       rows = rows.filter((j) => j.department === deptFilter);
+    }
+
+    if (locationQuery.trim()) {
+      const q = locationQuery.trim().toLowerCase();
+      rows = rows.filter((j) => {
+        const loc = (j.location || "").toLowerCase();
+        const country = (j.targetCountry || "").toLowerCase();
+        return loc.includes(q) || country.includes(q);
+      });
+    }
+
+    if (jobTypeFilter !== "All Job Types") {
+      rows = rows.filter((j) => j.jobType === jobTypeFilter);
+    }
+
+    if (workTypeFilter !== "All Work Types") {
+      rows = rows.filter((j) => j.workType === workTypeFilter);
     }
 
     rows.sort((a, b) => {
@@ -229,8 +261,17 @@ export default function AdminJobsPage() {
     });
 
     return rows;
-  }, [jobs, search, statusFilter, deptFilter, sortField, sortDir]);
-
+  }, [
+    jobs,
+    search,
+    statusFilter,
+    deptFilter,
+    locationQuery,
+    jobTypeFilter,
+    workTypeFilter,
+    sortField,
+    sortDir,
+  ]);
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = filtered.slice(
     (page - 1) * PAGE_SIZE,
@@ -239,8 +280,15 @@ export default function AdminJobsPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [search, statusFilter, deptFilter]);
-
+  }, [
+    search,
+    statusFilter,
+    deptFilter,
+    locationQuery,
+    jobTypeFilter,
+    workTypeFilter,
+  ]);
+  
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
   }, [totalPages, page]);
@@ -384,7 +432,7 @@ export default function AdminJobsPage() {
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <div className="flex flex-col sm:flex-row gap-3 mb-3">
             <div className="relative flex-1">
               <Search
                 size={16}
@@ -408,10 +456,43 @@ export default function AdminJobsPage() {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-4">
+            <div className="relative w-full sm:w-100 shrink-0">
+              <input
+                value={locationQuery}
+                onChange={(e) => setLocationQuery(e.target.value)}
+                placeholder="Search city, state, or country..."
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 placeholder:text-slate-400 placeholder:font-medium focus:outline-none focus:ring-2 focus:ring-[#003882]/20 focus:border-[#003882]"
+              />
+            </div>
+            <select
+              value={jobTypeFilter}
+              onChange={(e) => setJobTypeFilter(e.target.value)}
+              className="flex-1 min-w-30 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#003882]/20 focus:border-[#003882]"
+            >
+              {jobTypes.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+            <select
+              value={workTypeFilter}
+              onChange={(e) => setWorkTypeFilter(e.target.value)}
+              className="flex-1 min-w-40 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#003882]/20 focus:border-[#003882]"
+            >
+              {workTypes.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
             <select
               value={deptFilter}
               onChange={(e) => setDeptFilter(e.target.value)}
-              className="bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#003882]/20 focus:border-[#003882]"
+              className="flex-1 min-w-40 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#003882]/20 focus:border-[#003882]"
             >
               {departments.map((d) => (
                 <option key={d} value={d}>

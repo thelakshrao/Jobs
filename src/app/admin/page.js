@@ -17,7 +17,7 @@ import {
 } from "firebase/firestore";
 import { Lock, Mail, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import AdminBg from "@/images/admin.jpg";
-import Logo from "@/images/logoemp.png";
+import Logo from "@/images/logo3.png";
 
 const BRAND = "#003882";
 
