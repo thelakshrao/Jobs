@@ -57,6 +57,9 @@ export async function submitHelpMessage({ type, subject, message, role }) {
     subject,
     message,
     status: "open",
+    reply: "",
+    repliedAt: null,
+    repliedBy: "",
     createdAt: serverTimestamp(),
   });
 }
@@ -93,4 +96,12 @@ export function listenToHelpMessages(type, onData) {
 
 export async function markHelpMessageStatus(id, status) {
   await updateDoc(doc(db, COLLECTION, id), { status });
+}
+
+export async function replyToHelpMessage(id, replyText, adminName) {
+  await updateDoc(doc(db, COLLECTION, id), {
+    reply: replyText,
+    repliedAt: serverTimestamp(),
+    repliedBy: adminName || "Support Team",
+  });
 }
