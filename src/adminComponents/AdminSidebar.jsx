@@ -20,6 +20,7 @@ import {
   Menu,
   ChevronLeft,
   ChevronRight,
+  ShieldCheck,
 } from "lucide-react";
 
 const BRAND = "#003882";
@@ -41,6 +42,12 @@ const navItems = [
     requiresManage: false,
   },
   {
+    href: "/admin/dashboard/adminjobs",
+    icon: ShieldCheck,
+    label: "Admin Jobs",
+    requiresManage: false,
+  },
+  {
     href: "/admin/dashboard/employers",
     icon: Building2,
     label: "Employers",
@@ -50,6 +57,12 @@ const navItems = [
     href: "/admin/dashboard/applicants",
     icon: Users,
     label: "Applicants",
+    requiresManage: false,
+  },
+  {
+    href: "/admin/dashboard/admincreatejob",
+    icon: Users,
+    label: "Create Job",
     requiresManage: false,
   },
   {

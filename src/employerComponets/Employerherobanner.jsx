@@ -52,74 +52,76 @@ export default function EmployerHeroBanner() {
 
   return (
     <div className="relative mb-8" style={{ transform: "translateZ(0)" }}>
-      <div
-        className="relative rounded-2xl overflow-hidden transition-[background] duration-700"
-        style={{ background: slide.bg }}
-      >
+      <div className="relative sm:pt-7">
         <div
-          className="absolute -right-10 top-1/2 -translate-y-1/2 w-72 h-72 rounded-full pointer-events-none"
-          style={{ background: "rgba(255,255,255,0.06)" }}
-        />
+          className="relative rounded-2xl overflow-hidden transition-[background] duration-700"
+          style={{ background: slide.bg }}
+        >
+          <div
+            className="absolute -right-10 top-1/2 -translate-y-1/2 w-72 h-72 rounded-full pointer-events-none"
+            style={{ background: "rgba(255,255,255,0.06)" }}
+          />
 
-        <div className="block sm:hidden absolute z-0 pointer-events-none select-none right-0 bottom-0 w-28 h-40 opacity-90 transition-opacity duration-700">
+          <div className="block sm:hidden absolute z-0 pointer-events-none select-none right-0 bottom-0 w-28 h-40 opacity-90 transition-opacity duration-700">
+            <Image
+              src={slide.image}
+              alt=""
+              fill
+              sizes="100px"
+              className="object-contain object-bottom"
+              draggable={false}
+            />
+          </div>
+
+          <div className="relative flex items-center px-4 sm:px-10 py-5 sm:py-9 min-h-40 sm:min-h-55">
+            <div className="relative z-10 w-full sm:max-w-md sm:pr-0">
+              <span
+                className="inline-block text-[9px] sm:text-[11px] font-black uppercase tracking-widest px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full mb-2 sm:mb-3 transition-opacity duration-700"
+                style={{
+                  backgroundColor: "rgba(255,255,255,0.12)",
+                  color: "#fff",
+                }}
+              >
+                {slide.eyebrow}
+              </span>
+              <h1 className="text-lg sm:text-3xl font-black text-white leading-tight mb-1 sm:mb-2 transition-opacity duration-700">
+                {slide.title}
+              </h1>
+              <p className="text-xs sm:text-[15px] font-medium text-blue-100/80 leading-snug sm:leading-relaxed transition-opacity duration-700">
+                {slide.copy}
+              </p>
+              {slide.cta && slide.href && (
+                <Link
+                  href={slide.href}
+                  className="inline-flex items-center gap-1.5 mt-3 sm:mt-5 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-opacity hover:opacity-90 no-underline shadow-sm bg-white"
+                  style={{ color: "#004aac" }}
+                >
+                  {slide.cta}
+                  <ArrowRight size={13} strokeWidth={2.5} />
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div
+          className="hidden sm:block absolute z-20 pointer-events-none select-none transition-opacity duration-700"
+          style={{
+            right: "1.5rem",
+            top: 0,
+            bottom: "-4px",
+            width: "22rem",
+          }}
+        >
           <Image
             src={slide.image}
             alt=""
             fill
-            sizes="112px"
+            sizes="352px"
             className="object-contain object-bottom"
             draggable={false}
           />
         </div>
-
-        <div className="relative flex items-center px-4 sm:px-10 py-5 sm:py-9 min-h-40 sm:min-h-55">
-          <div className="relative z-10 w-full sm:max-w-md sm:pr-0">
-            <span
-              className="inline-block text-[9px] sm:text-[11px] font-black uppercase tracking-widest px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full mb-2 sm:mb-3 transition-opacity duration-700"
-              style={{
-                backgroundColor: "rgba(255,255,255,0.12)",
-                color: "#fff",
-              }}
-            >
-              {slide.eyebrow}
-            </span>
-            <h1 className="text-lg sm:text-3xl font-black text-white leading-tight mb-1 sm:mb-2 transition-opacity duration-700">
-              {slide.title}
-            </h1>
-            <p className="text-xs sm:text-[15px] font-medium text-blue-100/80 leading-snug sm:leading-relaxed transition-opacity duration-700">
-              {slide.copy}
-            </p>
-            {slide.cta && slide.href && (
-              <Link
-                href={slide.href}
-                className="inline-flex items-center gap-1.5 mt-3 sm:mt-5 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-opacity hover:opacity-90 no-underline shadow-sm bg-white"
-                style={{ color: "#004aac" }}
-              >
-                {slide.cta}
-                <ArrowRight size={13} strokeWidth={2.5} />
-              </Link>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div
-        className="hidden sm:block absolute z-20 pointer-events-none select-none transition-opacity duration-700"
-        style={{
-          right: "1.5rem",
-          bottom: "-4px",
-          width: "22rem",
-          height: "38rem",
-        }}
-      >
-        <Image
-          src={slide.image}
-          alt=""
-          fill
-          sizes="352px"
-          className="object-contain object-bottom"
-          draggable={false}
-        />
       </div>
     </div>
   );

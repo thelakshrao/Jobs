@@ -23,21 +23,10 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// getApps()/getApp() guard prevents "app already exists" errors during
-// Next.js Fast Refresh / HMR, where this module can be re-evaluated
-// without a full page reload.
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-// getAuth() is idempotent per app instance — safe to call on every
-// module evaluation, including across Fast Refresh reloads. This avoids
-// the fragile initializeAuth()-throws-then-getAuth()-fallback pattern,
-// which can leave `auth` in an inconsistent state relative to other
-// objects (like GoogleAuthProvider) created in the same module.
 export const auth = getAuth(app);
 
-// Best-effort: prefer IndexedDB persistence, fall back to localStorage.
-// Wrapped in try/catch + only run in the browser, since neither
-// persistence type is available during SSR.
 if (typeof window !== "undefined") {
   setPersistence(auth, indexedDBLocalPersistence).catch(() => {
     setPersistence(auth, browserLocalPersistence).catch((err) => {
@@ -49,10 +38,6 @@ if (typeof window !== "undefined") {
 export const googleProvider = new GoogleAuthProvider();
 export const db = getFirestore(app);
 
-// Analytics and Messaging are optional/non-critical services. Guard them
-// individually so a failure here (missing measurementId, unsupported
-// browser, no service worker registered, tracking protection, etc.)
-// can never break auth/db for the rest of the app.
 export let analytics = null;
 export let messaging = null;
 

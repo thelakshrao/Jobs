@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
 import { collection, addDoc, updateDoc, doc, getDoc } from "firebase/firestore";
 import {
@@ -34,6 +34,20 @@ import {
   CURRENCIES,
   ALL_PERKS,
 } from "@/app/employer/dashboard/create-job/constants";
+import AdminSidebar, {
+  getStoredSidebarCollapsed,
+  TOGGLE_EVENT,
+} from "@/adminComponents/AdminSidebar";
+
+// The platform's own company identity, used whenever the admin posts a job
+// on behalf of the job portal itself ("My Company" mode).
+const ADMIN_COMPANY = "Jobs Abroad";
+
+// Firebase Auth UID of the dedicated "thejobsabroad01@gmail.com" account.
+// This is NOT the logged-in admin's UID — it's a fixed, single identity
+// that "My Company" jobs are attributed to, so they don't get tied to
+// whichever staff member happens to be logged into the admin panel.
+const PLATFORM_EMPLOYER_UID = "yQJi0KNN9EVOkzJNntMtUnV";
 
 const STEPS = [
   { id: 1, label: "Context", icon: Globe },
@@ -46,7 +60,7 @@ const STEPS = [
 const INITIAL_FORM = {
   targetCountry: "",
   language: "English",
-  companyName: "",
+  companyName: ADMIN_COMPANY,
   industry: "",
   customIndustry: "",
   title: "",
@@ -72,6 +86,12 @@ const INITIAL_FORM = {
   description: "",
   requirements: "",
   benefits: "",
+  postingMode: "own",
+  externalCompanyName: "",
+  externalCareerUrl: "",
+  referralCompanyName: "",
+  referralContactName: "",
+  referralContactPhone: "",
 };
 
 function cls(...args) {
@@ -445,8 +465,23 @@ function StepBar({ current }) {
   );
 }
 
-function Step1({ form, setForm, employerData }) {
+function Step1({ form, setForm, adminData }) {
   const update = (key) => (val) => setForm((f) => ({ ...f, [key]: val }));
+
+  const postingMode = form.postingMode || "own";
+
+  const setMode = (mode) => {
+    setForm((f) => ({
+      ...f,
+      postingMode: mode,
+      externalCompanyName: "",
+      externalCareerUrl: "",
+      referralCompanyName: "",
+      referralContactName: "",
+      referralContactPhone: "",
+      companyName: mode === "own" ? ADMIN_COMPANY : "",
+    }));
+  };
 
   return (
     <div className="space-y-6">
@@ -459,15 +494,177 @@ function Step1({ form, setForm, employerData }) {
         </p>
       </div>
 
-      <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 flex items-center gap-3">
-        <Building2 size={16} className="text-slate-500 shrink-0" />
-        <div>
-          <p className="text-xs text-slate-500 font-semibold">Posting as</p>
-          <p className="text-sm font-bold text-slate-900">
-            {employerData?.company || form.companyName || "Your Company"}
-          </p>
+      <div>
+        <Label required>Posting Type</Label>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-1">
+          {[
+            {
+              key: "own",
+              title: "My Company",
+              desc: `Post a job for ${ADMIN_COMPANY}`,
+            },
+            {
+              key: "external",
+              title: "External Listing",
+              desc: "Post for another company with a redirect to their careers page",
+            },
+            {
+              key: "referral",
+              title: "Referral Post",
+              desc: "Refer applicants to another employer you know is hiring",
+            },
+          ].map((opt) => (
+            <button
+              key={opt.key}
+              type="button"
+              onClick={() => setMode(opt.key)}
+              className={cls(
+                "text-left px-4 py-4 rounded-xl border-2 transition-all",
+                postingMode === opt.key
+                  ? "border-[#003882] bg-[#003882]"
+                  : "border-slate-200 bg-white hover:border-slate-400 hover:bg-slate-50",
+              )}
+            >
+              <p
+                className={cls(
+                  "text-sm font-bold",
+                  postingMode === opt.key ? "text-white" : "text-slate-900",
+                )}
+              >
+                {opt.title}
+              </p>
+              <p
+                className={cls(
+                  "text-xs mt-1 leading-relaxed",
+                  postingMode === opt.key ? "text-slate-300" : "text-slate-500",
+                )}
+              >
+                {opt.desc}
+              </p>
+            </button>
+          ))}
         </div>
       </div>
+
+      {postingMode === "own" && (
+        <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 flex items-center gap-3">
+          <Building2 size={16} className="text-slate-500 shrink-0" />
+          <div>
+            <p className="text-xs text-slate-500 font-semibold">Posting as</p>
+            <p className="text-sm font-bold text-slate-900">{ADMIN_COMPANY}</p>
+          </div>
+        </div>
+      )}
+
+      {postingMode === "external" && (
+        <div className="space-y-4">
+          <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold text-slate-600 leading-relaxed">
+            Applicants will see all job details on your portal. When they click
+            Apply, they will be redirected to the external company's careers
+            page.
+          </div>
+          <div>
+            <Label required>External Company Name</Label>
+            <Input
+              placeholder="e.g. Google, Infosys, Accenture..."
+              value={form.externalCompanyName || ""}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  externalCompanyName: e.target.value,
+                  companyName: e.target.value,
+                }))
+              }
+            />
+          </div>
+          <div>
+            <Label required>Company Careers Page URL</Label>
+            <Input
+              placeholder="https://careers.company.com/job/..."
+              value={form.externalCareerUrl || ""}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  externalCareerUrl: e.target.value,
+                }))
+              }
+            />
+            <p className="text-xs text-slate-400 mt-1.5">
+              Applicants will be redirected here when they click Apply
+            </p>
+          </div>
+        </div>
+      )}
+
+      {postingMode === "referral" && (
+        <div className="space-y-4">
+          <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold text-slate-600 leading-relaxed">
+            You are referring applicants to another employer. Your name will be
+            shown as the referrer. Applicants apply through your portal and you
+            forward them.
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <Label required>Company You're Referring To</Label>
+              <Input
+                placeholder="e.g. Microsoft, TCS, Wipro..."
+                value={form.referralCompanyName || ""}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    referralCompanyName: e.target.value,
+                    companyName: e.target.value,
+                  }))
+                }
+              />
+            </div>
+            <div>
+              <Label>Contact Person at That Company</Label>
+              <Input
+                placeholder="e.g. Raj Sharma (HR Manager)"
+                value={form.referralContactName || ""}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    referralContactName: e.target.value,
+                  }))
+                }
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <Label>
+                Contact Person Phone{" "}
+                <span className="text-slate-400 font-normal">(optional)</span>
+              </Label>
+              <Input
+                type="tel"
+                placeholder="e.g. +91 98765 43210"
+                value={form.referralContactPhone || ""}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    referralContactPhone: e.target.value,
+                  }))
+                }
+              />
+              <p className="text-xs text-slate-400 mt-1.5">
+                Shown privately to you only — not visible to applicants
+              </p>
+            </div>
+          </div>
+          <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 flex items-center gap-3">
+            <Building2 size={16} className="text-slate-500 shrink-0" />
+            <div>
+              <p className="text-xs text-slate-500 font-semibold">
+                Referral posted by
+              </p>
+              <p className="text-sm font-bold text-slate-900">
+                {adminData?.firstName} {adminData?.lastName} · {ADMIN_COMPANY}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
@@ -963,7 +1160,7 @@ function Step4({ form, setForm }) {
   );
 }
 
-function Step5({ form, setForm, employerData }) {
+function Step5({ form, setForm, adminData }) {
   const update = (key) => (e) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
   const location =
@@ -1090,20 +1287,20 @@ function Step5({ form, setForm, employerData }) {
           Job Preview Summary
         </p>
 
-        {employerData && (
+        {adminData && (
           <div className="flex items-center gap-3 pb-3 border-b border-slate-200">
             <div className="w-9 h-9 rounded-full bg-[#003882] flex items-center justify-center shrink-0">
               <span className="text-white text-sm font-bold">
-                {employerData.firstName?.[0]}
-                {employerData.lastName?.[0]}
+                {adminData.firstName?.[0]}
+                {adminData.lastName?.[0]}
               </span>
             </div>
             <div>
               <p className="text-sm font-bold text-slate-900">
-                {employerData.firstName} {employerData.lastName}
+                {adminData.firstName} {adminData.lastName}
               </p>
               <p className="text-xs text-slate-500">
-                {employerData.email} · {employerData.company}
+                {adminData.email} · {ADMIN_COMPANY}
               </p>
             </div>
           </div>
@@ -1111,7 +1308,7 @@ function Step5({ form, setForm, employerData }) {
 
         <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
           {[
-            ["Company", employerData?.company || "—"],
+            ["Company", form.companyName || ADMIN_COMPANY || "—"],
             ["Title", form.title || "—"],
             ["Industry", form.industry || "—"],
             ["Location", location],
@@ -1186,8 +1383,10 @@ function Step5({ form, setForm, employerData }) {
   );
 }
 
-export default function CreateJob({ draftId }) {
+export default function Page() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const draftId = searchParams.get("draftId");
   const [step, setStep] = useState(1);
   const [form, setForm] = useState(INITIAL_FORM);
   const [currentDraftId, setCurrentDraftId] = useState(draftId || null);
@@ -1197,17 +1396,29 @@ export default function CreateJob({ draftId }) {
   const [error, setError] = useState("");
   const [showLeaveWarning, setShowLeaveWarning] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
-  const [employerData, setEmployerData] = useState(null);
+  const [adminData, setAdminData] = useState(null);
+  // Mirrors AdminSidebar's own collapsed state so this page's left margin
+  // always matches the sidebar's real width (w-60 vs w-20). This is the
+  // ONLY thing that should react to collapse state — content width itself
+  // stays constant (see max-w-3xl below), matching how the other admin
+  // pages (applicants, jobs) handle this.
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    setSidebarCollapsed(getStoredSidebarCollapsed());
+    const handleToggle = () => setSidebarCollapsed(getStoredSidebarCollapsed());
+    window.addEventListener(TOGGLE_EVENT, handleToggle);
+    return () => window.removeEventListener(TOGGLE_EVENT, handleToggle);
+  }, []);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (!user) return;
       try {
-        const snap = await getDoc(doc(db, "employers", user.uid));
+        // Matches the "admin_staff" collection defined in firestore.rules.
+        const snap = await getDoc(doc(db, "admin_staff", user.uid));
         if (snap.exists()) {
-          const data = snap.data();
-          setEmployerData(data);
-          setForm((f) => ({ ...f, companyName: data.company || "" }));
+          setAdminData(snap.data());
         }
       } catch (err) {
         console.error(err);
@@ -1238,7 +1449,10 @@ export default function CreateJob({ draftId }) {
       const payload = {
         ...formData,
         status: "Draft",
-        employerUid: user.uid,
+        employerUid:
+          formData.postingMode === "own" ? PLATFORM_EMPLOYER_UID : null,
+        postedByAdmin: true,
+        postedByAdminUid: user.uid,
         updatedAt: new Date().toISOString(),
         location:
           formData.workType === "Remote"
@@ -1276,6 +1490,24 @@ export default function CreateJob({ draftId }) {
       setError("Please fill in all required fields.");
       return;
     }
+    if (
+      step === 1 &&
+      form.postingMode === "external" &&
+      (!form.externalCompanyName?.trim() || !form.externalCareerUrl?.trim())
+    ) {
+      setError(
+        "Please provide the external company name and careers page URL.",
+      );
+      return;
+    }
+    if (
+      step === 1 &&
+      form.postingMode === "referral" &&
+      !form.referralCompanyName?.trim()
+    ) {
+      setError("Please provide the company you're referring to.");
+      return;
+    }
     if (step === 2 && !form.title.trim()) {
       setError("Job title is required.");
       return;
@@ -1307,7 +1539,9 @@ export default function CreateJob({ draftId }) {
       const payload = {
         ...form,
         status: "Open",
-        employerUid: user.uid,
+        employerUid: form.postingMode === "own" ? PLATFORM_EMPLOYER_UID : null,
+        postedByAdmin: true,
+        postedByAdminUid: user.uid,
         updatedAt: new Date().toISOString(),
         publishedAt: new Date().toISOString(),
         location:
@@ -1326,7 +1560,7 @@ export default function CreateJob({ draftId }) {
           starred: false,
         });
       }
-      router.push("/employer/dashboard");
+      router.push("/admin/dashboard");
     } catch (err) {
       console.error(err);
       setError("Failed to publish job.");
@@ -1335,138 +1569,147 @@ export default function CreateJob({ draftId }) {
     }
   };
 
-  const stepProps = { form, setForm: updateForm, employerData };
+  const stepProps = { form, setForm: updateForm, adminData };
 
   return (
-    <div
-      className="min-h-screen bg-[#e8eaed]"
-      style={{ fontFamily: "'Inter', 'DM Sans', system-ui, sans-serif" }}
-    >
-      <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-14 z-20">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() =>
-              isDirty
-                ? setShowLeaveWarning(true)
-                : router.push("/employer/dashboard")
-            }
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors"
-          >
-            <X size={16} className="text-slate-500" />
-          </button>
-          <div>
-            <h1 className="text-sm font-bold text-[#003882]">
-              {currentDraftId ? "Continue Draft" : "Create Job Posting"}
-            </h1>
-            {currentDraftId && (
-              <span className="text-[10px] text-slate-400 font-medium">
-                Draft · Auto-saved
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {saveMsg && (
-            <span className="text-xs text-green-600 font-semibold flex items-center gap-1">
-              <Check size={12} /> {saveMsg}
-            </span>
-          )}
-          <button
-            onClick={() => saveDraft(form)}
-            disabled={saving}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors disabled:opacity-50"
-          >
-            <Save size={13} />
-            {saving ? "Saving…" : "Save Draft"}
-          </button>
-        </div>
-      </div>
-
-      <div className="max-w-3xl mx-auto px-4 py-8">
-        <StepBar current={step} />
-
-        <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
-          {step === 1 && <Step1 {...stepProps} />}
-          {step === 2 && <Step2 {...stepProps} />}
-          {step === 3 && <Step3 {...stepProps} />}
-          {step === 4 && <Step4 {...stepProps} />}
-          {step === 5 && <Step5 {...stepProps} />}
-
-          {error && (
-            <div className="mt-5 flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-sm font-semibold px-4 py-3 rounded-xl">
-              <AlertCircle size={14} /> {error}
+    <>
+      <AdminSidebar />
+      <main
+        className={cls(
+          "min-h-screen bg-[#e8eaed] transition-all duration-200",
+          sidebarCollapsed ? "md:ml-20" : "md:ml-60",
+          "pt-14 md:pt-0",
+        )}
+        style={{ fontFamily: "'Inter', 'DM Sans', system-ui, sans-serif" }}
+      >
+        <div className="bg-white border-b border-slate-200 sticky top-0 z-20">
+          <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() =>
+                  isDirty
+                    ? setShowLeaveWarning(true)
+                    : router.push("/admin/dashboard")
+                }
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                <X size={16} className="text-slate-500" />
+              </button>
+              <div>
+                <h1 className="text-sm font-bold text-[#003882]">
+                  {currentDraftId ? "Continue Draft" : "Create Job Posting"}
+                </h1>
+                {currentDraftId && (
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    Draft · Auto-saved
+                  </span>
+                )}
+              </div>
             </div>
-          )}
-
-          <div className="flex items-center justify-between mt-8 pt-6 border-t border-slate-100">
-            <button
-              onClick={handleBack}
-              disabled={step === 1}
-              className="flex items-center gap-1.5 px-5 py-3 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors disabled:opacity-30"
-            >
-              <ChevronLeft size={15} /> Back
-            </button>
-            {step < 5 ? (
+            <div className="flex items-center gap-2">
+              {saveMsg && (
+                <span className="text-xs text-green-600 font-semibold flex items-center gap-1">
+                  <Check size={12} /> {saveMsg}
+                </span>
+              )}
               <button
-                onClick={handleNext}
-                className="flex items-center gap-1.5 px-6 py-3 text-sm font-semibold text-white bg-[#003882] hover:bg-[#002a61] rounded-xl transition-colors shadow-sm"
+                onClick={() => saveDraft(form)}
+                disabled={saving}
+                className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors disabled:opacity-50"
               >
-                Next <ChevronRight size={15} />
-              </button>
-            ) : (
-              <button
-                onClick={handlePublish}
-                disabled={publishing}
-                className="flex items-center gap-2 px-7 py-3 text-sm font-semibold text-white bg-[#003882] hover:bg-[#002a61] rounded-xl transition-colors shadow-sm disabled:opacity-60"
-              >
-                <Send size={14} />
-                {publishing ? "Publishing…" : "Publish Job"}
-              </button>
-            )}
-          </div>
-        </div>
-
-        <p className="text-center text-xs text-slate-400 mt-4 font-medium">
-          Step {step} of {STEPS.length} — {STEPS[step - 1].label}
-        </p>
-      </div>
-
-      {showLeaveWarning && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#003882]/40 backdrop-blur-sm px-4">
-          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full">
-            <h2 className="text-base font-bold text-slate-900 mb-2">
-              Save before leaving?
-            </h2>
-            <p className="text-sm text-slate-500 mb-5 leading-relaxed">
-              You have unsaved changes. Your progress will be saved as a draft
-              so you can come back anytime.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={async () => {
-                  await saveDraft(form);
-                  router.push("/employer/dashboard");
-                }}
-                className="flex-1 py-2.5 text-sm font-semibold text-white bg-[#003882] hover:bg-[#002a61] rounded-xl transition-colors"
-              >
-                Save as Draft
-              </button>
-              <button
-                onClick={() => router.push("/employer/dashboard")}
-                className="flex-1 py-2.5 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
-              >
-                Discard
+                <Save size={13} />
+                {saving ? "Saving…" : "Save Draft"}
               </button>
             </div>
-            <button
-              onClick={() => setShowLeaveWarning(false)}
-              className="w-full mt-2 py-2 text-xs text-slate-400 hover:text-slate-600 transition-colors"
-            >
-              Keep editing
-            </button>
           </div>
         </div>
-      )}
-    </div>
+
+        <div className="max-w-3xl mx-auto px-4 py-8">
+          <StepBar current={step} />
+
+          <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+            {step === 1 && <Step1 {...stepProps} />}
+            {step === 2 && <Step2 {...stepProps} />}
+            {step === 3 && <Step3 {...stepProps} />}
+            {step === 4 && <Step4 {...stepProps} />}
+            {step === 5 && <Step5 {...stepProps} />}
+
+            {error && (
+              <div className="mt-5 flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-sm font-semibold px-4 py-3 rounded-xl">
+                <AlertCircle size={14} /> {error}
+              </div>
+            )}
+
+            <div className="flex items-center justify-between mt-8 pt-6 border-t border-slate-100">
+              <button
+                onClick={handleBack}
+                disabled={step === 1}
+                className="flex items-center gap-1.5 px-5 py-3 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors disabled:opacity-30"
+              >
+                <ChevronLeft size={15} /> Back
+              </button>
+              {step < 5 ? (
+                <button
+                  onClick={handleNext}
+                  className="flex items-center gap-1.5 px-6 py-3 text-sm font-semibold text-white bg-[#003882] hover:bg-[#002a61] rounded-xl transition-colors shadow-sm"
+                >
+                  Next <ChevronRight size={15} />
+                </button>
+              ) : (
+                <button
+                  onClick={handlePublish}
+                  disabled={publishing}
+                  className="flex items-center gap-2 px-7 py-3 text-sm font-semibold text-white bg-[#003882] hover:bg-[#002a61] rounded-xl transition-colors shadow-sm disabled:opacity-60"
+                >
+                  <Send size={14} />
+                  {publishing ? "Publishing…" : "Publish Job"}
+                </button>
+              )}
+            </div>
+          </div>
+
+          <p className="text-center text-xs text-slate-400 mt-4 font-medium">
+            Step {step} of {STEPS.length} — {STEPS[step - 1].label}
+          </p>
+        </div>
+
+        {showLeaveWarning && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#003882]/40 backdrop-blur-sm px-4">
+            <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full">
+              <h2 className="text-base font-bold text-slate-900 mb-2">
+                Save before leaving?
+              </h2>
+              <p className="text-sm text-slate-500 mb-5 leading-relaxed">
+                You have unsaved changes. Your progress will be saved as a draft
+                so you can come back anytime.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={async () => {
+                    await saveDraft(form);
+                    router.push("/admin/dashboard");
+                  }}
+                  className="flex-1 py-2.5 text-sm font-semibold text-white bg-[#003882] hover:bg-[#002a61] rounded-xl transition-colors"
+                >
+                  Save as Draft
+                </button>
+                <button
+                  onClick={() => router.push("/admin/dashboard")}
+                  className="flex-1 py-2.5 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
+                >
+                  Discard
+                </button>
+              </div>
+              <button
+                onClick={() => setShowLeaveWarning(false)}
+                className="w-full mt-2 py-2 text-xs text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                Keep editing
+              </button>
+            </div>
+          </div>
+        )}
+      </main>
+    </>
   );
 }
