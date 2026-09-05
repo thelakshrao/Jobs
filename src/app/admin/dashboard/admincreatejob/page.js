@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
 import { collection, addDoc, updateDoc, doc, getDoc } from "firebase/firestore";
@@ -39,14 +39,8 @@ import AdminSidebar, {
   TOGGLE_EVENT,
 } from "@/adminComponents/AdminSidebar";
 
-// The platform's own company identity, used whenever the admin posts a job
-// on behalf of the job portal itself ("My Company" mode).
 const ADMIN_COMPANY = "Jobs Abroad";
 
-// Firebase Auth UID of the dedicated "thejobsabroad01@gmail.com" account.
-// This is NOT the logged-in admin's UID — it's a fixed, single identity
-// that "My Company" jobs are attributed to, so they don't get tied to
-// whichever staff member happens to be logged into the admin panel.
 const PLATFORM_EMPLOYER_UID = "yQJi0KNN9EVOkzJNntMtUnV";
 
 const STEPS = [
@@ -1383,7 +1377,7 @@ function Step5({ form, setForm, adminData }) {
   );
 }
 
-export default function Page() {
+function CreateJobPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const draftId = searchParams.get("draftId");
@@ -1397,11 +1391,6 @@ export default function Page() {
   const [showLeaveWarning, setShowLeaveWarning] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [adminData, setAdminData] = useState(null);
-  // Mirrors AdminSidebar's own collapsed state so this page's left margin
-  // always matches the sidebar's real width (w-60 vs w-20). This is the
-  // ONLY thing that should react to collapse state — content width itself
-  // stays constant (see max-w-3xl below), matching how the other admin
-  // pages (applicants, jobs) handle this.
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
@@ -1415,7 +1404,6 @@ export default function Page() {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (!user) return;
       try {
-        // Matches the "admin_staff" collection defined in firestore.rules.
         const snap = await getDoc(doc(db, "admin_staff", user.uid));
         if (snap.exists()) {
           setAdminData(snap.data());
@@ -1711,5 +1699,21 @@ export default function Page() {
         )}
       </main>
     </>
+  );
+}
+
+function CreateJobPageFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[#e8eaed]">
+      <div className="w-6 h-6 border-2 border-slate-700 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<CreateJobPageFallback />}>
+      <CreateJobPageInner />
+    </Suspense>
   );
 }
