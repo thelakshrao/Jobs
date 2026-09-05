@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase";
 import { getEmployerDestination } from "@/lib/employerRouting";
 import EmployerAuthModal from "@/employerComponets/EmployerAuthModal";
+import HelpPanel from "@/employerComponets/HelpPanel";
 import { motion, AnimatePresence } from "framer-motion";
 import LogoEmp from "@/images/logoemp.png";
 import { Bell, User } from "lucide-react";
@@ -49,6 +50,7 @@ export default function EmpNavbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [onDark, setOnDark] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const pendingRedirectRef = useRef(null);
   const navHeightRef = useRef(80);
   const router = useRouter();
@@ -130,6 +132,11 @@ export default function EmpNavbar() {
     router.push(dest);
   };
 
+  const handleRequireAuth = () => {
+    setHelpOpen(false);
+    openAuthModal();
+  };
+
   return (
     <>
       <motion.div
@@ -170,21 +177,15 @@ export default function EmpNavbar() {
           >
             Dashboard
           </button>
-          <button className="inline-flex items-center gap-1 px-4 py-1.5 rounded-lg text-[13.5px] font-medium text-[#0A0E17] hover:bg-[#004AAC]/8 transition-colors bg-transparent border-none cursor-pointer">
+          <button
+            onClick={() => setHelpOpen(true)}
+            className="inline-flex items-center gap-1 px-4 py-1.5 rounded-lg text-[13.5px] font-medium text-[#0A0E17] hover:bg-[#004AAC]/8 transition-colors bg-transparent border-none cursor-pointer"
+          >
             Help?
           </button>
         </nav>
 
         <div className="pointer-events-auto hidden md:flex items-center gap-2">
-          <motion.button
-            whileHover={{ scale: 1.08 }}
-            whileTap={{ scale: 0.95 }}
-            aria-label="Notifications"
-            className="relative inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/90 backdrop-blur-md border border-black/6 shadow-[0_2px_12px_rgba(0,0,0,0.08)] cursor-pointer text-[#004AAC] hover:bg-white transition-colors"
-          >
-            <Bell size={16} />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 border-[1.5px] border-white" />
-          </motion.button>
           <motion.button
             whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.95 }}
@@ -273,20 +274,19 @@ export default function EmpNavbar() {
               >
                 Dashboard
               </button>
-              <button className="flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-medium text-[#0A0E17] hover:bg-[#004AAC]/8 transition-colors bg-transparent border-none cursor-pointer w-full text-left">
+              <button
+                onClick={() => {
+                  setMobileOpen(false);
+                  setHelpOpen(true);
+                }}
+                className="flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-medium text-[#0A0E17] hover:bg-[#004AAC]/8 transition-colors bg-transparent border-none cursor-pointer w-full text-left"
+              >
                 Help?
               </button>
             </nav>
 
             <div className="px-4 pb-8 pt-4 border-t border-black/[0.07] shrink-0 flex flex-col gap-3">
               <div className="flex items-center gap-3 mb-1">
-                <button
-                  aria-label="Notifications"
-                  className="relative inline-flex items-center justify-center w-10 h-10 rounded-full text-[#004AAC] border border-black/10 bg-transparent cursor-pointer hover:bg-[#004AAC]/8 transition-colors"
-                >
-                  <Bell size={17} />
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 border-[1.5px] border-white" />
-                </button>
                 <button
                   onClick={() => {
                     setMobileOpen(false);
@@ -322,6 +322,13 @@ export default function EmpNavbar() {
           pendingRedirectRef.current = null;
         }}
         onAuthed={handleAuthed}
+      />
+
+      <HelpPanel
+        open={helpOpen}
+        onClose={() => setHelpOpen(false)}
+        role="employer"
+        onRequireAuth={handleRequireAuth}
       />
     </>
   );

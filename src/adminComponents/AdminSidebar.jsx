@@ -21,6 +21,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
+  Inbox,
+  PlusCircle,
 } from "lucide-react";
 
 const BRAND = "#003882";
@@ -61,8 +63,14 @@ const navItems = [
   },
   {
     href: "/admin/dashboard/admincreatejob",
-    icon: Users,
+    icon: PlusCircle,
     label: "Create Job",
+    requiresManage: false,
+  },
+  {
+    href: "/admin/dashboard/messages",
+    icon: Inbox,
+    label: "Query",
     requiresManage: false,
   },
   {

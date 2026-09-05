@@ -11,6 +11,7 @@ import {
   doc,
   getDoc,
 } from "firebase/firestore";
+import HelpPanel from "@/employerComponets/HelpPanel";
 
 const BORDER = "1.5px solid #cbd5e1";
 const BRAND = "#004aac";
@@ -130,6 +131,7 @@ export default function DashboardNavbar() {
   const notifBtnRef = useRef(null);
   const [msgNotifs, setMsgNotifs] = useState([]);
   const [totalUnread, setTotalUnread] = useState(0);
+  const [helpOpen, setHelpOpen] = useState(false);
   const senderCache = useRef({});
 
   useEffect(() => {
@@ -270,6 +272,7 @@ export default function DashboardNavbar() {
 
           <button
             aria-label="Help"
+            onClick={() => setHelpOpen(true)}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold text-slate-800 hover:bg-slate-100 transition-colors"
           >
             <HelpCircle size={16} />
@@ -320,6 +323,7 @@ export default function DashboardNavbar() {
 
         <button
           aria-label="Help"
+          onClick={() => setHelpOpen(true)}
           className="flex flex-col items-center gap-0.5 py-2 text-slate-700 hover:text-slate-900 transition-colors flex-1 border-none bg-transparent cursor-pointer"
         >
           <HelpCircle size={20} />
@@ -417,6 +421,12 @@ export default function DashboardNavbar() {
           </div>
         </div>
       )}
+
+      <HelpPanel
+        open={helpOpen}
+        onClose={() => setHelpOpen(false)}
+        role="employer"
+      />
     </>
   );
 }
