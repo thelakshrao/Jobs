@@ -4,7 +4,7 @@ import React, { useState, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import premiumImg from "@/images/premium.jpg";
 import logo3 from "@/images/logo3.png";
 import {
@@ -12,12 +12,14 @@ import {
   IoLockClosedOutline,
   IoEyeOffOutline,
   IoEyeOutline,
+  IoMailOpenOutline,
 } from "react-icons/io5";
 import { FiArrowRight } from "react-icons/fi";
 import {
   signInWithEmailAndPassword,
   signInWithPopup,
   browserPopupRedirectResolver,
+  sendPasswordResetEmail,
 } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, googleProvider, db } from "@/lib/firebase";
@@ -68,6 +70,7 @@ function LoginInner() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetSentTo, setResetSentTo] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -159,15 +162,34 @@ function LoginInner() {
     }
   };
 
+  const handleForgot = async () => {
+    if (!email.trim()) {
+      setError("Please enter your email address above first.");
+      return;
+    }
+    setError("");
+    setLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+      setResetSentTo(email.trim());
+    } catch (err) {
+      if (
+        err.code === "auth/user-not-found" ||
+        err.code === "auth/invalid-email"
+      ) {
+        setError("No account found with that email address.");
+      } else {
+        setError("Failed to send reset email. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const signupHref =
     redirectTarget && redirectTarget !== "/dashboard"
       ? `/signup?redirect=${encodeURIComponent(redirectTarget)}`
       : "/signup";
-
-  const resetHref =
-    redirectTarget && redirectTarget !== "/dashboard"
-      ? `/reset-password?redirect=${encodeURIComponent(redirectTarget)}`
-      : "/reset-password";
 
   return (
     <div className="relative w-full min-h-screen bg-white flex flex-col md:flex-row font-sans">
@@ -408,36 +430,7 @@ function LoginInner() {
                 </label>
                 <button
                   type="button"
-                  onClick={async () => {
-                    if (!email.trim()) {
-                      setError("Please enter your email address above first.");
-                      return;
-                    }
-                    setError("");
-                    setLoading(true);
-                    try {
-                      const { sendPasswordResetEmail } =
-                        await import("firebase/auth");
-                      await sendPasswordResetEmail(auth, email.trim());
-                      setError("");
-                      alert(
-                        `Reset email sent to ${email}. Please check your inbox and spam folder.`,
-                      );
-                    } catch (err) {
-                      if (
-                        err.code === "auth/user-not-found" ||
-                        err.code === "auth/invalid-email"
-                      ) {
-                        setError("No account found with that email address.");
-                      } else {
-                        setError(
-                          "Failed to send reset email. Please try again.",
-                        );
-                      }
-                    } finally {
-                      setLoading(false);
-                    }
-                  }}
+                  onClick={handleForgot}
                   className="text-[#004AAC] text-xs font-semibold hover:text-[#003785] transition-colors"
                 >
                   Forgot password?
@@ -546,6 +539,50 @@ function LoginInner() {
           </form>
         </motion.div>
       </div>
+
+      <AnimatePresence>
+        {resetSentTo && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-[#0A0E17]/50 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setResetSentTo("")}
+          >
+            <motion.div
+              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, y: 24, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 12, scale: 0.97 }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              className="w-full max-w-sm bg-white rounded-3xl p-8 text-center shadow-2xl shadow-[#004AAC]/20"
+            >
+              <div className="w-14 h-14 rounded-full bg-[#004AAC]/10 flex items-center justify-center mx-auto mb-5">
+                <IoMailOpenOutline size={26} className="text-[#004AAC]" />
+              </div>
+              <h3 className="text-[#0A0E17] text-xl font-semibold mb-2">
+                Check your inbox
+              </h3>
+              <p className="text-gray-500 text-sm leading-relaxed mb-1">
+                We&apos;ve sent a password reset link to
+              </p>
+              <p className="text-[#004AAC] text-sm font-semibold mb-4 break-all">
+                {resetSentTo}
+              </p>
+              <p className="text-gray-400 text-xs mb-6">
+                Can&apos;t find it? Check your spam folder.
+              </p>
+              <button
+                type="button"
+                onClick={() => setResetSentTo("")}
+                className="w-full bg-[#004AAC] hover:bg-[#003785] text-white font-bold text-sm py-3.5 rounded-full transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              >
+                Got it
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
