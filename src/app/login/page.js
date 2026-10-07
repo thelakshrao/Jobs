@@ -75,7 +75,11 @@ function LoginInner() {
     setLoading(true);
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password,
+      );
       const user = userCredential.user;
 
       // Self-healing: if this account's signup was interrupted before its
@@ -402,12 +406,42 @@ function LoginInner() {
                 <label className="block text-[#0A0E17] text-xs font-medium">
                   Password
                 </label>
-                <Link
-                  href={resetHref}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!email.trim()) {
+                      setError("Please enter your email address above first.");
+                      return;
+                    }
+                    setError("");
+                    setLoading(true);
+                    try {
+                      const { sendPasswordResetEmail } =
+                        await import("firebase/auth");
+                      await sendPasswordResetEmail(auth, email.trim());
+                      setError("");
+                      alert(
+                        `Reset email sent to ${email}. Please check your inbox and spam folder.`,
+                      );
+                    } catch (err) {
+                      if (
+                        err.code === "auth/user-not-found" ||
+                        err.code === "auth/invalid-email"
+                      ) {
+                        setError("No account found with that email address.");
+                      } else {
+                        setError(
+                          "Failed to send reset email. Please try again.",
+                        );
+                      }
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
                   className="text-[#004AAC] text-xs font-semibold hover:text-[#003785] transition-colors"
                 >
                   Forgot password?
-                </Link>
+                </button>
               </div>
               <div className={inputClass}>
                 <IoLockClosedOutline
