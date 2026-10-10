@@ -25,6 +25,8 @@ import AdminSidebar, {
   getStoredSidebarCollapsed,
   TOGGLE_EVENT,
 } from "@/adminComponents/AdminSidebar";
+import AdminPageBanner from "@/adminComponents/AdminPageBanner";
+import teamMeetingImg from "@/images/team-meeting-standing.jpg";
 import {
   Plus,
   X,
@@ -691,26 +693,25 @@ export default function StaffPage() {
         }`}
       >
         <div className="px-4 sm:px-8 py-8">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-2xl font-extrabold text-[#003882] tracking-tight">
-                Manage Staff
-              </h1>
-              <p className="text-sm text-slate-500 mt-0.5 font-medium">
-                {staff.length} admin staff member{staff.length !== 1 ? "s" : ""}
-              </p>
-            </div>
-            {canAdd(myRoles) && (
-              <button
-                onClick={() => setShowAdd(true)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 text-white text-sm font-bold rounded-xl shadow-md"
-                style={{ backgroundColor: BRAND }}
-              >
-                <Plus size={15} strokeWidth={2.5} />
-                Add Staff
-              </button>
-            )}
-          </div>
+          <AdminPageBanner
+            eyebrow="Team"
+            title="Manage Staff"
+            subtitle={`${staff.length} admin staff member${staff.length !== 1 ? "s" : ""}`}
+            image={teamMeetingImg}
+            imageAlt="Admin team meeting"
+            right={
+              canAdd(myRoles) && (
+                <button
+                  onClick={() => setShowAdd(true)}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-sm font-bold rounded-xl shadow-md cursor-pointer"
+                  style={{ color: BRAND }}
+                >
+                  <Plus size={15} strokeWidth={2.5} />
+                  Add Staff
+                </button>
+              )
+            }
+          />
 
           {loading ? (
             <div className="p-10 text-center text-sm text-slate-400 font-medium">

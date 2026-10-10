@@ -1,0 +1,221 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isActiveAdmin() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/admin_staff/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/admin_staff/$(request.auth.uid)).data.status == 'active';
+    }
+    function myAdminRoles() {
+      return get(/databases/$(database)/documents/admin_staff/$(request.auth.uid)).data.roles;
+    }
+    function hasTopTier(roles) {
+      return roles != null && roles.hasAny(['Founder', 'Co-Founder', 'Developer']);
+    }
+    function hasMidTier(roles) {
+      return roles != null && roles.hasAny(['Managing Head', 'Technical Head']);
+    }
+
+    // Employer & Team Helpers
+    function isEmployerDoc(uid) {
+      return exists(/databases/$(database)/documents/employers/$(uid));
+    }
+    function getEmployerDoc(uid) {
+      return get(/databases/$(database)/documents/employers/$(uid)).data;
+    }
+    function isActiveEmployer() {
+      return request.auth != null &&
+        isEmployerDoc(request.auth.uid) &&
+        (!('status' in getEmployerDoc(request.auth.uid)) || getEmployerDoc(request.auth.uid).status == 'active') &&
+        (!('banned' in getEmployerDoc(request.auth.uid)) || getEmployerDoc(request.auth.uid).banned == false);
+    }
+    function myCompanyId() {
+      let data = getEmployerDoc(request.auth.uid);
+      return ('companyId' in data && data.companyId != null && data.companyId != '') ? data.companyId : request.auth.uid;
+    }
+    function myCompanyRole() {
+      let data = getEmployerDoc(request.auth.uid);
+      return ('companyRole' in data && data.companyRole != null) ? data.companyRole : 'Owner';
+    }
+    function isCompanyMember(targetCompanyId, legacyOwnerUid) {
+      return isActiveEmployer() && (
+        (targetCompanyId != null && targetCompanyId != '' && myCompanyId() == targetCompanyId) ||
+        (legacyOwnerUid != null && (myCompanyId() == legacyOwnerUid || request.auth.uid == legacyOwnerUid))
+      );
+    }
+    function canEditCompanyJob(resourceData) {
+      return isActiveEmployer() &&
+        (isCompanyMember(resourceData.companyId, resourceData.employerUid)) &&
+        (
+          myCompanyRole() in ['Owner', 'Admin'] ||
+          (myCompanyRole() == 'Recruiter' && resourceData.postedBy == request.auth.uid)
+        );
+    }
+    function canDeleteCompanyJob(targetCompanyId, legacyOwnerUid) {
+      return isCompanyMember(targetCompanyId, legacyOwnerUid) &&
+        myCompanyRole() in ['Owner', 'Admin'];
+    }
+    function isCompanyAdminOrOwner(targetCompanyId) {
+      return isActiveEmployer() &&
+        myCompanyId() == targetCompanyId &&
+        myCompanyRole() in ['Owner', 'Admin'];
+    }
+
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /slugs/{slug} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Public company profiles
+    match /companies/{companyId} {
+      // Public read so applicants and visitors can view company profile info
+      allow read: if true;
+      // Creator must be an active Owner initializing their own company
+      allow create: if request.auth != null &&
+        request.auth.uid == companyId &&
+        isActiveEmployer() &&
+        myCompanyRole() == 'Owner' &&
+        (!('verified' in request.resource.data) || request.resource.data.verified == false);
+      // Owners and Admins can edit company profile, but cannot touch verified status
+      allow update: if isActiveAdmin() || (
+        isCompanyAdminOrOwner(companyId) &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['verified'])
+      );
+      allow delete: if false; // Deletions must go through server-side admin
+    }
+
+    match /employers/{userId} {
+      // Restrict read to self, members of the same company, or active admins.
+      allow read: if isActiveAdmin() || (request.auth != null && (
+        request.auth.uid == userId ||
+        (resource != null && isCompanyMember(resource.data.companyId, null))
+      ));
+      // Self-create allowed only when initializing their own company as Owner.
+      allow create: if request.auth != null &&
+        request.auth.uid == userId &&
+        request.resource.data.companyId == userId &&
+        request.resource.data.companyRole == 'Owner' &&
+        (!('status' in request.resource.data) || request.resource.data.status == 'active') &&
+        (!('verified' in request.resource.data) || request.resource.data.verified == false) &&
+        (!('banned' in request.resource.data) || request.resource.data.banned == false);
+      // Self-update allowed only if core system fields remain untouched.
+      allow update: if request.auth != null &&
+        request.auth.uid == userId &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['companyId', 'companyRole', 'status', 'verified', 'banned']);
+      // No client write path for Owners/Admins to manage other members directly.
+      // Member creation, role promotions/demotions, suspensions, and removals
+      // MUST be executed via server-side API routes using firebase-admin with token verification.
+      allow delete: if false;
+    }
+
+    match /jobs/{jobId} {
+      allow read: if true;
+      allow create: if isActiveAdmin() || (
+        isActiveEmployer() &&
+        myCompanyRole() in ['Owner', 'Admin', 'Recruiter'] &&
+        request.resource.data.companyId == myCompanyId() &&
+        request.resource.data.employerUid == myCompanyId() &&
+        request.resource.data.postedBy == request.auth.uid
+      );
+      allow update: if isActiveAdmin() ||
+        canEditCompanyJob(resource.data) ||
+        // Allow applicant count increment during application submission
+        (request.auth != null &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['applicants']) &&
+         request.resource.data.applicants == resource.data.applicants + 1);
+      allow delete: if isActiveAdmin() ||
+        canDeleteCompanyJob(resource.data.companyId, resource.data.employerUid);
+    }
+    match /savedJobs/{docId} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == resource.data.applicantUid;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.applicantUid;
+    }
+    match /applications/{docId} {
+      allow read: if isActiveAdmin() || (request.auth != null && (
+        request.auth.uid == resource.data.applicantUid ||
+        request.auth.uid == resource.data.employerUid ||
+        isCompanyMember(resource.data.companyId, resource.data.employerUid)
+      ));
+      // Recruiters may update applications for all company jobs
+      allow update: if isActiveAdmin() || (request.auth != null && (
+        request.auth.uid == resource.data.applicantUid ||
+        request.auth.uid == resource.data.employerUid ||
+        (isCompanyMember(resource.data.companyId, resource.data.employerUid) && myCompanyRole() in ['Owner', 'Admin', 'Recruiter'])
+      ));
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.applicantUid;
+      allow delete: if request.auth != null
+        && request.auth.uid == resource.data.applicantUid;
+    }
+    match /projects/{projectId} {
+      allow read: if true;
+      allow create: if isActiveAdmin() || (
+        isActiveEmployer() &&
+        myCompanyRole() in ['Owner', 'Admin', 'Recruiter'] &&
+        request.resource.data.companyId == myCompanyId() &&
+        request.resource.data.employerUid == myCompanyId() &&
+        request.resource.data.postedBy == request.auth.uid
+      );
+      allow update: if isActiveAdmin() ||
+        canEditCompanyJob(resource.data) ||
+        (request.auth != null &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['applicants']) &&
+         request.resource.data.applicants == resource.data.applicants + 1);
+      allow delete: if isActiveAdmin() ||
+        canDeleteCompanyJob(resource.data.companyId, resource.data.employerUid);
+    }
+    match /savedProjects/{docId} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == resource.data.applicantUid;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.applicantUid;
+    }
+    match /conversations/{convId} {
+      allow read, update: if request.auth != null
+        && (request.auth.uid in resource.data.participants || isCompanyMember(resource.data.companyId, null));
+      allow create: if request.auth != null
+        && (request.auth.uid in request.resource.data.participants || (request.resource.data.companyId != null && isCompanyMember(request.resource.data.companyId, null)));
+      match /messages/{msgId} {
+        allow read, create: if request.auth != null && (
+          request.auth.uid in get(/databases/$(database)/documents/conversations/$(convId)).data.participants ||
+          isCompanyMember(get(/databases/$(database)/documents/conversations/$(convId)).data.companyId, null)
+        );
+      }
+    }
+    match /notifications/{uid}/items/{notifId} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null;
+    }
+    match /helpMessages/{msgId} {
+      allow read: if isActiveAdmin() || (request.auth != null && request.auth.uid == resource.data.uid);
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.uid;
+      allow update: if isActiveAdmin();
+    }
+    match /admin_staff/{staffId} {
+      allow read: if true;
+      allow create: if isActiveAdmin() &&
+        (hasTopTier(myAdminRoles()) || hasMidTier(myAdminRoles()));
+      allow update: if isActiveAdmin() && (
+        request.auth.uid == staffId ||
+        hasTopTier(myAdminRoles()) ||
+        (hasMidTier(myAdminRoles()) &&
+          !hasTopTier(resource.data.roles) &&
+          !hasMidTier(resource.data.roles))
+      );
+      allow delete: if isActiveAdmin() &&
+        request.auth.uid != staffId &&
+        (
+          hasTopTier(myAdminRoles()) ||
+          (hasMidTier(myAdminRoles()) &&
+            !hasTopTier(resource.data.roles) &&
+            !hasMidTier(resource.data.roles))
+        );
+    }
+  }
+}

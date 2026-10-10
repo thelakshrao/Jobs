@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
 import { collection, addDoc, updateDoc, doc, getDoc } from "firebase/firestore";
+import { canPostJob, canEditJob } from "@/lib/employerRoles";
 import {
   ChevronRight,
   ChevronLeft,
@@ -1216,11 +1217,17 @@ export default function CreateJob({ draftId }) {
     return () => unsubscribe();
   }, []);
 
+  const [existingJob, setExistingJob] = useState(null);
+
   useEffect(() => {
     if (!draftId) return;
     const load = async () => {
       const snap = await getDoc(doc(db, "jobs", draftId));
-      if (snap.exists()) setForm((prev) => ({ ...prev, ...snap.data() }));
+      if (snap.exists()) {
+        const d = snap.data();
+        setExistingJob({ id: snap.id, ...d });
+        setForm((prev) => ({ ...prev, ...d }));
+      }
     };
     load();
   }, [draftId]);
@@ -1233,12 +1240,24 @@ export default function CreateJob({ draftId }) {
   const saveDraft = async (formData, silent = false) => {
     const user = auth.currentUser;
     if (!user) return;
+    const myRole = employerData?.companyRole || "Owner";
+    if (!canPostJob(myRole)) {
+      if (!silent) setError("Viewers cannot create or edit jobs.");
+      return;
+    }
+    if (existingJob && !canEditJob(myRole, existingJob, user.uid)) {
+      if (!silent) setError("You only have permission to edit jobs that you posted.");
+      return;
+    }
     if (!silent) setSaving(true);
     try {
+      const companyId = employerData?.companyId || user.uid;
       const payload = {
         ...formData,
         status: "Draft",
-        employerUid: user.uid,
+        companyId,
+        employerUid: companyId,
+        postedBy: existingJob?.postedBy || user.uid,
         updatedAt: new Date().toISOString(),
         location:
           formData.workType === "Remote"
@@ -1302,12 +1321,24 @@ export default function CreateJob({ draftId }) {
     }
     const user = auth.currentUser;
     if (!user) return;
+    const myRole = employerData?.companyRole || "Owner";
+    if (!canPostJob(myRole)) {
+      setError("Viewers cannot create or publish jobs.");
+      return;
+    }
+    if (existingJob && !canEditJob(myRole, existingJob, user.uid)) {
+      setError("You only have permission to edit jobs that you posted.");
+      return;
+    }
     setPublishing(true);
     try {
+      const companyId = employerData?.companyId || user.uid;
       const payload = {
         ...form,
         status: "Open",
-        employerUid: user.uid,
+        companyId,
+        employerUid: companyId,
+        postedBy: existingJob?.postedBy || user.uid,
         updatedAt: new Date().toISOString(),
         publishedAt: new Date().toISOString(),
         location:

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { auth, db } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import {
@@ -17,6 +18,9 @@ import AdminSidebar, {
   getStoredSidebarCollapsed,
   TOGGLE_EVENT,
 } from "@/adminComponents/AdminSidebar";
+import AdminPageBanner from "@/adminComponents/AdminPageBanner";
+import officeMeetingImg from "@/images/office-meeting-glass.jpg";
+import flatTeamImg from "@/images/flat-team-illustration.jpg";
 import {
   Search,
   ChevronUp,
@@ -438,16 +442,17 @@ export default function AdminEmployersPage() {
         }`}
       >
         <div className="px-4 sm:px-8 py-8">
-          <div className="mb-6">
-            <h1 className="text-2xl font-extrabold text-[#003882] tracking-tight">
-              Employers
-            </h1>
-            <p className="text-sm text-slate-500 mt-0.5 font-medium">
-              {loading
+          <AdminPageBanner
+            eyebrow="Employers"
+            title="Companies on your portal"
+            subtitle={
+              loading
                 ? "Loading…"
-                : `${filtered.length} employer${filtered.length === 1 ? "" : "s"} registered`}
-            </p>
-          </div>
+                : `${filtered.length} employer${filtered.length === 1 ? "" : "s"} registered`
+            }
+            image={officeMeetingImg}
+            imageAlt="Team reviewing employer accounts"
+          />
 
           <div className="flex flex-col sm:flex-row gap-3 mb-4">
             <div className="relative flex-1">
@@ -526,8 +531,19 @@ export default function AdminEmployersPage() {
                 Loading…
               </div>
             ) : filtered.length === 0 ? (
-              <div className="p-10 text-center text-sm text-slate-400 font-medium">
-                No employers match your filters.
+              <div className="p-10 flex flex-col items-center text-center gap-3">
+                <div className="relative w-40 h-32">
+                  <Image
+                    src={flatTeamImg}
+                    alt=""
+                    fill
+                    sizes="160px"
+                    className="object-contain opacity-80"
+                  />
+                </div>
+                <p className="text-sm text-slate-400 font-medium">
+                  No employers match your filters.
+                </p>
               </div>
             ) : (
               <div className="overflow-x-auto">

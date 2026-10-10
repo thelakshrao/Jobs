@@ -5,6 +5,7 @@ import EmployerSidebar from "@/employerComponets/EmployerSidebar";
 import DashboardNavbar from "@/employerComponets/DashboardNavbar";
 import {
   listenToConversations,
+  listenToEmployerConversations,
   listenToMessages,
   sendMessage,
   getOrCreateConversation,
@@ -239,6 +240,7 @@ export default function EmployerMessagesPage() {
           const snap = await getDoc(doc(db, "employers", user.uid));
           if (snap.exists()) {
             const d = snap.data();
+            const companyId = d.companyId || user.uid;
             setCurrentUserData({
               name:
                 `${d.firstName || ""} ${d.lastName || ""}`.trim() ||
@@ -254,24 +256,25 @@ export default function EmployerMessagesPage() {
                 user.photoURL ||
                 "",
               company: d.company || d.companyName || "",
+              companyId,
             });
+            setLoadingApplicants(true);
+            const applicants = await fetchEmployerApplicants(companyId);
+            if (applicants.length > 0) {
+              const enriched = await Promise.all(
+                applicants.map(async (a) => {
+                  if (a.name) return a;
+                  const info = await fetchApplicantInfo(a.uid);
+                  return { ...a, ...info };
+                }),
+              );
+              setAllApplicants(enriched);
+            } else {
+              setAllApplicants(applicants);
+            }
+            setLoadingApplicants(false);
           }
         } catch (e) {}
-        setLoadingApplicants(true);
-        const applicants = await fetchEmployerApplicants(user.uid);
-        if (applicants.length > 0) {
-          const enriched = await Promise.all(
-            applicants.map(async (a) => {
-              if (a.name) return a;
-              const info = await fetchApplicantInfo(a.uid);
-              return { ...a, ...info };
-            }),
-          );
-          setAllApplicants(enriched);
-        } else {
-          setAllApplicants(applicants);
-        }
-        setLoadingApplicants(false);
       }
     });
     return () => unsub();
@@ -279,28 +282,34 @@ export default function EmployerMessagesPage() {
 
   useEffect(() => {
     if (!currentUser) return;
-    const unsub = listenToConversations(currentUser.uid, async (convs) => {
-      const employerConvs = convs.filter(
-        (c) =>
-          c.participantRoles?.[currentUser.uid] === "employer" ||
-          !c.participantRoles,
-      );
-      setConversations(employerConvs);
-      setLoading(false);
-      const uidsToFetch = employerConvs
-        .map((c) => c.participants.find((p) => p !== currentUser.uid))
-        .filter((uid) => uid && !fetchedUids.current.has(uid));
-      if (!uidsToFetch.length) return;
-      uidsToFetch.forEach((uid) => fetchedUids.current.add(uid));
-      const results = await Promise.all(
-        uidsToFetch.map((uid) =>
-          fetchApplicantInfo(uid).then((info) => [uid, info]),
-        ),
-      );
-      setOtherUserData((prev) => ({ ...prev, ...Object.fromEntries(results) }));
-    });
+    const companyId = currentUserData?.companyId || currentUser.uid;
+    const unsub = listenToEmployerConversations(
+      currentUser.uid,
+      companyId,
+      async (convs) => {
+        const employerConvs = convs.filter(
+          (c) =>
+            c.participantRoles?.[currentUser.uid] === "employer" ||
+            !c.participantRoles ||
+            c.companyId === companyId,
+        );
+        setConversations(employerConvs);
+        setLoading(false);
+        const uidsToFetch = employerConvs
+          .map((c) => c.participants?.find((p) => p !== currentUser.uid))
+          .filter((uid) => uid && !fetchedUids.current.has(uid));
+        if (!uidsToFetch.length) return;
+        uidsToFetch.forEach((uid) => fetchedUids.current.add(uid));
+        const results = await Promise.all(
+          uidsToFetch.map((uid) =>
+            fetchApplicantInfo(uid).then((info) => [uid, info]),
+          ),
+        );
+        setOtherUserData((prev) => ({ ...prev, ...Object.fromEntries(results) }));
+      },
+    );
     return () => unsub();
-  }, [currentUser]);
+  }, [currentUser, currentUserData?.companyId]);
 
   useEffect(() => {
     if (!selectedConv || !currentUser) return;
@@ -376,11 +385,16 @@ export default function EmployerMessagesPage() {
 
   const startConversation = async (applicant) => {
     try {
+      const companyId = currentUserData?.companyId || currentUser.uid;
       const convId = await getOrCreateConversation(
         currentUser.uid,
         "employer",
         applicant.uid,
         "applicant",
+        {
+          companyId,
+          companyName: currentUserData?.company || "",
+        },
       );
       setOtherUserData((prev) => ({
         ...prev,

@@ -3,8 +3,9 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 import LogoEmp from "@/images/logoemp.png";
+import { canEditCompany, ROLE_BADGE_STYLE } from "@/lib/employerRoles";
 import {
   PlusCircle,
   Briefcase,
@@ -94,9 +95,18 @@ export default function EmployerSidebar() {
     setSaving(true);
     try {
       const user = auth.currentUser;
+      const compId = employerData?.companyId || user.uid;
       await updateDoc(doc(db, "employers", user.uid), {
         company: newCompany.trim(),
       });
+      await setDoc(
+        doc(db, "companies", compId),
+        {
+          company: newCompany.trim(),
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true },
+      );
       setEmployerData((prev) => ({ ...prev, company: newCompany.trim() }));
       setEditingCompany(false);
     } catch (err) {
@@ -123,18 +133,33 @@ export default function EmployerSidebar() {
         pathname.startsWith(href + "/") ||
         pathname.startsWith(href + "?");
 
+  const myRole = employerData?.companyRole || "Owner";
+  const canEdit = canEditCompany(myRole);
+
   const ProfileCard = () => (
     <div className="px-4 py-4 border-b border-white/25">
       <div className="flex items-center gap-3 mb-3">
         <div className="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center shrink-0">
           <User size={16} strokeWidth={2.5} className="text-white" />
         </div>
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-white truncate">
-            {employerData
-              ? `${employerData.firstName} ${employerData.lastName}`
-              : "Loading..."}
-          </p>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <p className="text-sm font-semibold text-white truncate">
+              {employerData
+                ? `${employerData.firstName} ${employerData.lastName}`
+                : "Loading..."}
+            </p>
+            {employerData?.companyRole && (
+              <span
+                className={`text-[10px] font-bold px-1.5 py-0.5 rounded border shrink-0 ${
+                  ROLE_BADGE_STYLE[employerData.companyRole] ||
+                  ROLE_BADGE_STYLE.Viewer
+                }`}
+              >
+                {employerData.companyRole}
+              </span>
+            )}
+          </div>
           <p className="text-xs text-white/40 truncate">
             {employerData?.email || ""}
           </p>
@@ -178,12 +203,14 @@ export default function EmployerSidebar() {
             <span className="text-sm font-semibold text-white truncate">
               {employerData?.company || "—"}
             </span>
-            <button
-              onClick={() => setEditingCompany(true)}
-              className="flex items-center justify-center w-6 h-6 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors shrink-0"
-            >
-              <Pencil size={12} />
-            </button>
+            {canEdit && (
+              <button
+                onClick={() => setEditingCompany(true)}
+                className="flex items-center justify-center w-6 h-6 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors shrink-0"
+              >
+                <Pencil size={12} />
+              </button>
+            )}
           </div>
         )}
       </div>

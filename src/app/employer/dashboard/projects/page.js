@@ -10,7 +10,9 @@ import {
   deleteDoc,
   doc,
   updateDoc,
+  getDoc,
 } from "firebase/firestore";
+import { canDeleteJob } from "@/lib/employerRoles";
 import {
   Plus,
   MapPin,
@@ -51,15 +53,21 @@ export default function AllProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [companyRole, setCompanyRole] = useState("Owner");
 
   useEffect(() => {
     const unsub = auth.onAuthStateChanged(async (user) => {
       if (!user) return;
       try {
+        const empSnap = await getDoc(doc(db, "employers", user.uid));
+        const empData = empSnap.exists() ? empSnap.data() : null;
+        const companyId = empData?.companyId || user.uid;
+        setCompanyRole(empData?.companyRole || "Owner");
+
         const snap = await getDocs(
           query(
             collection(db, "projects"),
-            where("employerUid", "==", user.uid),
+            where("employerUid", "==", companyId),
           ),
         );
         const loaded = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
@@ -75,6 +83,11 @@ export default function AllProjectsPage() {
 
   const handleDeleteConfirmed = async () => {
     if (!deleteConfirm) return;
+    if (!canDeleteJob(companyRole)) {
+      alert("Only Owners and Admins have permission to delete projects.");
+      setDeleteConfirm(null);
+      return;
+    }
     setDeleting(true);
     try {
       await deleteDoc(doc(db, "projects", deleteConfirm));

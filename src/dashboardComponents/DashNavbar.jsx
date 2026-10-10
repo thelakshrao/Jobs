@@ -182,15 +182,17 @@ export default function DashNavbar() {
             if (!otherUid) return null;
             if (!senderCache.current[otherUid]) {
               try {
-                const empSnap = await getDoc(doc(db, "employers", otherUid));
-                if (empSnap.exists()) {
-                  const d = empSnap.data();
+                if (c.companyName || c.companyId) {
+                  let compName = c.companyName || "";
+                  if (!compName && c.companyId) {
+                    try {
+                      const compSnap = await getDoc(doc(db, "companies", c.companyId));
+                      if (compSnap.exists()) compName = compSnap.data()?.company || "";
+                    } catch {}
+                  }
                   senderCache.current[otherUid] = {
-                    name:
-                      `${d.firstName || ""} ${d.lastName || ""}`.trim() ||
-                      d.companyName ||
-                      "Employer",
-                    company: d.company || d.companyName || "",
+                    name: compName || "Employer",
+                    company: compName || "",
                   };
                 } else {
                   const userSnap = await getDoc(doc(db, "users", otherUid));
@@ -199,12 +201,23 @@ export default function DashNavbar() {
                     senderCache.current[otherUid] = {
                       name:
                         `${d.firstName || ""} ${d.lastName || ""}`.trim() ||
+                        d.name ||
                         "User",
+                      company: "",
+                    };
+                  } else {
+                    senderCache.current[otherUid] = {
+                      name: "Employer",
                       company: "",
                     };
                   }
                 }
-              } catch (e) {}
+              } catch (e) {
+                senderCache.current[otherUid] = {
+                  name: "Employer",
+                  company: "",
+                };
+              }
             }
             const sender = senderCache.current[otherUid] || {};
             return {

@@ -13,6 +13,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
+import { canManageApplicants } from "@/lib/employerRoles";
 import EmployerSidebar from "@/employerComponets/EmployerSidebar";
 import DashboardNavbar from "@/employerComponets/DashboardNavbar";
 import {
@@ -108,6 +109,8 @@ export default function EmployerApplicantsPage() {
     }
   };
 
+  const [companyRole, setCompanyRole] = useState("Owner");
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -119,12 +122,15 @@ export default function EmployerApplicantsPage() {
         router.replace("/employer/onboarding");
         return;
       }
+      const empData = empDoc.data() || {};
+      const companyId = empData.companyId || user.uid;
+      setCompanyRole(empData.companyRole || "Owner");
       setChecking(false);
       try {
         const snap = await getDocs(
           query(
             collection(db, "applications"),
-            where("employerUid", "==", user.uid),
+            where("employerUid", "==", companyId),
           ),
         );
         let apps = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
@@ -157,6 +163,10 @@ export default function EmployerApplicantsPage() {
   }, []);
 
   const updateStatus = async (appId, status) => {
+    if (!canManageApplicants(companyRole)) {
+      alert("Viewers cannot change applicant status.");
+      return;
+    }
     setUpdatingStatus(true);
     try {
       const timestampField =

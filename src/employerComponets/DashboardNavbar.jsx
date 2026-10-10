@@ -3,14 +3,8 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, MessageSquare, HelpCircle, User, X } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  doc,
-  getDoc,
-} from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
+import { listenToEmployerConversations } from "@/lib/messaging";
 import HelpPanel from "@/employerComponets/HelpPanel";
 
 const BORDER = "1.5px solid #cbd5e1";
@@ -136,6 +130,79 @@ export default function DashboardNavbar() {
 
   useEffect(() => {
     let unsubConvs = null;
+    let cancelled = false;
+
+    // Starts the conversations listener for this user + company.
+    const startListener = (user, companyId) => {
+      if (cancelled) return;
+      if (unsubConvs) {
+        unsubConvs();
+        unsubConvs = null;
+      }
+
+      unsubConvs = listenToEmployerConversations(
+        user.uid,
+        companyId,
+        async (convs) => {
+          const employerConvs = convs.filter(
+            (c) =>
+              c.participantRoles?.[user.uid] === "employer" ||
+              !c.participantRoles ||
+              c.companyId === companyId,
+          );
+
+          const unreadConvs = employerConvs.filter(
+            (c) => (c.unreadCount?.[user.uid] || 0) > 0,
+          );
+
+          const notifs = await Promise.all(
+            unreadConvs.map(async (c) => {
+              // The sender is the applicant: the participant who is not
+              // an employer. For teammates, "not me" alone could be the owner.
+              const otherUid =
+                c.participants?.find(
+                  (p) =>
+                    p !== user.uid && c.participantRoles?.[p] !== "employer",
+                ) || c.participants?.find((p) => p !== user.uid);
+              if (!otherUid) return null;
+
+              if (!senderCache.current[otherUid]) {
+                try {
+                  const userSnap = await getDoc(doc(db, "users", otherUid));
+                  if (userSnap.exists()) {
+                    const d = userSnap.data();
+                    senderCache.current[otherUid] = {
+                      name:
+                        `${d.firstName || ""} ${d.lastName || ""}`.trim() ||
+                        d.name ||
+                        "Applicant",
+                    };
+                  }
+                } catch (e) { }
+              }
+
+              const sender = senderCache.current[otherUid] || {};
+              return {
+                convId: c.id,
+                senderName: sender.name || "Applicant",
+                lastMessage: c.lastMessage || "",
+                lastMessageAt: c.lastMessageAt,
+                unread: c.unreadCount?.[user.uid] || 0,
+              };
+            }),
+          );
+
+          const validNotifs = notifs.filter(Boolean).sort((a, b) => {
+            const aTime = a.lastMessageAt?.toDate?.() || new Date(0);
+            const bTime = b.lastMessageAt?.toDate?.() || new Date(0);
+            return bTime - aTime;
+          });
+
+          setMsgNotifs(validNotifs);
+          setTotalUnread(validNotifs.reduce((s, n) => s + n.unread, 0));
+        },
+      );
+    };
 
     const unsub = auth.onAuthStateChanged((user) => {
       if (unsubConvs) {
@@ -149,67 +216,24 @@ export default function DashboardNavbar() {
         return;
       }
 
-      const q = query(
-        collection(db, "conversations"),
-        where("participants", "array-contains", user.uid),
-      );
-
-      unsubConvs = onSnapshot(q, async (snap) => {
-        const convs = snap.docs
-          .map((d) => ({ id: d.id, ...d.data() }))
-          .filter(
-            (c) =>
-              c.participantRoles?.[user.uid] === "employer" ||
-              !c.participantRoles,
-          );
-
-        const unreadConvs = convs.filter(
-          (c) => (c.unreadCount?.[user.uid] || 0) > 0,
-        );
-
-        const notifs = await Promise.all(
-          unreadConvs.map(async (c) => {
-            const otherUid = c.participants?.find((p) => p !== user.uid);
-            if (!otherUid) return null;
-
-            if (!senderCache.current[otherUid]) {
-              try {
-                const userSnap = await getDoc(doc(db, "users", otherUid));
-                if (userSnap.exists()) {
-                  const d = userSnap.data();
-                  senderCache.current[otherUid] = {
-                    name:
-                      `${d.firstName || ""} ${d.lastName || ""}`.trim() ||
-                      d.name ||
-                      "Applicant",
-                  };
-                }
-              } catch (e) {}
-            }
-
-            const sender = senderCache.current[otherUid] || {};
-            return {
-              convId: c.id,
-              senderName: sender.name || "Applicant",
-              lastMessage: c.lastMessage || "",
-              lastMessageAt: c.lastMessageAt,
-              unread: c.unreadCount?.[user.uid] || 0,
-            };
-          }),
-        );
-
-        const validNotifs = notifs.filter(Boolean).sort((a, b) => {
-          const aTime = a.lastMessageAt?.toDate?.() || new Date(0);
-          const bTime = b.lastMessageAt?.toDate?.() || new Date(0);
-          return bTime - aTime;
-        });
-
-        setMsgNotifs(validNotifs);
-        setTotalUnread(validNotifs.reduce((s, n) => s + n.unread, 0));
-      });
+      // Find which company this user belongs to. If the lookup fails or the
+      // doc has no companyId (not migrated yet), fall back to their own uid
+      // so the inbox still works.
+      getDoc(doc(db, "employers", user.uid))
+        .then((empSnap) =>
+          empSnap.exists()
+            ? empSnap.data()?.companyId || user.uid
+            : user.uid,
+        )
+        .catch((err) => {
+          console.error("Could not load employer profile:", err);
+          return user.uid;
+        })
+        .then((companyId) => startListener(user, companyId));
     });
 
     return () => {
+      cancelled = true;
       if (unsubConvs) unsubConvs();
       unsub();
     };

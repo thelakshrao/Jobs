@@ -10,7 +10,13 @@ import {
   deleteDoc,
   doc,
   updateDoc,
+  getDoc,
 } from "firebase/firestore";
+import {
+  canEditJob,
+  canDeleteJob,
+  canUpdateJobStatus,
+} from "@/lib/employerRoles";
 import {
   Plus,
   MapPin,
@@ -234,14 +240,22 @@ export default function PostedJobs() {
   const [statusDropdown, setStatusDropdown] = useState(null);
   const [selectedJob, setSelectedJob] = useState(null);
   const [sheetJob, setSheetJob] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [companyRole, setCompanyRole] = useState("Owner");
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (!user) return;
+      setCurrentUser(user);
       try {
+        const empSnap = await getDoc(doc(db, "employers", user.uid));
+        const empData = empSnap.exists() ? empSnap.data() : null;
+        const companyId = empData?.companyId || user.uid;
+        setCompanyRole(empData?.companyRole || "Owner");
+
         const q = query(
           collection(db, "jobs"),
-          where("employerUid", "==", user.uid),
+          where("employerUid", "==", companyId),
         );
         const snap = await getDocs(q);
         const today = new Date().toISOString().split("T")[0];
@@ -287,6 +301,11 @@ export default function PostedJobs() {
 
   const handleDeleteConfirmed = async () => {
     if (!deleteConfirm) return;
+    if (!canDeleteJob(companyRole)) {
+      alert("Only Owners and Admins have permission to delete jobs.");
+      setDeleteConfirm(null);
+      return;
+    }
     setDeleting(true);
     try {
       await deleteDoc(doc(db, "jobs", deleteConfirm));
@@ -302,6 +321,12 @@ export default function PostedJobs() {
   };
 
   const handleStatusChange = async (jobId, newStatus) => {
+    const targetJob = jobs.find((j) => j.id === jobId);
+    if (!canUpdateJobStatus(companyRole, targetJob, currentUser?.uid)) {
+      alert("You only have permission to change status for jobs you posted.");
+      setStatusDropdown(null);
+      return;
+    }
     try {
       await updateDoc(doc(db, "jobs", jobId), {
         status: newStatus,

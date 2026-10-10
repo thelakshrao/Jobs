@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
 import EmpNavbar from "@/employerComponets/EmpNavbar";
 import PolicyPanel from "@/components/Policypanel";
@@ -286,20 +286,60 @@ function EmployerOnboardingInner() {
     setError("");
     setSubmitting(true);
     try {
-      await setDoc(doc(db, "employers", user.uid), {
-        company: form.company,
-        website,
-        firstName: form.firstName,
-        lastName: form.lastName,
-        email: form.email,
-        phone: form.phone,
-        dialCode: form.dialCode,
-        dataConsent: form.dataConsent,
-        termsConsent: form.termsConsent,
-        verified: false,
-        createdAt: new Date().toISOString(),
-        uid: user.uid,
-      });
+      if (isSwitchMode) {
+        await updateDoc(doc(db, "employers", user.uid), {
+          company: form.company,
+          website,
+          firstName: form.firstName,
+          lastName: form.lastName,
+          email: form.email,
+          phone: form.phone,
+          dialCode: form.dialCode,
+          dataConsent: form.dataConsent,
+          termsConsent: form.termsConsent,
+          updatedAt: new Date().toISOString(),
+        });
+
+        const empSnap = await getDoc(doc(db, "employers", user.uid));
+        const companyId = empSnap.data()?.companyId || user.uid;
+        await setDoc(
+          doc(db, "companies", companyId),
+          {
+            company: form.company,
+            website,
+            updatedAt: new Date().toISOString(),
+          },
+          { merge: true },
+        );
+      } else {
+        // Sequential writes: employers first, then companies
+        await setDoc(doc(db, "employers", user.uid), {
+          company: form.company,
+          website,
+          firstName: form.firstName,
+          lastName: form.lastName,
+          email: form.email,
+          phone: form.phone,
+          dialCode: form.dialCode,
+          dataConsent: form.dataConsent,
+          termsConsent: form.termsConsent,
+          verified: false,
+          banned: false,
+          companyId: user.uid,
+          companyRole: "Owner",
+          status: "active",
+          createdAt: new Date().toISOString(),
+          uid: user.uid,
+        });
+
+        await setDoc(doc(db, "companies", user.uid), {
+          company: form.company,
+          website,
+          verified: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+      }
       sessionStorage.removeItem("empLoggedOut");
       router.replace("/employer/dashboard");
     } catch (err) {

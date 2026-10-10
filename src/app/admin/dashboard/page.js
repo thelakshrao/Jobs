@@ -3,6 +3,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
+import AdminPageBanner from "@/adminComponents/AdminPageBanner";
+import teamPresentingImg from "@/images/team-presenting.jpg";
 import {
   doc,
   getDoc,
@@ -221,6 +223,7 @@ export default function AdminDashboardPage() {
         const jobsCol = collection(db, "jobs");
         const employersCol = collection(db, "employers");
         const applicationsCol = collection(db, "applications");
+        const usersCol = collection(db, "users");
 
         const [
           jobsCountSnap,
@@ -230,7 +233,7 @@ export default function AdminDashboardPage() {
         ] = await Promise.all([
           getCountFromServer(jobsCol),
           getCountFromServer(employersCol),
-          getCountFromServer(applicationsCol),
+          getCountFromServer(usersCol),
           getCountFromServer(query(jobsCol, where("status", "==", "Draft"))),
         ]);
 
@@ -363,24 +366,32 @@ export default function AdminDashboardPage() {
       value: stats.totalJobs,
       icon: Briefcase,
       note: "across all employers",
+      tint: "#eaf1fb",
+      fg: "#003882",
     },
     {
       label: "Total Applicants",
       value: stats.totalApplicants,
       icon: Users,
-      note: "all applications",
+      note: "registered job seekers",
+      tint: "#eafbf3",
+      fg: "#0a8f5b",
     },
     {
       label: "Total Employers",
       value: stats.totalEmployers,
       icon: Building2,
       note: "registered companies",
+      tint: "#fbf0ea",
+      fg: "#c2591a",
     },
     {
       label: "Draft Jobs",
       value: stats.draftJobs,
       icon: FileEdit,
       note: "not yet published",
+      tint: "#f4eafb",
+      fg: "#7a2bb5",
     },
   ];
 
@@ -418,27 +429,30 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
-          <div className="mb-7">
-            <h1 className="text-2xl font-extrabold text-[#003882] tracking-tight">
-              Welcome back, {staffData?.name?.split(" ")[0] || "Admin"}
-            </h1>
-            <p className="text-sm text-slate-500 mt-0.5 font-medium">
-              Here's what's happening with your job portal today.
-            </p>
-          </div>
+          <AdminPageBanner
+            eyebrow={todayLabel}
+            title={`Welcome back, ${staffData?.name?.split(" ")[0] || "Admin"} 👋`}
+            subtitle="Here's what's happening with your job portal today."
+            image={teamPresentingImg}
+            imageAlt="Team reviewing hiring progress"
+          />
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-            {statCards.map(({ label, value, icon: Icon, note }) => (
+            {statCards.map(({ label, value, icon: Icon, note, tint, fg }) => (
               <div
                 key={label}
-                className="bg-white rounded-2xl px-4 sm:px-5 py-4 sm:py-5 border border-slate-200/80 shadow-sm"
+                className="group relative bg-white rounded-2xl px-4 sm:px-5 py-4 sm:py-5 border border-slate-200/80 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
               >
+                <div
+                  className="absolute top-0 left-0 right-0 h-1"
+                  style={{ backgroundColor: fg }}
+                />
                 <div className="flex items-center justify-between mb-3">
                   <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center"
-                    style={{ backgroundColor: BRAND_TINT }}
+                    className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform duration-200 group-hover:scale-105"
+                    style={{ backgroundColor: tint }}
                   >
-                    <Icon size={16} style={{ color: BRAND }} />
+                    <Icon size={18} style={{ color: fg }} />
                   </div>
                 </div>
                 <p className="text-xl sm:text-2xl font-extrabold text-slate-900 tabular-nums">

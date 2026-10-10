@@ -18,6 +18,7 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
+import { canPostJob, canEditJob } from "@/lib/employerRoles";
 import EmployerSidebar from "@/employerComponets/EmployerSidebar";
 import DashboardNavbar from "@/employerComponets/DashboardNavbar";
 import { ChevronLeft, Check } from "lucide-react";
@@ -190,6 +191,7 @@ function CreateProjectPageInner() {
 
   const [checking, setChecking] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
+  const [employerData, setEmployerData] = useState(null);
   const [companySuggestions, setCompanySuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -281,13 +283,16 @@ function CreateProjectPageInner() {
         router.replace("/employer/onboarding");
         return;
       }
+      const empData = empDoc.data();
+      setEmployerData(empData);
       setCurrentUser(user);
 
       try {
+        const companyId = empData?.companyId || user.uid;
         const snap = await getDocs(
           query(
             collection(db, "projects"),
-            where("employerUid", "==", user.uid),
+            where("employerUid", "==", companyId),
           ),
         );
         const myProjects = snap.docs.map((d) => d.data());
@@ -364,6 +369,15 @@ function CreateProjectPageInner() {
       return;
     }
     setLoading(true);
+    const myRole = employerData?.companyRole || "Owner";
+    if (!canPostJob(myRole)) {
+      alert("Viewers cannot create or edit projects.");
+      setLoading(false);
+      return;
+    }
+
+    const companyId = employerData?.companyId || currentUser.uid;
+
     try {
       const payload = {
         company: form.company.trim(),
@@ -380,7 +394,9 @@ function CreateProjectPageInner() {
         state: form.state,
         urgent: form.urgent,
         deadline: form.deadline || null,
-        employerUid: currentUser.uid,
+        companyId,
+        employerUid: companyId,
+        postedBy: currentUser.uid,
         employerEmail: currentUser.email,
       };
       if (editId) {

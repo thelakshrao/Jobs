@@ -18,6 +18,8 @@ import AdminSidebar, {
   getStoredSidebarCollapsed,
   TOGGLE_EVENT,
 } from "@/adminComponents/AdminSidebar";
+import AdminPageBanner from "@/adminComponents/AdminPageBanner";
+import officeMeetingImg from "@/images/office-meeting-glass.jpg";
 import {
   Search,
   ChevronUp,
@@ -429,16 +431,17 @@ export default function AdminJobsPage() {
         }`}
       >
         <div className="px-4 sm:px-8 py-8">
-          <div className="mb-6">
-            <h1 className="text-2xl font-extrabold text-[#003882] tracking-tight">
-              Admin Jobs
-            </h1>
-            <p className="text-sm text-slate-500 mt-0.5 font-medium">
-              {loading
+          <AdminPageBanner
+            eyebrow="Admin Jobs"
+            title="Admin-posted Jobs"
+            subtitle={
+              loading
                 ? "Loading…"
-                : `${filtered.length} job${filtered.length === 1 ? "" : "s"} posted from the admin panel`}
-            </p>
-          </div>
+                : `${filtered.length} job${filtered.length === 1 ? "" : "s"} posted from the admin panel`
+            }
+            image={officeMeetingImg}
+            imageAlt="Admin team posting a job"
+          />
 
           <div className="flex flex-col sm:flex-row gap-3 mb-4">
             <div className="relative flex-1">
