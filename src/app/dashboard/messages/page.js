@@ -51,11 +51,11 @@ function Avatar({ name, photoURL, uid, size = 40 }) {
   const [imgErr, setImgErr] = useState(false);
   const initials = name
     ? name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2)
     : uid
       ? uid[0].toUpperCase()
       : "U";
@@ -82,41 +82,32 @@ function Avatar({ name, photoURL, uid, size = 40 }) {
   );
 }
 
-async function fetchSenderInfo(uid) {
-  let name = "",
-    photoURL = "",
-    company = "";
+async function fetchSenderInfo(uid, conv) {
+  let name = conv?.companyName || "";
+  let photoURL = "";
+  let company = conv?.companyName || "";
   try {
-    const empSnap = await getDoc(doc(db, "employers", uid));
-    if (empSnap.exists()) {
-      const d = empSnap.data();
-      name =
-        `${d.firstName || ""} ${d.lastName || ""}`.trim() ||
-        d.name ||
-        d.displayName ||
-        d.companyName ||
-        "";
-      company = d.company || d.companyName || "";
-      photoURL =
-        d.profilePicture ||
-        d.profilePhoto ||
-        d.logo ||
-        d.photo ||
-        d.photoURL ||
-        "";
-      return { name, photoURL, company };
+    if (conv?.companyId) {
+      const compSnap = await getDoc(doc(db, "companies", conv.companyId));
+      if (compSnap.exists()) {
+        const d = compSnap.data();
+        company = d.company || company;
+        name = company || name;
+        photoURL = d.logo || "";
+      }
     }
-    const userSnap = await getDoc(doc(db, "users", uid));
-    if (userSnap.exists()) {
-      const d = userSnap.data();
-      name =
-        `${d.firstName || ""} ${d.lastName || ""}`.trim() ||
-        d.name ||
-        d.displayName ||
-        "";
-      photoURL =
-        d.profilePicture || d.profilePhoto || d.photo || d.photoURL || "";
-      return { name, photoURL, company: "" };
+    if (!name) {
+      const userSnap = await getDoc(doc(db, "users", uid));
+      if (userSnap.exists()) {
+        const d = userSnap.data();
+        name =
+          `${d.firstName || ""} ${d.lastName || ""}`.trim() ||
+          d.name ||
+          d.displayName ||
+          "";
+        photoURL =
+          d.profilePicture || d.profilePhoto || d.photo || d.photoURL || "";
+      }
     }
   } catch (e) {
     console.error("fetchSenderInfo error:", e);
@@ -296,7 +287,7 @@ export default function ApplicantMessagesPage() {
                 "",
             });
           }
-        } catch (e) {}
+        } catch (e) { }
       }
     });
     return () => unsub();
@@ -312,14 +303,17 @@ export default function ApplicantMessagesPage() {
       );
       setConversations(applicantConvs);
       setLoading(false);
-      const uidsToFetch = applicantConvs
-        .map((c) => c.participants.find((p) => p !== currentUser.uid))
-        .filter((uid) => uid && !fetchedUids.current.has(uid));
-      if (!uidsToFetch.length) return;
-      uidsToFetch.forEach((uid) => fetchedUids.current.add(uid));
+      const toFetch = applicantConvs
+        .map((c) => ({
+          uid: c.participants.find((p) => p !== currentUser.uid),
+          conv: c,
+        }))
+        .filter(({ uid }) => uid && !fetchedUids.current.has(uid));
+      if (!toFetch.length) return;
+      toFetch.forEach(({ uid }) => fetchedUids.current.add(uid));
       const results = await Promise.all(
-        uidsToFetch.map((uid) =>
-          fetchSenderInfo(uid).then((info) => [uid, info]),
+        toFetch.map(({ uid, conv }) =>
+          fetchSenderInfo(uid, conv).then((info) => [uid, info]),
         ),
       );
       setOtherUserData((prev) => ({ ...prev, ...Object.fromEntries(results) }));
@@ -336,14 +330,14 @@ export default function ApplicantMessagesPage() {
         80,
       );
     });
-    markConversationRead(selectedConv.id, currentUser.uid).catch(() => {});
+    markConversationRead(selectedConv.id, currentUser.uid).catch(() => { });
     setConversations((prev) =>
       prev.map((c) =>
         c.id === selectedConv.id
           ? {
-              ...c,
-              unreadCount: { ...(c.unreadCount || {}), [currentUser.uid]: 0 },
-            }
+            ...c,
+            unreadCount: { ...(c.unreadCount || {}), [currentUser.uid]: 0 },
+          }
           : c,
       ),
     );
@@ -383,14 +377,14 @@ export default function ApplicantMessagesPage() {
   const handleSelectConv = (conv) => {
     setSelectedConv(conv);
     if (currentUser) {
-      markConversationRead(conv.id, currentUser.uid).catch(() => {});
+      markConversationRead(conv.id, currentUser.uid).catch(() => { });
       setConversations((prev) =>
         prev.map((c) =>
           c.id === conv.id
             ? {
-                ...c,
-                unreadCount: { ...(c.unreadCount || {}), [currentUser.uid]: 0 },
-              }
+              ...c,
+              unreadCount: { ...(c.unreadCount || {}), [currentUser.uid]: 0 },
+            }
             : c,
         ),
       );
@@ -477,11 +471,10 @@ export default function ApplicantMessagesPage() {
       <button
         onClick={handleSend}
         disabled={!inputText.trim() || sending}
-        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border-none transition-all ${
-          inputText.trim()
-            ? "bg-[#004aac] text-white cursor-pointer hover:bg-blue-500"
-            : "bg-slate-100 text-slate-400 cursor-default"
-        }`}
+        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border-none transition-all ${inputText.trim()
+          ? "bg-[#004aac] text-white cursor-pointer hover:bg-blue-500"
+          : "bg-slate-100 text-slate-400 cursor-default"
+          }`}
       >
         {sending ? (
           <div className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
@@ -520,11 +513,10 @@ export default function ApplicantMessagesPage() {
               <button
                 key={id}
                 onClick={() => setTab(id)}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[12px] font-semibold transition-all border-none cursor-pointer relative ${
-                  tab === id
-                    ? "bg-white text-slate-900 shadow-sm"
-                    : "bg-transparent text-slate-500 hover:text-slate-700"
-                }`}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[12px] font-semibold transition-all border-none cursor-pointer relative ${tab === id
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "bg-transparent text-slate-500 hover:text-slate-700"
+                  }`}
               >
                 <Icon size={13} />
                 {label}
@@ -571,11 +563,10 @@ export default function ApplicantMessagesPage() {
               >
                 <button
                   onClick={() => handleSelectConv(conv)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 pr-12 text-left border-none cursor-pointer transition-all border-b border-slate-50 border-l-2 ${
-                    isSelected
-                      ? "bg-blue-50 border-l-[#004aac]"
-                      : "bg-transparent hover:bg-slate-50 border-l-transparent"
-                  }`}
+                  className={`w-full flex items-center gap-3 px-4 py-3 pr-12 text-left border-none cursor-pointer transition-all border-b border-slate-50 border-l-2 ${isSelected
+                    ? "bg-blue-50 border-l-[#004aac]"
+                    : "bg-transparent hover:bg-slate-50 border-l-transparent"
+                    }`}
                 >
                   <Avatar
                     name={other.name}

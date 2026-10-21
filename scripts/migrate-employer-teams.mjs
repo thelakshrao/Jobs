@@ -4,7 +4,7 @@
  *
  * Usage:
  *   node scripts/migrate-employer-teams.mjs --dry-run
- *   node scripts/migrate-employer-teams.mjs
+ *   node scripts/migrate-employer-teams.mjs --confirm      (live run, writes data)
  *   node scripts/migrate-employer-teams.mjs --service-account=path/to/serviceAccountKey.json
  *
  * What it does (Idempotent - safe to run multiple times):
@@ -14,13 +14,12 @@
  *    - Sets status = "active" (if missing)
  * 2. Backfills "companies" collection:
  *    - Creates companies/{companyId} copying ONLY public company-level fields:
- *      (company, website, logo/profilePicture, description, industry, location, verified)
+ *      (company, website, companyLogo/logo, description, industry, location, verified)
  *    - Never copies personal fields (firstName, lastName, email, phone, dialCode, consent flags, banned, uid)
  * 3. Backfills "jobs":
- *    - Sets companyId = employerUid || doc.id (if missing)
- *    - Sets employerUid = companyId
- *    - Sets postedBy = employerUid (if missing)
- *    - Sets applicants = 0 (if missing)
+ *    - Sets companyId from companyId/employerUid/employerId (if missing)
+ *    - Docs with no owner (e.g. admin-posted) are SKIPPED and listed
+ *    - Sets employerUid = companyId, postedBy (if missing), applicants = 0 (if missing)
  * 4. Backfills "projects":
  *    - Sets companyId = employerUid || doc.id (if missing)
  *    - Sets employerUid = companyId
@@ -110,6 +109,18 @@ async function runMigration() {
   console.log(`========================================\n`);
 
   const db = initAdmin();
+  const projectLabel =
+    process.env.FIREBASE_ADMIN_PROJECT_ID ||
+    process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
+    "(from service account file)";
+  console.log(` Target Firebase project: ${projectLabel}\n`);
+
+  if (!isDryRun && !process.argv.includes("--confirm")) {
+    console.error(
+      "Refusing to write. Run with --dry-run first, then add --confirm for a live run.",
+    );
+    process.exit(1);
+  }
 
   // 1. Migrate employers
   console.log("==> Step 1: Scanning 'employers' collection...");
@@ -157,12 +168,9 @@ async function runMigration() {
       const companyPayload = {
         company: emp.company || emp.companyName || "",
         website: emp.website || "",
-        logo:
-          emp.profilePicture ||
-          emp.profilePhoto ||
-          emp.logo ||
-          emp.photoURL ||
-          "",
+        // Only a dedicated company logo. Never a personal profile photo,
+        // because companies/* is publicly readable.
+        logo: emp.companyLogo || emp.logo || "",
         description: emp.description || "",
         industry: emp.industry || "",
         location: emp.location || "",
@@ -185,16 +193,24 @@ async function runMigration() {
   console.log("==> Step 3: Scanning 'jobs' collection...");
   const jobsSnap = await db.collection("jobs").get();
   let jobsUpdated = 0;
+  const jobsSkipped = [];
 
   for (const doc of jobsSnap.docs) {
     const data = doc.data();
     const updates = {};
 
-    const targetCompanyId = data.companyId || data.employerUid || doc.id;
+    // Owner comes from existing fields only. NEVER fall back to the job's own
+    // id: admin-posted jobs have no employer, and must be left untouched.
+    const targetCompanyId =
+      data.companyId || data.employerUid || data.employerId || null;
+    if (!targetCompanyId) {
+      jobsSkipped.push(doc.id);
+      continue;
+    }
     if (!data.companyId) updates.companyId = targetCompanyId;
     if (data.employerUid !== targetCompanyId)
       updates.employerUid = targetCompanyId;
-    if (!data.postedBy) updates.postedBy = data.employerUid || null;
+    if (!data.postedBy) updates.postedBy = targetCompanyId;
     if (data.applicants === undefined || data.applicants === null) {
       updates.applicants = 0;
     }
@@ -208,23 +224,31 @@ async function runMigration() {
     }
   }
   console.log(
-    `  Scanned ${jobsSnap.size} jobs. ${jobsUpdated} needed backfill.\n`,
+    `  Scanned ${jobsSnap.size} jobs. ${jobsUpdated} needed backfill. ${jobsSkipped.length} skipped (no employer, e.g. admin-posted).`,
   );
+  if (jobsSkipped.length) console.log(`  Skipped job ids: ${jobsSkipped.join(", ")}`);
+  console.log("");
 
   // 4. Migrate projects
   console.log("==> Step 4: Scanning 'projects' collection...");
   const projectsSnap = await db.collection("projects").get();
   let projectsUpdated = 0;
+  const projectsSkipped = [];
 
   for (const doc of projectsSnap.docs) {
     const data = doc.data();
     const updates = {};
 
-    const targetCompanyId = data.companyId || data.employerUid || doc.id;
+    const targetCompanyId =
+      data.companyId || data.employerUid || data.employerId || null;
+    if (!targetCompanyId) {
+      projectsSkipped.push(doc.id);
+      continue;
+    }
     if (!data.companyId) updates.companyId = targetCompanyId;
     if (data.employerUid !== targetCompanyId)
       updates.employerUid = targetCompanyId;
-    if (!data.postedBy) updates.postedBy = data.employerUid || null;
+    if (!data.postedBy) updates.postedBy = targetCompanyId;
     if (data.applicants === undefined || data.applicants === null) {
       updates.applicants = 0;
     }
@@ -238,8 +262,11 @@ async function runMigration() {
     }
   }
   console.log(
-    `  Scanned ${projectsSnap.size} projects. ${projectsUpdated} needed backfill.\n`,
+    `  Scanned ${projectsSnap.size} projects. ${projectsUpdated} needed backfill. ${projectsSkipped.length} skipped (no employer).`,
   );
+  if (projectsSkipped.length)
+    console.log(`  Skipped project ids: ${projectsSkipped.join(", ")}`);
+  console.log("");
 
   // 5. Migrate applications
   console.log("==> Step 5: Scanning 'applications' collection...");

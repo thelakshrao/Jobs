@@ -1,0 +1,1758 @@
+diff --git a/firestore.rules.proposed b/firestore.rules.proposed
+new file mode 100644
+index 0000000..8899d01
+--- /dev/null
++++ b/firestore.rules.proposed
+@@ -0,0 +1,221 @@
++rules_version = '2';
++service cloud.firestore {
++  match /databases/{database}/documents {
++    function isActiveAdmin() {
++      return request.auth != null &&
++        exists(/databases/$(database)/documents/admin_staff/$(request.auth.uid)) &&
++        get(/databases/$(database)/documents/admin_staff/$(request.auth.uid)).data.status == 'active';
++    }
++    function myAdminRoles() {
++      return get(/databases/$(database)/documents/admin_staff/$(request.auth.uid)).data.roles;
++    }
++    function hasTopTier(roles) {
++      return roles != null && roles.hasAny(['Founder', 'Co-Founder', 'Developer']);
++    }
++    function hasMidTier(roles) {
++      return roles != null && roles.hasAny(['Managing Head', 'Technical Head']);
++    }
++
++    // Employer & Team Helpers
++    function isEmployerDoc(uid) {
++      return exists(/databases/$(database)/documents/employers/$(uid));
++    }
++    function getEmployerDoc(uid) {
++      return get(/databases/$(database)/documents/employers/$(uid)).data;
++    }
++    function isActiveEmployer() {
++      return request.auth != null &&
++        isEmployerDoc(request.auth.uid) &&
++        (!('status' in getEmployerDoc(request.auth.uid)) || getEmployerDoc(request.auth.uid).status == 'active') &&
++        (!('banned' in getEmployerDoc(request.auth.uid)) || getEmployerDoc(request.auth.uid).banned == false);
++    }
++    function myCompanyId() {
++      let data = getEmployerDoc(request.auth.uid);
++      return ('companyId' in data && data.companyId != null && data.companyId != '') ? data.companyId : request.auth.uid;
++    }
++    function myCompanyRole() {
++      let data = getEmployerDoc(request.auth.uid);
++      return ('companyRole' in data && data.companyRole != null) ? data.companyRole : 'Owner';
++    }
++    function isCompanyMember(targetCompanyId, legacyOwnerUid) {
++      return isActiveEmployer() && (
++        (targetCompanyId != null && targetCompanyId != '' && myCompanyId() == targetCompanyId) ||
++        (legacyOwnerUid != null && (myCompanyId() == legacyOwnerUid || request.auth.uid == legacyOwnerUid))
++      );
++    }
++    function canEditCompanyJob(resourceData) {
++      return isActiveEmployer() &&
++        (isCompanyMember(resourceData.companyId, resourceData.employerUid)) &&
++        (
++          myCompanyRole() in ['Owner', 'Admin'] ||
++          (myCompanyRole() == 'Recruiter' && resourceData.postedBy == request.auth.uid)
++        );
++    }
++    function canDeleteCompanyJob(targetCompanyId, legacyOwnerUid) {
++      return isCompanyMember(targetCompanyId, legacyOwnerUid) &&
++        myCompanyRole() in ['Owner', 'Admin'];
++    }
++    function isCompanyAdminOrOwner(targetCompanyId) {
++      return isActiveEmployer() &&
++        myCompanyId() == targetCompanyId &&
++        myCompanyRole() in ['Owner', 'Admin'];
++    }
++
++    match /users/{userId} {
++      allow read: if true;
++      allow write: if request.auth != null && request.auth.uid == userId;
++    }
++    match /slugs/{slug} {
++      allow read: if true;
++      allow write: if request.auth != null;
++    }
++
++    // Public company profiles
++    match /companies/{companyId} {
++      // Public read so applicants and visitors can view company profile info
++      allow read: if true;
++      // Creator must be an active Owner initializing their own company
++      allow create: if request.auth != null &&
++        request.auth.uid == companyId &&
++        isActiveEmployer() &&
++        myCompanyRole() == 'Owner' &&
++        (!('verified' in request.resource.data) || request.resource.data.verified == false);
++      // Owners and Admins can edit company profile, but cannot touch verified status
++      allow update: if isActiveAdmin() || (
++        isCompanyAdminOrOwner(companyId) &&
++        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['verified'])
++      );
++      allow delete: if false; // Deletions must go through server-side admin
++    }
++
++    match /employers/{userId} {
++      // Restrict read to self, members of the same company, or active admins.
++      allow read: if isActiveAdmin() || (request.auth != null && (
++        request.auth.uid == userId ||
++        (resource != null && isCompanyMember(resource.data.companyId, null))
++      ));
++      // Self-create allowed only when initializing their own company as Owner.
++      allow create: if request.auth != null &&
++        request.auth.uid == userId &&
++        request.resource.data.companyId == userId &&
++        request.resource.data.companyRole == 'Owner' &&
++        (!('status' in request.resource.data) || request.resource.data.status == 'active') &&
++        (!('verified' in request.resource.data) || request.resource.data.verified == false) &&
++        (!('banned' in request.resource.data) || request.resource.data.banned == false);
++      // Self-update allowed only if core system fields remain untouched.
++      allow update: if request.auth != null &&
++        request.auth.uid == userId &&
++        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['companyId', 'companyRole', 'status', 'verified', 'banned']);
++      // No client write path for Owners/Admins to manage other members directly.
++      // Member creation, role promotions/demotions, suspensions, and removals
++      // MUST be executed via server-side API routes using firebase-admin with token verification.
++      allow delete: if false;
++    }
++
++    match /jobs/{jobId} {
++      allow read: if true;
++      allow create: if isActiveAdmin() || (
++        isActiveEmployer() &&
++        myCompanyRole() in ['Owner', 'Admin', 'Recruiter'] &&
++        request.resource.data.companyId == myCompanyId() &&
++        request.resource.data.employerUid == myCompanyId() &&
++        request.resource.data.postedBy == request.auth.uid
++      );
++      allow update: if isActiveAdmin() ||
++        canEditCompanyJob(resource.data) ||
++        // Allow applicant count increment during application submission
++        (request.auth != null &&
++         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['applicants']) &&
++         request.resource.data.applicants == resource.data.applicants + 1);
++      allow delete: if isActiveAdmin() ||
++        canDeleteCompanyJob(resource.data.companyId, resource.data.employerUid);
++    }
++    match /savedJobs/{docId} {
++      allow read, write: if request.auth != null
++        && request.auth.uid == resource.data.applicantUid;
++      allow create: if request.auth != null
++        && request.auth.uid == request.resource.data.applicantUid;
++    }
++    match /applications/{docId} {
++      allow read: if isActiveAdmin() || (request.auth != null && (
++        request.auth.uid == resource.data.applicantUid ||
++        request.auth.uid == resource.data.employerUid ||
++        isCompanyMember(resource.data.companyId, resource.data.employerUid)
++      ));
++      // Recruiters may update applications for all company jobs
++      allow update: if isActiveAdmin() || (request.auth != null && (
++        request.auth.uid == resource.data.applicantUid ||
++        request.auth.uid == resource.data.employerUid ||
++        (isCompanyMember(resource.data.companyId, resource.data.employerUid) && myCompanyRole() in ['Owner', 'Admin', 'Recruiter'])
++      ));
++      allow create: if request.auth != null
++        && request.auth.uid == request.resource.data.applicantUid;
++      allow delete: if request.auth != null
++        && request.auth.uid == resource.data.applicantUid;
++    }
++    match /projects/{projectId} {
++      allow read: if true;
++      allow create: if isActiveAdmin() || (
++        isActiveEmployer() &&
++        myCompanyRole() in ['Owner', 'Admin', 'Recruiter'] &&
++        request.resource.data.companyId == myCompanyId() &&
++        request.resource.data.employerUid == myCompanyId() &&
++        request.resource.data.postedBy == request.auth.uid
++      );
++      allow update: if isActiveAdmin() ||
++        canEditCompanyJob(resource.data) ||
++        (request.auth != null &&
++         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['applicants']) &&
++         request.resource.data.applicants == resource.data.applicants + 1);
++      allow delete: if isActiveAdmin() ||
++        canDeleteCompanyJob(resource.data.companyId, resource.data.employerUid);
++    }
++    match /savedProjects/{docId} {
++      allow read, write: if request.auth != null
++        && request.auth.uid == resource.data.applicantUid;
++      allow create: if request.auth != null
++        && request.auth.uid == request.resource.data.applicantUid;
++    }
++    match /conversations/{convId} {
++      allow read, update: if request.auth != null
++        && (request.auth.uid in resource.data.participants || isCompanyMember(resource.data.companyId, null));
++      allow create: if request.auth != null
++        && (request.auth.uid in request.resource.data.participants || (request.resource.data.companyId != null && isCompanyMember(request.resource.data.companyId, null)));
++      match /messages/{msgId} {
++        allow read, create: if request.auth != null && (
++          request.auth.uid in get(/databases/$(database)/documents/conversations/$(convId)).data.participants ||
++          isCompanyMember(get(/databases/$(database)/documents/conversations/$(convId)).data.companyId, null)
++        );
++      }
++    }
++    match /notifications/{uid}/items/{notifId} {
++      allow read: if request.auth != null && request.auth.uid == uid;
++      allow write: if request.auth != null;
++    }
++    match /helpMessages/{msgId} {
++      allow read: if isActiveAdmin() || (request.auth != null && request.auth.uid == resource.data.uid);
++      allow create: if request.auth != null && request.auth.uid == request.resource.data.uid;
++      allow update: if isActiveAdmin();
++    }
++    match /admin_staff/{staffId} {
++      allow read: if true;
++      allow create: if isActiveAdmin() &&
++        (hasTopTier(myAdminRoles()) || hasMidTier(myAdminRoles()));
++      allow update: if isActiveAdmin() && (
++        request.auth.uid == staffId ||
++        hasTopTier(myAdminRoles()) ||
++        (hasMidTier(myAdminRoles()) &&
++          !hasTopTier(resource.data.roles) &&
++          !hasMidTier(resource.data.roles))
++      );
++      allow delete: if isActiveAdmin() &&
++        request.auth.uid != staffId &&
++        (
++          hasTopTier(myAdminRoles()) ||
++          (hasMidTier(myAdminRoles()) &&
++            !hasTopTier(resource.data.roles) &&
++            !hasMidTier(resource.data.roles))
++        );
++    }
++  }
++}
+diff --git a/scripts/migrate-employer-teams.mjs b/scripts/migrate-employer-teams.mjs
+new file mode 100644
+index 0000000..60007cd
+--- /dev/null
++++ b/scripts/migrate-employer-teams.mjs
+@@ -0,0 +1,316 @@
++#!/usr/bin/env node
++/**
++ * Migration Script: Foundation for Employer Team Management
++ *
++ * Usage:
++ *   node scripts/migrate-employer-teams.mjs --dry-run
++ *   node scripts/migrate-employer-teams.mjs
++ *   node scripts/migrate-employer-teams.mjs --service-account=path/to/serviceAccountKey.json
++ *
++ * What it does (Idempotent - safe to run multiple times):
++ * 1. Backfills "employers" documents:
++ *    - Sets companyId = doc.id (if missing)
++ *    - Sets companyRole = "Owner" (if missing)
++ *    - Sets status = "active" (if missing)
++ * 2. Backfills "companies" collection:
++ *    - Creates companies/{companyId} copying ONLY public company-level fields:
++ *      (company, website, logo/profilePicture, description, industry, location, verified)
++ *    - Never copies personal fields (firstName, lastName, email, phone, dialCode, consent flags, banned, uid)
++ * 3. Backfills "jobs":
++ *    - Sets companyId = employerUid || doc.id (if missing)
++ *    - Sets employerUid = companyId
++ *    - Sets postedBy = employerUid (if missing)
++ *    - Sets applicants = 0 (if missing)
++ * 4. Backfills "projects":
++ *    - Sets companyId = employerUid || doc.id (if missing)
++ *    - Sets employerUid = companyId
++ *    - Sets postedBy = employerUid (if missing)
++ *    - Sets applicants = 0 (if missing)
++ * 5. Backfills "applications":
++ *    - Sets companyId = employerUid (if missing)
++ * 6. Backfills "conversations":
++ *    - Finds employer participant and backfills companyId and companyName (if missing)
++ */
++
++import { initializeApp, cert, getApps } from "firebase-admin/app";
++import { getFirestore } from "firebase-admin/firestore";
++import fs from "fs";
++import path from "path";
++
++const isDryRun = process.argv.includes("--dry-run");
++
++// Parse service account arg if provided
++const saArg = process.argv.find((arg) => arg.startsWith("--service-account="));
++const saPath = saArg ? saArg.split("=")[1] : null;
++
++function loadEnvLocal() {
++  const envPath = path.resolve(process.cwd(), ".env.local");
++  if (fs.existsSync(envPath)) {
++    const lines = fs.readFileSync(envPath, "utf-8").split("\n");
++    for (const line of lines) {
++      const trimmed = line.trim();
++      if (!trimmed || trimmed.startsWith("#")) continue;
++      const [key, ...vals] = trimmed.split("=");
++      if (key && !process.env[key]) {
++        process.env[key] = vals.join("=").replace(/^["']|["']$/g, "");
++      }
++    }
++  }
++}
++
++loadEnvLocal();
++
++function initAdmin() {
++  if (getApps().length) return getFirestore();
++
++  if (saPath && fs.existsSync(saPath)) {
++    const sa = JSON.parse(fs.readFileSync(saPath, "utf-8"));
++    initializeApp({ credential: cert(sa) });
++    return getFirestore();
++  }
++
++  if (
++    process.env.FIREBASE_ADMIN_PROJECT_ID &&
++    process.env.FIREBASE_ADMIN_CLIENT_EMAIL &&
++    process.env.FIREBASE_ADMIN_PRIVATE_KEY
++  ) {
++    const privateKey = Buffer.from(
++      process.env.FIREBASE_ADMIN_PRIVATE_KEY,
++      "base64",
++    ).toString("utf8");
++    initializeApp({
++      credential: cert({
++        projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
++        clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
++        privateKey,
++      }),
++    });
++    return getFirestore();
++  }
++
++  if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
++    initializeApp();
++    return getFirestore();
++  }
++
++  if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
++    initializeApp({ projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID });
++    return getFirestore();
++  }
++
++  throw new Error(
++    "Could not initialize firebase-admin. Please provide --service-account=path/to/key.json or set GOOGLE_APPLICATION_CREDENTIALS.",
++  );
++}
++
++async function runMigration() {
++  console.log(`\n========================================`);
++  console.log(` Starting Employer Teams Migration`);
++  console.log(` Mode: ${isDryRun ? "DRY RUN (No writes)" : "LIVE EXECUTION"}`);
++  console.log(`========================================\n`);
++
++  const db = initAdmin();
++
++  // 1. Migrate employers
++  console.log("==> Step 1: Scanning 'employers' collection...");
++  const employersSnap = await db.collection("employers").get();
++  let employersUpdated = 0;
++  const employerMap = new Map(); // uid -> data
++
++  for (const doc of employersSnap.docs) {
++    const data = doc.data();
++    employerMap.set(doc.id, { id: doc.id, ...data });
++
++    const updates = {};
++    if (!data.companyId) updates.companyId = doc.id;
++    if (!data.companyRole) updates.companyRole = "Owner";
++    if (!data.status) updates.status = "active";
++
++    if (Object.keys(updates).length > 0) {
++      employersUpdated++;
++      console.log(`  [employers/${doc.id}] Add: ${JSON.stringify(updates)}`);
++      if (!isDryRun) {
++        await doc.ref.set(updates, { merge: true });
++      }
++    }
++  }
++  console.log(
++    `  Scanned ${employersSnap.size} employers. ${employersUpdated} needed backfill.\n`,
++  );
++
++  // 2. Backfill companies
++  console.log("==> Step 2: Backfilling 'companies' collection...");
++  let companiesCreated = 0;
++  for (const [uid, emp] of employerMap.entries()) {
++    const companyId = emp.companyId || uid;
++    // Only create company doc for owners or primary companyId
++    if (emp.companyRole && emp.companyRole !== "Owner" && companyId !== uid) {
++      continue;
++    }
++
++    const companyDocRef = db.collection("companies").doc(companyId);
++    const existingCompSnap = await companyDocRef.get();
++
++    if (!existingCompSnap.exists) {
++      companiesCreated++;
++      // Copy ONLY public company-level fields
++      const companyPayload = {
++        company: emp.company || emp.companyName || "",
++        website: emp.website || "",
++        logo:
++          emp.profilePicture ||
++          emp.profilePhoto ||
++          emp.logo ||
++          emp.photoURL ||
++          "",
++        description: emp.description || "",
++        industry: emp.industry || "",
++        location: emp.location || "",
++        verified: Boolean(emp.verified),
++        createdAt: emp.createdAt || new Date().toISOString(),
++        updatedAt: new Date().toISOString(),
++      };
++
++      console.log(
++        `  [companies/${companyId}] Create: ${JSON.stringify(companyPayload)}`,
++      );
++      if (!isDryRun) {
++        await companyDocRef.set(companyPayload);
++      }
++    }
++  }
++  console.log(`  Created ${companiesCreated} missing company documents.\n`);
++
++  // 3. Migrate jobs
++  console.log("==> Step 3: Scanning 'jobs' collection...");
++  const jobsSnap = await db.collection("jobs").get();
++  let jobsUpdated = 0;
++
++  for (const doc of jobsSnap.docs) {
++    const data = doc.data();
++    const updates = {};
++
++    const targetCompanyId = data.companyId || data.employerUid || doc.id;
++    if (!data.companyId) updates.companyId = targetCompanyId;
++    if (data.employerUid !== targetCompanyId)
++      updates.employerUid = targetCompanyId;
++    if (!data.postedBy) updates.postedBy = data.employerUid || null;
++    if (data.applicants === undefined || data.applicants === null) {
++      updates.applicants = 0;
++    }
++
++    if (Object.keys(updates).length > 0) {
++      jobsUpdated++;
++      console.log(`  [jobs/${doc.id}] Add: ${JSON.stringify(updates)}`);
++      if (!isDryRun) {
++        await doc.ref.set(updates, { merge: true });
++      }
++    }
++  }
++  console.log(
++    `  Scanned ${jobsSnap.size} jobs. ${jobsUpdated} needed backfill.\n`,
++  );
++
++  // 4. Migrate projects
++  console.log("==> Step 4: Scanning 'projects' collection...");
++  const projectsSnap = await db.collection("projects").get();
++  let projectsUpdated = 0;
++
++  for (const doc of projectsSnap.docs) {
++    const data = doc.data();
++    const updates = {};
++
++    const targetCompanyId = data.companyId || data.employerUid || doc.id;
++    if (!data.companyId) updates.companyId = targetCompanyId;
++    if (data.employerUid !== targetCompanyId)
++      updates.employerUid = targetCompanyId;
++    if (!data.postedBy) updates.postedBy = data.employerUid || null;
++    if (data.applicants === undefined || data.applicants === null) {
++      updates.applicants = 0;
++    }
++
++    if (Object.keys(updates).length > 0) {
++      projectsUpdated++;
++      console.log(`  [projects/${doc.id}] Add: ${JSON.stringify(updates)}`);
++      if (!isDryRun) {
++        await doc.ref.set(updates, { merge: true });
++      }
++    }
++  }
++  console.log(
++    `  Scanned ${projectsSnap.size} projects. ${projectsUpdated} needed backfill.\n`,
++  );
++
++  // 5. Migrate applications
++  console.log("==> Step 5: Scanning 'applications' collection...");
++  const appsSnap = await db.collection("applications").get();
++  let appsUpdated = 0;
++
++  for (const doc of appsSnap.docs) {
++    const data = doc.data();
++    const updates = {};
++
++    if (!data.companyId && data.employerUid) {
++      updates.companyId = data.employerUid;
++    }
++
++    if (Object.keys(updates).length > 0) {
++      appsUpdated++;
++      console.log(`  [applications/${doc.id}] Add: ${JSON.stringify(updates)}`);
++      if (!isDryRun) {
++        await doc.ref.set(updates, { merge: true });
++      }
++    }
++  }
++  console.log(
++    `  Scanned ${appsSnap.size} applications. ${appsUpdated} needed backfill.\n`,
++  );
++
++  // 6. Migrate conversations
++  console.log("==> Step 6: Scanning 'conversations' collection...");
++  const convsSnap = await db.collection("conversations").get();
++  let convsUpdated = 0;
++
++  for (const doc of convsSnap.docs) {
++    const data = doc.data();
++    const participants = data.participants || [];
++    const updates = {};
++
++    if (!data.companyId || !data.companyName) {
++      // Find the participant that corresponds to an employer
++      for (const pUid of participants) {
++        const emp = employerMap.get(pUid);
++        if (emp) {
++          if (!data.companyId) updates.companyId = emp.companyId || pUid;
++          if (!data.companyName)
++            updates.companyName = emp.company || emp.companyName || "";
++          break;
++        }
++      }
++    }
++
++    if (Object.keys(updates).length > 0) {
++      convsUpdated++;
++      console.log(
++        `  [conversations/${doc.id}] Add: ${JSON.stringify(updates)}`,
++      );
++      if (!isDryRun) {
++        await doc.ref.set(updates, { merge: true });
++      }
++    }
++  }
++  console.log(
++    `  Scanned ${convsSnap.size} conversations. ${convsUpdated} needed backfill.\n`,
++  );
++
++  console.log(`========================================`);
++  console.log(
++    ` Migration Completed Successfully${isDryRun ? " (DRY RUN)" : ""}.`,
++  );
++  console.log(`========================================\n`);
++}
++
++runMigration().catch((err) => {
++  console.error("Migration failed:", err);
++  process.exit(1);
++});
+diff --git a/src/app/employer/dashboard/applicants/page.js b/src/app/employer/dashboard/applicants/page.js
+index 95ed92f..0c2017c 100644
+--- a/src/app/employer/dashboard/applicants/page.js
++++ b/src/app/employer/dashboard/applicants/page.js
+@@ -13,6 +13,7 @@ import {
+   serverTimestamp,
+ } from "firebase/firestore";
+ import { onAuthStateChanged } from "firebase/auth";
++import { canManageApplicants } from "@/lib/employerRoles";
+ import EmployerSidebar from "@/employerComponets/EmployerSidebar";
+ import DashboardNavbar from "@/employerComponets/DashboardNavbar";
+ import {
+@@ -108,6 +109,8 @@ export default function EmployerApplicantsPage() {
+     }
+   };
+ 
++  const [companyRole, setCompanyRole] = useState("Owner");
++
+   useEffect(() => {
+     const unsub = onAuthStateChanged(auth, async (user) => {
+       if (!user) {
+@@ -119,12 +122,15 @@ export default function EmployerApplicantsPage() {
+         router.replace("/employer/onboarding");
+         return;
+       }
++      const empData = empDoc.data() || {};
++      const companyId = empData.companyId || user.uid;
++      setCompanyRole(empData.companyRole || "Owner");
+       setChecking(false);
+       try {
+         const snap = await getDocs(
+           query(
+             collection(db, "applications"),
+-            where("employerUid", "==", user.uid),
++            where("employerUid", "==", companyId),
+           ),
+         );
+         let apps = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+@@ -157,6 +163,10 @@ export default function EmployerApplicantsPage() {
+   }, []);
+ 
+   const updateStatus = async (appId, status) => {
++    if (!canManageApplicants(companyRole)) {
++      alert("Viewers cannot change applicant status.");
++      return;
++    }
+     setUpdatingStatus(true);
+     try {
+       const timestampField =
+diff --git a/src/app/employer/dashboard/create-project/page.js b/src/app/employer/dashboard/create-project/page.js
+index 11712da..d8c3151 100644
+--- a/src/app/employer/dashboard/create-project/page.js
++++ b/src/app/employer/dashboard/create-project/page.js
+@@ -18,6 +18,7 @@ import {
+   getDocs,
+ } from "firebase/firestore";
+ import { onAuthStateChanged } from "firebase/auth";
++import { canPostJob, canEditJob } from "@/lib/employerRoles";
+ import EmployerSidebar from "@/employerComponets/EmployerSidebar";
+ import DashboardNavbar from "@/employerComponets/DashboardNavbar";
+ import { ChevronLeft, Check } from "lucide-react";
+@@ -190,6 +191,7 @@ function CreateProjectPageInner() {
+ 
+   const [checking, setChecking] = useState(true);
+   const [currentUser, setCurrentUser] = useState(null);
++  const [employerData, setEmployerData] = useState(null);
+   const [companySuggestions, setCompanySuggestions] = useState([]);
+   const [loading, setLoading] = useState(false);
+   const [success, setSuccess] = useState(false);
+@@ -281,13 +283,16 @@ function CreateProjectPageInner() {
+         router.replace("/employer/onboarding");
+         return;
+       }
++      const empData = empDoc.data();
++      setEmployerData(empData);
+       setCurrentUser(user);
+ 
+       try {
++        const companyId = empData?.companyId || user.uid;
+         const snap = await getDocs(
+           query(
+             collection(db, "projects"),
+-            where("employerUid", "==", user.uid),
++            where("employerUid", "==", companyId),
+           ),
+         );
+         const myProjects = snap.docs.map((d) => d.data());
+@@ -364,6 +369,15 @@ function CreateProjectPageInner() {
+       return;
+     }
+     setLoading(true);
++    const myRole = employerData?.companyRole || "Owner";
++    if (!canPostJob(myRole)) {
++      alert("Viewers cannot create or edit projects.");
++      setLoading(false);
++      return;
++    }
++
++    const companyId = employerData?.companyId || currentUser.uid;
++
+     try {
+       const payload = {
+         company: form.company.trim(),
+@@ -380,7 +394,9 @@ function CreateProjectPageInner() {
+         state: form.state,
+         urgent: form.urgent,
+         deadline: form.deadline || null,
+-        employerUid: currentUser.uid,
++        companyId,
++        employerUid: companyId,
++        postedBy: currentUser.uid,
+         employerEmail: currentUser.email,
+       };
+       if (editId) {
+diff --git a/src/app/employer/dashboard/empmessages/page.js b/src/app/employer/dashboard/empmessages/page.js
+index dfe158c..874db24 100644
+--- a/src/app/employer/dashboard/empmessages/page.js
++++ b/src/app/employer/dashboard/empmessages/page.js
+@@ -5,6 +5,7 @@ import EmployerSidebar from "@/employerComponets/EmployerSidebar";
+ import DashboardNavbar from "@/employerComponets/DashboardNavbar";
+ import {
+   listenToConversations,
++  listenToEmployerConversations,
+   listenToMessages,
+   sendMessage,
+   getOrCreateConversation,
+@@ -239,6 +240,7 @@ export default function EmployerMessagesPage() {
+           const snap = await getDoc(doc(db, "employers", user.uid));
+           if (snap.exists()) {
+             const d = snap.data();
++            const companyId = d.companyId || user.uid;
+             setCurrentUserData({
+               name:
+                 `${d.firstName || ""} ${d.lastName || ""}`.trim() ||
+@@ -254,24 +256,25 @@ export default function EmployerMessagesPage() {
+                 user.photoURL ||
+                 "",
+               company: d.company || d.companyName || "",
++              companyId,
+             });
++            setLoadingApplicants(true);
++            const applicants = await fetchEmployerApplicants(companyId);
++            if (applicants.length > 0) {
++              const enriched = await Promise.all(
++                applicants.map(async (a) => {
++                  if (a.name) return a;
++                  const info = await fetchApplicantInfo(a.uid);
++                  return { ...a, ...info };
++                }),
++              );
++              setAllApplicants(enriched);
++            } else {
++              setAllApplicants(applicants);
++            }
++            setLoadingApplicants(false);
+           }
+         } catch (e) {}
+-        setLoadingApplicants(true);
+-        const applicants = await fetchEmployerApplicants(user.uid);
+-        if (applicants.length > 0) {
+-          const enriched = await Promise.all(
+-            applicants.map(async (a) => {
+-              if (a.name) return a;
+-              const info = await fetchApplicantInfo(a.uid);
+-              return { ...a, ...info };
+-            }),
+-          );
+-          setAllApplicants(enriched);
+-        } else {
+-          setAllApplicants(applicants);
+-        }
+-        setLoadingApplicants(false);
+       }
+     });
+     return () => unsub();
+@@ -279,28 +282,34 @@ export default function EmployerMessagesPage() {
+ 
+   useEffect(() => {
+     if (!currentUser) return;
+-    const unsub = listenToConversations(currentUser.uid, async (convs) => {
+-      const employerConvs = convs.filter(
+-        (c) =>
+-          c.participantRoles?.[currentUser.uid] === "employer" ||
+-          !c.participantRoles,
+-      );
+-      setConversations(employerConvs);
+-      setLoading(false);
+-      const uidsToFetch = employerConvs
+-        .map((c) => c.participants.find((p) => p !== currentUser.uid))
+-        .filter((uid) => uid && !fetchedUids.current.has(uid));
+-      if (!uidsToFetch.length) return;
+-      uidsToFetch.forEach((uid) => fetchedUids.current.add(uid));
+-      const results = await Promise.all(
+-        uidsToFetch.map((uid) =>
+-          fetchApplicantInfo(uid).then((info) => [uid, info]),
+-        ),
+-      );
+-      setOtherUserData((prev) => ({ ...prev, ...Object.fromEntries(results) }));
+-    });
++    const companyId = currentUserData?.companyId || currentUser.uid;
++    const unsub = listenToEmployerConversations(
++      currentUser.uid,
++      companyId,
++      async (convs) => {
++        const employerConvs = convs.filter(
++          (c) =>
++            c.participantRoles?.[currentUser.uid] === "employer" ||
++            !c.participantRoles ||
++            c.companyId === companyId,
++        );
++        setConversations(employerConvs);
++        setLoading(false);
++        const uidsToFetch = employerConvs
++          .map((c) => c.participants?.find((p) => p !== currentUser.uid))
++          .filter((uid) => uid && !fetchedUids.current.has(uid));
++        if (!uidsToFetch.length) return;
++        uidsToFetch.forEach((uid) => fetchedUids.current.add(uid));
++        const results = await Promise.all(
++          uidsToFetch.map((uid) =>
++            fetchApplicantInfo(uid).then((info) => [uid, info]),
++          ),
++        );
++        setOtherUserData((prev) => ({ ...prev, ...Object.fromEntries(results) }));
++      },
++    );
+     return () => unsub();
+-  }, [currentUser]);
++  }, [currentUser, currentUserData?.companyId]);
+ 
+   useEffect(() => {
+     if (!selectedConv || !currentUser) return;
+@@ -376,11 +385,16 @@ export default function EmployerMessagesPage() {
+ 
+   const startConversation = async (applicant) => {
+     try {
++      const companyId = currentUserData?.companyId || currentUser.uid;
+       const convId = await getOrCreateConversation(
+         currentUser.uid,
+         "employer",
+         applicant.uid,
+         "applicant",
++        {
++          companyId,
++          companyName: currentUserData?.company || "",
++        },
+       );
+       setOtherUserData((prev) => ({
+         ...prev,
+diff --git a/src/app/employer/dashboard/projects/page.js b/src/app/employer/dashboard/projects/page.js
+index 0a11427..4ffdd72 100644
+--- a/src/app/employer/dashboard/projects/page.js
++++ b/src/app/employer/dashboard/projects/page.js
+@@ -10,7 +10,9 @@ import {
+   deleteDoc,
+   doc,
+   updateDoc,
++  getDoc,
+ } from "firebase/firestore";
++import { canDeleteJob } from "@/lib/employerRoles";
+ import {
+   Plus,
+   MapPin,
+@@ -51,15 +53,21 @@ export default function AllProjectsPage() {
+   const [loading, setLoading] = useState(true);
+   const [deleteConfirm, setDeleteConfirm] = useState(null);
+   const [deleting, setDeleting] = useState(false);
++  const [companyRole, setCompanyRole] = useState("Owner");
+ 
+   useEffect(() => {
+     const unsub = auth.onAuthStateChanged(async (user) => {
+       if (!user) return;
+       try {
++        const empSnap = await getDoc(doc(db, "employers", user.uid));
++        const empData = empSnap.exists() ? empSnap.data() : null;
++        const companyId = empData?.companyId || user.uid;
++        setCompanyRole(empData?.companyRole || "Owner");
++
+         const snap = await getDocs(
+           query(
+             collection(db, "projects"),
+-            where("employerUid", "==", user.uid),
++            where("employerUid", "==", companyId),
+           ),
+         );
+         const loaded = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+@@ -75,6 +83,11 @@ export default function AllProjectsPage() {
+ 
+   const handleDeleteConfirmed = async () => {
+     if (!deleteConfirm) return;
++    if (!canDeleteJob(companyRole)) {
++      alert("Only Owners and Admins have permission to delete projects.");
++      setDeleteConfirm(null);
++      return;
++    }
+     setDeleting(true);
+     try {
+       await deleteDoc(doc(db, "projects", deleteConfirm));
+diff --git a/src/app/employer/dashboard/shortlisted/page.js b/src/app/employer/dashboard/shortlisted/page.js
+index 7c79a18..8ea6921 100644
+--- a/src/app/employer/dashboard/shortlisted/page.js
++++ b/src/app/employer/dashboard/shortlisted/page.js
+@@ -13,6 +13,7 @@ import {
+   serverTimestamp,
+ } from "firebase/firestore";
+ import { onAuthStateChanged } from "firebase/auth";
++import { canManageApplicants } from "@/lib/employerRoles";
+ import EmployerSidebar from "@/employerComponets/EmployerSidebar";
+ import DashboardNavbar from "@/employerComponets/DashboardNavbar";
+ import {
+@@ -87,6 +88,8 @@ export default function EmployerShortlistedPage() {
+       setLoadingJobDetail(false);
+     }
+   };
++  const [companyRole, setCompanyRole] = useState("Owner");
++
+   useEffect(() => {
+     const unsub = onAuthStateChanged(auth, async (user) => {
+       if (!user) {
+@@ -98,12 +101,15 @@ export default function EmployerShortlistedPage() {
+         router.replace("/employer/onboarding");
+         return;
+       }
++      const empData = empDoc.data() || {};
++      const companyId = empData.companyId || user.uid;
++      setCompanyRole(empData.companyRole || "Owner");
+       setChecking(false);
+       try {
+         const snap = await getDocs(
+           query(
+             collection(db, "applications"),
+-            where("employerUid", "==", user.uid),
++            where("employerUid", "==", companyId),
+             where("status", "in", [
+               "Shortlisted",
+               "Interviewing",
+@@ -141,6 +147,10 @@ export default function EmployerShortlistedPage() {
+     return () => unsub();
+   }, []);
+   const updateStatus = async (appId, status) => {
++    if (!canManageApplicants(companyRole)) {
++      alert("Viewers cannot change applicant status.");
++      return;
++    }
+     setUpdatingStatus(true);
+     try {
+       const timestampField =
+diff --git a/src/app/employer/onboarding/page.js b/src/app/employer/onboarding/page.js
+index 37085ad..3dfa2f5 100644
+--- a/src/app/employer/onboarding/page.js
++++ b/src/app/employer/onboarding/page.js
+@@ -1,7 +1,7 @@
+ "use client";
+ import { useState, useEffect, useRef, Suspense } from "react";
+ import { useRouter, useSearchParams } from "next/navigation";
+-import { doc, getDoc, setDoc } from "firebase/firestore";
++import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+ import { db, auth } from "@/lib/firebase";
+ import EmpNavbar from "@/employerComponets/EmpNavbar";
+ import PolicyPanel from "@/components/Policypanel";
+@@ -286,20 +286,60 @@ function EmployerOnboardingInner() {
+     setError("");
+     setSubmitting(true);
+     try {
+-      await setDoc(doc(db, "employers", user.uid), {
+-        company: form.company,
+-        website,
+-        firstName: form.firstName,
+-        lastName: form.lastName,
+-        email: form.email,
+-        phone: form.phone,
+-        dialCode: form.dialCode,
+-        dataConsent: form.dataConsent,
+-        termsConsent: form.termsConsent,
+-        verified: false,
+-        createdAt: new Date().toISOString(),
+-        uid: user.uid,
+-      });
++      if (isSwitchMode) {
++        await updateDoc(doc(db, "employers", user.uid), {
++          company: form.company,
++          website,
++          firstName: form.firstName,
++          lastName: form.lastName,
++          email: form.email,
++          phone: form.phone,
++          dialCode: form.dialCode,
++          dataConsent: form.dataConsent,
++          termsConsent: form.termsConsent,
++          updatedAt: new Date().toISOString(),
++        });
++
++        const empSnap = await getDoc(doc(db, "employers", user.uid));
++        const companyId = empSnap.data()?.companyId || user.uid;
++        await setDoc(
++          doc(db, "companies", companyId),
++          {
++            company: form.company,
++            website,
++            updatedAt: new Date().toISOString(),
++          },
++          { merge: true },
++        );
++      } else {
++        // Sequential writes: employers first, then companies
++        await setDoc(doc(db, "employers", user.uid), {
++          company: form.company,
++          website,
++          firstName: form.firstName,
++          lastName: form.lastName,
++          email: form.email,
++          phone: form.phone,
++          dialCode: form.dialCode,
++          dataConsent: form.dataConsent,
++          termsConsent: form.termsConsent,
++          verified: false,
++          banned: false,
++          companyId: user.uid,
++          companyRole: "Owner",
++          status: "active",
++          createdAt: new Date().toISOString(),
++          uid: user.uid,
++        });
++
++        await setDoc(doc(db, "companies", user.uid), {
++          company: form.company,
++          website,
++          verified: false,
++          createdAt: new Date().toISOString(),
++          updatedAt: new Date().toISOString(),
++        });
++      }
+       sessionStorage.removeItem("empLoggedOut");
+       router.replace("/employer/dashboard");
+     } catch (err) {
+diff --git a/src/dashboardComponents/DashNavbar.jsx b/src/dashboardComponents/DashNavbar.jsx
+index 42b763d..e9c5f8b 100644
+--- a/src/dashboardComponents/DashNavbar.jsx
++++ b/src/dashboardComponents/DashNavbar.jsx
+@@ -182,15 +182,17 @@ export default function DashNavbar() {
+             if (!otherUid) return null;
+             if (!senderCache.current[otherUid]) {
+               try {
+-                const empSnap = await getDoc(doc(db, "employers", otherUid));
+-                if (empSnap.exists()) {
+-                  const d = empSnap.data();
++                if (c.companyName || c.companyId) {
++                  let compName = c.companyName || "";
++                  if (!compName && c.companyId) {
++                    try {
++                      const compSnap = await getDoc(doc(db, "companies", c.companyId));
++                      if (compSnap.exists()) compName = compSnap.data()?.company || "";
++                    } catch {}
++                  }
+                   senderCache.current[otherUid] = {
+-                    name:
+-                      `${d.firstName || ""} ${d.lastName || ""}`.trim() ||
+-                      d.companyName ||
+-                      "Employer",
+-                    company: d.company || d.companyName || "",
++                    name: compName || "Employer",
++                    company: compName || "",
+                   };
+                 } else {
+                   const userSnap = await getDoc(doc(db, "users", otherUid));
+@@ -199,12 +201,23 @@ export default function DashNavbar() {
+                     senderCache.current[otherUid] = {
+                       name:
+                         `${d.firstName || ""} ${d.lastName || ""}`.trim() ||
++                        d.name ||
+                         "User",
+                       company: "",
+                     };
++                  } else {
++                    senderCache.current[otherUid] = {
++                      name: "Employer",
++                      company: "",
++                    };
+                   }
+                 }
+-              } catch (e) {}
++              } catch (e) {
++                senderCache.current[otherUid] = {
++                  name: "Employer",
++                  company: "",
++                };
++              }
+             }
+             const sender = senderCache.current[otherUid] || {};
+             return {
+diff --git a/src/employerComponets/Createjob.jsx b/src/employerComponets/Createjob.jsx
+index 83fd3ea..f83bc98 100644
+--- a/src/employerComponets/Createjob.jsx
++++ b/src/employerComponets/Createjob.jsx
+@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
+ import { useRouter } from "next/navigation";
+ import { auth, db } from "@/lib/firebase";
+ import { collection, addDoc, updateDoc, doc, getDoc } from "firebase/firestore";
++import { canPostJob, canEditJob } from "@/lib/employerRoles";
+ import {
+   ChevronRight,
+   ChevronLeft,
+@@ -1216,11 +1217,17 @@ export default function CreateJob({ draftId }) {
+     return () => unsubscribe();
+   }, []);
+ 
++  const [existingJob, setExistingJob] = useState(null);
++
+   useEffect(() => {
+     if (!draftId) return;
+     const load = async () => {
+       const snap = await getDoc(doc(db, "jobs", draftId));
+-      if (snap.exists()) setForm((prev) => ({ ...prev, ...snap.data() }));
++      if (snap.exists()) {
++        const d = snap.data();
++        setExistingJob({ id: snap.id, ...d });
++        setForm((prev) => ({ ...prev, ...d }));
++      }
+     };
+     load();
+   }, [draftId]);
+@@ -1233,12 +1240,24 @@ export default function CreateJob({ draftId }) {
+   const saveDraft = async (formData, silent = false) => {
+     const user = auth.currentUser;
+     if (!user) return;
++    const myRole = employerData?.companyRole || "Owner";
++    if (!canPostJob(myRole)) {
++      if (!silent) setError("Viewers cannot create or edit jobs.");
++      return;
++    }
++    if (existingJob && !canEditJob(myRole, existingJob, user.uid)) {
++      if (!silent) setError("You only have permission to edit jobs that you posted.");
++      return;
++    }
+     if (!silent) setSaving(true);
+     try {
++      const companyId = employerData?.companyId || user.uid;
+       const payload = {
+         ...formData,
+         status: "Draft",
+-        employerUid: user.uid,
++        companyId,
++        employerUid: companyId,
++        postedBy: existingJob?.postedBy || user.uid,
+         updatedAt: new Date().toISOString(),
+         location:
+           formData.workType === "Remote"
+@@ -1302,12 +1321,24 @@ export default function CreateJob({ draftId }) {
+     }
+     const user = auth.currentUser;
+     if (!user) return;
++    const myRole = employerData?.companyRole || "Owner";
++    if (!canPostJob(myRole)) {
++      setError("Viewers cannot create or publish jobs.");
++      return;
++    }
++    if (existingJob && !canEditJob(myRole, existingJob, user.uid)) {
++      setError("You only have permission to edit jobs that you posted.");
++      return;
++    }
+     setPublishing(true);
+     try {
++      const companyId = employerData?.companyId || user.uid;
+       const payload = {
+         ...form,
+         status: "Open",
+-        employerUid: user.uid,
++        companyId,
++        employerUid: companyId,
++        postedBy: existingJob?.postedBy || user.uid,
+         updatedAt: new Date().toISOString(),
+         publishedAt: new Date().toISOString(),
+         location:
+diff --git a/src/employerComponets/DashboardNavbar.jsx b/src/employerComponets/DashboardNavbar.jsx
+index 7bd47dd..55a86b4 100644
+--- a/src/employerComponets/DashboardNavbar.jsx
++++ b/src/employerComponets/DashboardNavbar.jsx
+@@ -3,14 +3,8 @@ import { useState, useEffect, useRef } from "react";
+ import { useRouter } from "next/navigation";
+ import { Bell, MessageSquare, HelpCircle, User, X } from "lucide-react";
+ import { auth, db } from "@/lib/firebase";
+-import {
+-  collection,
+-  query,
+-  where,
+-  onSnapshot,
+-  doc,
+-  getDoc,
+-} from "firebase/firestore";
++import { doc, getDoc } from "firebase/firestore";
++import { listenToEmployerConversations } from "@/lib/messaging";
+ import HelpPanel from "@/employerComponets/HelpPanel";
+ 
+ const BORDER = "1.5px solid #cbd5e1";
+@@ -136,6 +130,79 @@ export default function DashboardNavbar() {
+ 
+   useEffect(() => {
+     let unsubConvs = null;
++    let cancelled = false;
++
++    // Starts the conversations listener for this user + company.
++    const startListener = (user, companyId) => {
++      if (cancelled) return;
++      if (unsubConvs) {
++        unsubConvs();
++        unsubConvs = null;
++      }
++
++      unsubConvs = listenToEmployerConversations(
++        user.uid,
++        companyId,
++        async (convs) => {
++          const employerConvs = convs.filter(
++            (c) =>
++              c.participantRoles?.[user.uid] === "employer" ||
++              !c.participantRoles ||
++              c.companyId === companyId,
++          );
++
++          const unreadConvs = employerConvs.filter(
++            (c) => (c.unreadCount?.[user.uid] || 0) > 0,
++          );
++
++          const notifs = await Promise.all(
++            unreadConvs.map(async (c) => {
++              // The sender is the applicant: the participant who is not
++              // an employer. For teammates, "not me" alone could be the owner.
++              const otherUid =
++                c.participants?.find(
++                  (p) =>
++                    p !== user.uid && c.participantRoles?.[p] !== "employer",
++                ) || c.participants?.find((p) => p !== user.uid);
++              if (!otherUid) return null;
++
++              if (!senderCache.current[otherUid]) {
++                try {
++                  const userSnap = await getDoc(doc(db, "users", otherUid));
++                  if (userSnap.exists()) {
++                    const d = userSnap.data();
++                    senderCache.current[otherUid] = {
++                      name:
++                        `${d.firstName || ""} ${d.lastName || ""}`.trim() ||
++                        d.name ||
++                        "Applicant",
++                    };
++                  }
++                } catch (e) { }
++              }
++
++              const sender = senderCache.current[otherUid] || {};
++              return {
++                convId: c.id,
++                senderName: sender.name || "Applicant",
++                lastMessage: c.lastMessage || "",
++                lastMessageAt: c.lastMessageAt,
++                unread: c.unreadCount?.[user.uid] || 0,
++              };
++            }),
++          );
++
++          const validNotifs = notifs.filter(Boolean).sort((a, b) => {
++            const aTime = a.lastMessageAt?.toDate?.() || new Date(0);
++            const bTime = b.lastMessageAt?.toDate?.() || new Date(0);
++            return bTime - aTime;
++          });
++
++          setMsgNotifs(validNotifs);
++          setTotalUnread(validNotifs.reduce((s, n) => s + n.unread, 0));
++        },
++      );
++    };
+ 
+     const unsub = auth.onAuthStateChanged((user) => {
+       if (unsubConvs) {
+@@ -149,67 +216,24 @@ export default function DashboardNavbar() {
+         return;
+       }
+ 
+-      const q = query(
+-        collection(db, "conversations"),
+-        where("participants", "array-contains", user.uid),
+-      );
+-
+-      unsubConvs = onSnapshot(q, async (snap) => {
+-        const convs = snap.docs
+-          .map((d) => ({ id: d.id, ...d.data() }))
+-          .filter(
+-            (c) =>
+-              c.participantRoles?.[user.uid] === "employer" ||
+-              !c.participantRoles,
+-          );
+-
+-        const unreadConvs = convs.filter(
+-          (c) => (c.unreadCount?.[user.uid] || 0) > 0,
+-        );
+-
+-        const notifs = await Promise.all(
+-          unreadConvs.map(async (c) => {
+-            const otherUid = c.participants?.find((p) => p !== user.uid);
+-            if (!otherUid) return null;
+-
+-            if (!senderCache.current[otherUid]) {
+-              try {
+-                const userSnap = await getDoc(doc(db, "users", otherUid));
+-                if (userSnap.exists()) {
+-                  const d = userSnap.data();
+-                  senderCache.current[otherUid] = {
+-                    name:
+-                      `${d.firstName || ""} ${d.lastName || ""}`.trim() ||
+-                      d.name ||
+-                      "Applicant",
+-                  };
+-                }
+-              } catch (e) {}
+-            }
+-
+-            const sender = senderCache.current[otherUid] || {};
+-            return {
+-              convId: c.id,
+-              senderName: sender.name || "Applicant",
+-              lastMessage: c.lastMessage || "",
+-              lastMessageAt: c.lastMessageAt,
+-              unread: c.unreadCount?.[user.uid] || 0,
+-            };
+-          }),
+-        );
+-
+-        const validNotifs = notifs.filter(Boolean).sort((a, b) => {
+-          const aTime = a.lastMessageAt?.toDate?.() || new Date(0);
+-          const bTime = b.lastMessageAt?.toDate?.() || new Date(0);
+-          return bTime - aTime;
+-        });
+-
+-        setMsgNotifs(validNotifs);
+-        setTotalUnread(validNotifs.reduce((s, n) => s + n.unread, 0));
+-      });
++      // Find which company this user belongs to. If the lookup fails or the
++      // doc has no companyId (not migrated yet), fall back to their own uid
++      // so the inbox still works.
++      getDoc(doc(db, "employers", user.uid))
++        .then((empSnap) =>
++          empSnap.exists()
++            ? empSnap.data()?.companyId || user.uid
++            : user.uid,
++        )
++        .catch((err) => {
++          console.error("Could not load employer profile:", err);
++          return user.uid;
++        })
++        .then((companyId) => startListener(user, companyId));
+     });
+ 
+     return () => {
++      cancelled = true;
+       if (unsubConvs) unsubConvs();
+       unsub();
+     };
+@@ -429,4 +453,4 @@ export default function DashboardNavbar() {
+       />
+     </>
+   );
+-}
++}
+\ No newline at end of file
+diff --git a/src/employerComponets/EmployerSidebar.jsx b/src/employerComponets/EmployerSidebar.jsx
+index 9feb5e3..42a76ab 100644
+--- a/src/employerComponets/EmployerSidebar.jsx
++++ b/src/employerComponets/EmployerSidebar.jsx
+@@ -3,8 +3,9 @@ import { useState, useEffect } from "react";
+ import Link from "next/link";
+ import { usePathname, useRouter } from "next/navigation";
+ import { auth, db } from "@/lib/firebase";
+-import { doc, getDoc, updateDoc } from "firebase/firestore";
++import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
+ import LogoEmp from "@/images/logoemp.png";
++import { canEditCompany, ROLE_BADGE_STYLE } from "@/lib/employerRoles";
+ import {
+   PlusCircle,
+   Briefcase,
+@@ -94,9 +95,18 @@ export default function EmployerSidebar() {
+     setSaving(true);
+     try {
+       const user = auth.currentUser;
++      const compId = employerData?.companyId || user.uid;
+       await updateDoc(doc(db, "employers", user.uid), {
+         company: newCompany.trim(),
+       });
++      await setDoc(
++        doc(db, "companies", compId),
++        {
++          company: newCompany.trim(),
++          updatedAt: new Date().toISOString(),
++        },
++        { merge: true },
++      );
+       setEmployerData((prev) => ({ ...prev, company: newCompany.trim() }));
+       setEditingCompany(false);
+     } catch (err) {
+@@ -123,18 +133,33 @@ export default function EmployerSidebar() {
+         pathname.startsWith(href + "/") ||
+         pathname.startsWith(href + "?");
+ 
++  const myRole = employerData?.companyRole || "Owner";
++  const canEdit = canEditCompany(myRole);
++
+   const ProfileCard = () => (
+     <div className="px-4 py-4 border-b border-white/25">
+       <div className="flex items-center gap-3 mb-3">
+         <div className="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center shrink-0">
+           <User size={16} strokeWidth={2.5} className="text-white" />
+         </div>
+-        <div className="min-w-0">
+-          <p className="text-sm font-semibold text-white truncate">
+-            {employerData
+-              ? `${employerData.firstName} ${employerData.lastName}`
+-              : "Loading..."}
+-          </p>
++        <div className="min-w-0 flex-1">
++          <div className="flex items-center gap-1.5">
++            <p className="text-sm font-semibold text-white truncate">
++              {employerData
++                ? `${employerData.firstName} ${employerData.lastName}`
++                : "Loading..."}
++            </p>
++            {employerData?.companyRole && (
++              <span
++                className={`text-[10px] font-bold px-1.5 py-0.5 rounded border shrink-0 ${
++                  ROLE_BADGE_STYLE[employerData.companyRole] ||
++                  ROLE_BADGE_STYLE.Viewer
++                }`}
++              >
++                {employerData.companyRole}
++              </span>
++            )}
++          </div>
+           <p className="text-xs text-white/40 truncate">
+             {employerData?.email || ""}
+           </p>
+@@ -178,12 +203,14 @@ export default function EmployerSidebar() {
+             <span className="text-sm font-semibold text-white truncate">
+               {employerData?.company || "—"}
+             </span>
+-            <button
+-              onClick={() => setEditingCompany(true)}
+-              className="flex items-center justify-center w-6 h-6 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors shrink-0"
+-            >
+-              <Pencil size={12} />
+-            </button>
++            {canEdit && (
++              <button
++                onClick={() => setEditingCompany(true)}
++                className="flex items-center justify-center w-6 h-6 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors shrink-0"
++              >
++                <Pencil size={12} />
++              </button>
++            )}
+           </div>
+         )}
+       </div>
+diff --git a/src/employerComponets/PostedJobs.jsx b/src/employerComponets/PostedJobs.jsx
+index 4c120ef..a591573 100644
+--- a/src/employerComponets/PostedJobs.jsx
++++ b/src/employerComponets/PostedJobs.jsx
+@@ -10,7 +10,13 @@ import {
+   deleteDoc,
+   doc,
+   updateDoc,
++  getDoc,
+ } from "firebase/firestore";
++import {
++  canEditJob,
++  canDeleteJob,
++  canUpdateJobStatus,
++} from "@/lib/employerRoles";
+ import {
+   Plus,
+   MapPin,
+@@ -234,14 +240,22 @@ export default function PostedJobs() {
+   const [statusDropdown, setStatusDropdown] = useState(null);
+   const [selectedJob, setSelectedJob] = useState(null);
+   const [sheetJob, setSheetJob] = useState(null);
++  const [currentUser, setCurrentUser] = useState(null);
++  const [companyRole, setCompanyRole] = useState("Owner");
+ 
+   useEffect(() => {
+     const unsubscribe = auth.onAuthStateChanged(async (user) => {
+       if (!user) return;
++      setCurrentUser(user);
+       try {
++        const empSnap = await getDoc(doc(db, "employers", user.uid));
++        const empData = empSnap.exists() ? empSnap.data() : null;
++        const companyId = empData?.companyId || user.uid;
++        setCompanyRole(empData?.companyRole || "Owner");
++
+         const q = query(
+           collection(db, "jobs"),
+-          where("employerUid", "==", user.uid),
++          where("employerUid", "==", companyId),
+         );
+         const snap = await getDocs(q);
+         const today = new Date().toISOString().split("T")[0];
+@@ -287,6 +301,11 @@ export default function PostedJobs() {
+ 
+   const handleDeleteConfirmed = async () => {
+     if (!deleteConfirm) return;
++    if (!canDeleteJob(companyRole)) {
++      alert("Only Owners and Admins have permission to delete jobs.");
++      setDeleteConfirm(null);
++      return;
++    }
+     setDeleting(true);
+     try {
+       await deleteDoc(doc(db, "jobs", deleteConfirm));
+@@ -302,6 +321,12 @@ export default function PostedJobs() {
+   };
+ 
+   const handleStatusChange = async (jobId, newStatus) => {
++    const targetJob = jobs.find((j) => j.id === jobId);
++    if (!canUpdateJobStatus(companyRole, targetJob, currentUser?.uid)) {
++      alert("You only have permission to change status for jobs you posted.");
++      setStatusDropdown(null);
++      return;
++    }
+     try {
+       await updateDoc(doc(db, "jobs", jobId), {
+         status: newStatus,
+diff --git a/src/lib/employerRoles.js b/src/lib/employerRoles.js
+new file mode 100644
+index 0000000..fd6d380
+--- /dev/null
++++ b/src/lib/employerRoles.js
+@@ -0,0 +1,56 @@
++export const EMPLOYER_ROLES = ["Owner", "Admin", "Recruiter", "Viewer"];
++
++export const ROLE_BADGE_STYLE = {
++  Owner: "bg-indigo-50 text-indigo-700 border-indigo-200",
++  Admin: "bg-purple-50 text-purple-700 border-purple-200",
++  Recruiter: "bg-blue-50 text-blue-700 border-blue-200",
++  Viewer: "bg-slate-100 text-slate-600 border-slate-200",
++};
++
++export const isOwner = (role) => role === "Owner";
++export const isAdmin = (role) => role === "Admin";
++export const isRecruiter = (role) => role === "Recruiter";
++export const isViewer = (role) => role === "Viewer";
++
++export const canManageTeam = (role) => ["Owner", "Admin"].includes(role);
++
++export const canEditCompany = (role) => ["Owner", "Admin"].includes(role);
++
++export const canPostJob = (role) =>
++  ["Owner", "Admin", "Recruiter"].includes(role);
++
++export const canEditJob = (role, job, currentUid) => {
++  if (["Owner", "Admin"].includes(role)) return true;
++  if (role === "Recruiter") {
++    // Recruiters can edit if they posted it, or if legacy doc has no postedBy
++    return !job?.postedBy || job.postedBy === currentUid;
++  }
++  return false;
++};
++
++export const canDeleteJob = (role) => ["Owner", "Admin"].includes(role);
++
++export const canUpdateJobStatus = (role, job, currentUid) => {
++  if (["Owner", "Admin"].includes(role)) return true;
++  if (role === "Recruiter") {
++    return !job?.postedBy || job.postedBy === currentUid;
++  }
++  return false;
++};
++
++// Recruiters may still update applications for all company jobs
++export const canManageApplicants = (role) =>
++  ["Owner", "Admin", "Recruiter"].includes(role);
++
++export const canViewCompanyData = (role) =>
++  ["Owner", "Admin", "Recruiter", "Viewer"].includes(role);
++
++export const assignableCompanyRoles = (actorRole) => {
++  if (actorRole === "Owner") {
++    return ["Admin", "Recruiter", "Viewer"];
++  }
++  if (actorRole === "Admin") {
++    return ["Recruiter", "Viewer"];
++  }
++  return [];
++};
+diff --git a/src/lib/messaging.js b/src/lib/messaging.js
+index cb01e60..d613350 100644
+--- a/src/lib/messaging.js
++++ b/src/lib/messaging.js
+@@ -1,36 +1,81 @@
+ import { db, auth } from "./firebase";
+ import {
+-  collection, doc, addDoc, updateDoc, onSnapshot,
+-  query, orderBy, serverTimestamp, getDocs,
+-  where, getDoc
++  collection,
++  doc,
++  addDoc,
++  updateDoc,
++  onSnapshot,
++  query,
++  orderBy,
++  serverTimestamp,
++  getDocs,
++  where,
++  getDoc,
+ } from "firebase/firestore";
+ import { createNotification } from "./notifications";
+ 
+-export async function getOrCreateConversation(myUid, myRole, otherUid, otherRole) {
++export async function getOrCreateConversation(
++  myUid,
++  myRole,
++  otherUid,
++  otherRole,
++  options = {},
++) {
++  const companyId = options.companyId || null;
++  const companyName = options.companyName || "";
++
++  // Check if existing conversation matches participants
+   const q = query(
+     collection(db, "conversations"),
+-    where("participants", "array-contains", myUid)
++    where("participants", "array-contains", myUid),
+   );
+   const snap = await getDocs(q);
+   const existing = snap.docs.find((d) =>
+-    d.data().participants.includes(otherUid)
++    d.data().participants?.includes(otherUid),
+   );
+-  if (existing) return existing.id;
++  if (existing) {
++    // If companyId is missing on existing, patch it if we have it
++    if (companyId && !existing.data().companyId) {
++      updateDoc(existing.ref, { companyId, companyName }).catch(() => {});
++    }
++    return existing.id;
++  }
++
++  // Also check if company already has a conversation with this applicant
++  if (companyId) {
++    try {
++      const compQ = query(
++        collection(db, "conversations"),
++        where("companyId", "==", companyId),
++      );
++      const compSnap = await getDocs(compQ);
++      const compExisting = compSnap.docs.find((d) =>
++        d.data().participants?.includes(otherUid),
++      );
++      if (compExisting) return compExisting.id;
++    } catch (e) {
++      // Ignore if index / query not ready
++    }
++  }
+ 
+-  const ref = await addDoc(collection(db, "conversations"), {
++  const payload = {
+     participants: [myUid, otherUid],
+     participantRoles: { [myUid]: myRole, [otherUid]: otherRole },
+     lastMessage: "",
+     lastMessageAt: serverTimestamp(),
+     unreadCount: { [myUid]: 0, [otherUid]: 0 },
+-  });
++  };
++  if (companyId) payload.companyId = companyId;
++  if (companyName) payload.companyName = companyName;
++
++  const ref = await addDoc(collection(db, "conversations"), payload);
+   return ref.id;
+ }
+ 
+ export function listenToMessages(conversationId, onData) {
+   const q = query(
+     collection(db, "conversations", conversationId, "messages"),
+-    orderBy("createdAt", "asc")
++    orderBy("createdAt", "asc"),
+   );
+   return onSnapshot(q, (snap) => {
+     onData(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+@@ -47,27 +92,32 @@ export async function sendMessage(conversationId, text, recipientUid) {
+       text,
+       createdAt: serverTimestamp(),
+       read: false,
+-    }
++    },
+   );
+ 
+   const convRef = doc(db, "conversations", conversationId);
+   const convSnap = await getDoc(convRef);
+-  const unread = convSnap.data()?.unreadCount || {};
++  const convData = convSnap.data() || {};
++  const unread = convData.unreadCount || {};
+   await updateDoc(convRef, {
+     lastMessage: text,
+     lastMessageAt: serverTimestamp(),
+     unreadCount: { ...unread, [recipientUid]: (unread[recipientUid] || 0) + 1 },
+   });
+ 
+-  let senderName = "Someone";
+-  const userDoc = await getDoc(doc(db, "users", myUid));
+-  if (userDoc.exists()) {
+-    senderName = `${userDoc.data().firstName} ${userDoc.data().lastName}`;
+-  } else {
+-    const empDoc = await getDoc(doc(db, "employers", myUid));
+-    if (empDoc.exists()) {
+-      senderName = `${empDoc.data().firstName} ${empDoc.data().lastName}`;
++  let senderName = convData.companyName || "Someone";
++  try {
++    const userDoc = await getDoc(doc(db, "users", myUid));
++    if (userDoc.exists()) {
++      const d = userDoc.data();
++      senderName =
++        `${d.firstName || ""} ${d.lastName || ""}`.trim() ||
++        d.name ||
++        convData.companyName ||
++        "Someone";
+     }
++  } catch (e) {
++    // Graceful fallback without crashing
+   }
+ 
+   await createNotification(recipientUid, {
+@@ -82,13 +132,81 @@ export function listenToConversations(uid, onData) {
+   const q = query(
+     collection(db, "conversations"),
+     where("participants", "array-contains", uid),
+-    orderBy("lastMessageAt", "desc")
++    orderBy("lastMessageAt", "desc"),
+   );
+   return onSnapshot(q, (snap) => {
+     onData(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+   });
+ }
+ 
++/**
++ * Merges two listeners for employer inbox:
++ * 1. participants array-contains uid
++ * 2. companyId == companyId
++ * De-duplicated by conversation id.
++ */
++export function listenToEmployerConversations(uid, companyId, onData) {
++  let convsByUid = [];
++  let convsByCompany = [];
++
++  const mergeAndEmit = () => {
++    const map = new Map();
++    for (const c of convsByCompany) map.set(c.id, c);
++    for (const c of convsByUid) map.set(c.id, c);
++    const list = Array.from(map.values()).sort((a, b) => {
++      const tA =
++        a.lastMessageAt?.toMillis?.() ||
++        new Date(a.lastMessageAt || 0).getTime();
++      const tB =
++        b.lastMessageAt?.toMillis?.() ||
++        new Date(b.lastMessageAt || 0).getTime();
++      return tB - tA;
++    });
++    onData(list);
++  };
++
++  const q1 = query(
++    collection(db, "conversations"),
++    where("participants", "array-contains", uid),
++    orderBy("lastMessageAt", "desc"),
++  );
++  const unsub1 = onSnapshot(
++    q1,
++    (snap) => {
++      convsByUid = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
++      mergeAndEmit();
++    },
++    (err) => {
++      console.error("listenToEmployerConversations q1 error:", err);
++    },
++  );
++
++  let unsub2 = () => {};
++  if (companyId) {
++    const q2 = query(
++      collection(db, "conversations"),
++      where("companyId", "==", companyId),
++      orderBy("lastMessageAt", "desc"),
++    );
++    unsub2 = onSnapshot(
++      q2,
++      (snap) => {
++        convsByCompany = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
++        mergeAndEmit();
++      },
++      (err) => {
++        // Query may fail before index or if collection is empty
++        console.warn("listenToEmployerConversations q2 fallback:", err?.message);
++      },
++    );
++  }
++
++  return () => {
++    unsub1();
++    unsub2();
++  };
++}
++
+ export async function markConversationRead(conversationId, uid) {
+   try {
+     const convRef = doc(db, "conversations", conversationId);
