@@ -286,8 +286,13 @@ function EmployerOnboardingInner() {
     setError("");
     setSubmitting(true);
     try {
-      if (isSwitchMode) {
-        await updateDoc(doc(db, "employers", user.uid), {
+      const empRef = doc(db, "employers", user.uid);
+      const existing = await getDoc(empRef);
+
+      if (existing.exists()) {
+        // Profile already exists: update only the profile fields.
+        // companyId, companyRole and status are locked by the rules.
+        await updateDoc(empRef, {
           company: form.company,
           website,
           firstName: form.firstName,
@@ -300,20 +305,24 @@ function EmployerOnboardingInner() {
           updatedAt: new Date().toISOString(),
         });
 
-        const empSnap = await getDoc(doc(db, "employers", user.uid));
-        const companyId = empSnap.data()?.companyId || user.uid;
-        await setDoc(
-          doc(db, "companies", companyId),
-          {
-            company: form.company,
-            website,
-            updatedAt: new Date().toISOString(),
-          },
-          { merge: true },
-        );
+        const data = existing.data();
+        const companyId = data?.companyId || user.uid;
+        const role = data?.companyRole || "Owner";
+        if (role === "Owner" || role === "Admin") {
+          await setDoc(
+            doc(db, "companies", companyId),
+            {
+              company: form.company,
+              website,
+              updatedAt: new Date().toISOString(),
+            },
+            { merge: true },
+          );
+        }
       } else {
-        // Sequential writes: employers first, then companies
-        await setDoc(doc(db, "employers", user.uid), {
+        // Brand-new employer. Two writes in this order, because the
+        // companies rule looks up the employer document.
+        await setDoc(empRef, {
           company: form.company,
           website,
           firstName: form.firstName,
@@ -478,10 +487,9 @@ function EmployerOnboardingInner() {
                     required
                     readOnly={prefilled && !isSwitchMode}
                     className={`w-full px-4 py-3 rounded-lg border text-sm text-gray-800 outline-none transition-all
-                      ${
-                        prefilled && !isSwitchMode
-                          ? "bg-gray-50 border-gray-200 text-gray-600 cursor-default"
-                          : "border-gray-300 focus:ring-2 focus:ring-[#004aac] focus:border-[#004aac]"
+                      ${prefilled && !isSwitchMode
+                        ? "bg-gray-50 border-gray-200 text-gray-600 cursor-default"
+                        : "border-gray-300 focus:ring-2 focus:ring-[#004aac] focus:border-[#004aac]"
                       }`}
                   />
                   {prefilled && !isSwitchMode && (
@@ -512,10 +520,9 @@ function EmployerOnboardingInner() {
                     required
                     readOnly={prefilled && !isSwitchMode}
                     className={`w-full px-4 py-3 rounded-lg border text-sm text-gray-800 outline-none transition-all
-                      ${
-                        prefilled && !isSwitchMode
-                          ? "bg-gray-50 border-gray-200 text-gray-600 cursor-default"
-                          : "border-gray-300 focus:ring-2 focus:ring-[#004aac] focus:border-[#004aac]"
+                      ${prefilled && !isSwitchMode
+                        ? "bg-gray-50 border-gray-200 text-gray-600 cursor-default"
+                        : "border-gray-300 focus:ring-2 focus:ring-[#004aac] focus:border-[#004aac]"
                       }`}
                   />
                   {prefilled && !isSwitchMode && (
@@ -548,10 +555,9 @@ function EmployerOnboardingInner() {
                   required
                   readOnly={prefilled && !isSwitchMode}
                   className={`w-full px-4 py-3 rounded-lg border text-sm text-gray-800 outline-none transition-all
-                    ${
-                      prefilled && !isSwitchMode
-                        ? "bg-gray-50 border-gray-200 text-gray-600 cursor-default"
-                        : "border-gray-300 focus:ring-2 focus:ring-[#004aac] focus:border-[#004aac]"
+                    ${prefilled && !isSwitchMode
+                      ? "bg-gray-50 border-gray-200 text-gray-600 cursor-default"
+                      : "border-gray-300 focus:ring-2 focus:ring-[#004aac] focus:border-[#004aac]"
                     }`}
                 />
                 {prefilled && !isSwitchMode && (
@@ -592,10 +598,9 @@ function EmployerOnboardingInner() {
                   setForm((f) => ({ ...f, dataConsent: !f.dataConsent }))
                 }
                 className={`mt-0.5 w-5 h-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors cursor-pointer
-                  ${
-                    form.dataConsent
-                      ? "bg-[#004aac] border-[#004aac]"
-                      : "border-gray-400 bg-white"
+                  ${form.dataConsent
+                    ? "bg-[#004aac] border-[#004aac]"
+                    : "border-gray-400 bg-white"
                   }`}
               >
                 {form.dataConsent && (
@@ -625,10 +630,9 @@ function EmployerOnboardingInner() {
                   setForm((f) => ({ ...f, termsConsent: !f.termsConsent }))
                 }
                 className={`mt-0.5 w-5 h-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors cursor-pointer
-                  ${
-                    form.termsConsent
-                      ? "bg-[#004aac] border-[#004aac]"
-                      : "border-gray-400 bg-white"
+                  ${form.termsConsent
+                    ? "bg-[#004aac] border-[#004aac]"
+                    : "border-gray-400 bg-white"
                   }`}
               >
                 {form.termsConsent && (
@@ -678,10 +682,9 @@ function EmployerOnboardingInner() {
               type="submit"
               disabled={!form.termsConsent || submitting}
               className={`w-full py-3.5 rounded-lg text-sm font-semibold transition-all mt-2
-                ${
-                  form.termsConsent && !submitting
-                    ? "bg-[#004aac] hover:bg-[#003b8a] text-white shadow-sm hover:shadow-md"
-                    : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                ${form.termsConsent && !submitting
+                  ? "bg-[#004aac] hover:bg-[#003b8a] text-white shadow-sm hover:shadow-md"
+                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
                 }`}
             >
               {submitting ? "Saving…" : "Continue"}
