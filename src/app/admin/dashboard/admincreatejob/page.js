@@ -41,7 +41,7 @@ import AdminSidebar, {
 
 const ADMIN_COMPANY = "Jobs Abroad";
 
-const PLATFORM_EMPLOYER_UID = "yQJi0KNN9EVOkzJNntMtUnV";
+const PLATFORM_EMPLOYER_UID = "platform";
 
 const STEPS = [
   { id: 1, label: "Context", icon: Globe },
