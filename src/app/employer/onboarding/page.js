@@ -197,7 +197,7 @@ function EmployerOnboardingInner() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [existingVerified, setExistingVerified] = useState(false);
-  const [activePolicyPanel, setActivePolicyPanel] = useState(null); // null | "privacy" | "terms"
+  const [activePolicyPanel, setActivePolicyPanel] = useState(null);
   const [form, setForm] = useState({
     company: "",
     website: "",
@@ -290,8 +290,6 @@ function EmployerOnboardingInner() {
       const existing = await getDoc(empRef);
 
       if (existing.exists()) {
-        // Profile already exists: update only the profile fields.
-        // companyId, companyRole and status are locked by the rules.
         await updateDoc(empRef, {
           company: form.company,
           website,
@@ -320,8 +318,6 @@ function EmployerOnboardingInner() {
           );
         }
       } else {
-        // Brand-new employer. Two writes in this order, because the
-        // companies rule looks up the employer document.
         await setDoc(empRef, {
           company: form.company,
           website,
@@ -420,7 +416,7 @@ function EmployerOnboardingInner() {
           </div>
 
           <a
-            href="/jobs"
+            href="/dashboard/jobs"
             className="inline-flex items-center gap-1.5 mt-4 mb-7 text-[#004aac] text-sm font-semibold hover:underline group"
           >
             I'm looking for a job
