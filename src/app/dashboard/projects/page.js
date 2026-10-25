@@ -275,6 +275,7 @@ function ApplicantProjectsPageInner() {
             projectId: p.id,
             projectTitle: p.title,
             employerUid: p.employerUid || null,
+            companyId: p.companyId || p.employerUid || null,
             applicantUid: user?.uid || null,
             applicantName: formData.fullName,
             applicantEmail: formData.email,
@@ -290,14 +291,17 @@ function ApplicantProjectsPageInner() {
         ),
       );
 
-      await Promise.all(
-        selectedProjects.map((p) =>
-          updateDoc(doc(db, "projects", p.id), {
-            applicants: increment(1),
-          }),
-        ),
-      );
-
+      try {
+        await Promise.all(
+          selectedProjects.map((p) =>
+            updateDoc(doc(db, "projects", p.id), {
+              applicants: increment(1),
+            }),
+          ),
+        );
+      } catch (e) {
+        console.error("Applicant counter failed:", e);
+      }
       await fetch("https://formspree.io/f/your-form-id", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -413,11 +417,10 @@ function ApplicantProjectsPageInner() {
                 <select
                   value={filters[key]}
                   onChange={(e) => setF(key, e.target.value)}
-                  className={`appearance-none border border-slate-200 rounded-xl px-3 py-1.5 pr-7 bg-slate-50 outline-none cursor-pointer w-full md:w-auto ${
-                    key === "company"
+                  className={`appearance-none border border-slate-200 rounded-xl px-3 py-1.5 pr-7 bg-slate-50 outline-none cursor-pointer w-full md:w-auto ${key === "company"
                       ? "text-sm font-black text-slate-900 md:min-w-32.5"
                       : "text-xs font-bold text-slate-700 md:min-w-27.5"
-                  }`}
+                    }`}
                 >
                   {options.map((o) => (
                     <option key={o}>{o}</option>

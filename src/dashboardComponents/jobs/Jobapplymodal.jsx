@@ -126,6 +126,7 @@ export default function JobApplyModal({ job, onClose, onApplied }) {
         jobTitle: job.title,
         companyName: job.companyName || "",
         employerUid: job.employerUid || "",
+        companyId: job.companyId || job.employerUid || "",
         applicantUid: user.uid,
         applicantName: editName || profile?.name || "",
         applicantEmail: editEmail || profile?.email || user.email || "",
@@ -139,10 +140,13 @@ export default function JobApplyModal({ job, onClose, onApplied }) {
         appliedAt: new Date(),
       });
 
-      await updateDoc(doc(db, "jobs", job.id), {
-        applicants: increment(1),
-      });
-
+      try {
+        await updateDoc(doc(db, "jobs", job.id), {
+          applicants: increment(1),
+        });
+      } catch (e) {
+        console.error("Applicant counter failed:", e);
+      }
       setApplied(true);
       setTimeout(() => {
         onApplied?.();
