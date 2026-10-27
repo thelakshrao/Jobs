@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import DetailSectionsView from "@/components/jobs/DetailSectionsView";
 import { auth, db } from "@/lib/firebase";
 import {
   collection,
@@ -107,7 +108,7 @@ const getInfoFields = (job, salary) => {
     { label: "Department", value: job.department || "—", icon: Building2 },
     { label: "Industry", value: job.industry || "—", icon: TrendingUp },
     { label: "Urgency", value: job.urgency || "—", icon: Zap },
-    { label: "Target Country", value: job.targetCountry || "—", icon: Globe },
+    { label: "Country", value: job.targetCountry || "—", icon: Globe },
     { label: "Language", value: job.language || "—", icon: Languages },
     { label: "Compensation", value: salary, icon: DollarSign },
     {
@@ -1108,26 +1109,7 @@ export default function PostedJobs() {
                             </div>
                           </div>
                         )}
-                        {job.description && (
-                          <div className="mb-5">
-                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
-                              Description
-                            </h4>
-                            <p className="text-sm text-slate-700 leading-relaxed font-medium whitespace-pre-line">
-                              {job.description}
-                            </p>
-                          </div>
-                        )}
-                        {job.requirements && (
-                          <div className="mb-5">
-                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
-                              Requirements
-                            </h4>
-                            <p className="text-sm text-slate-700 leading-relaxed font-medium whitespace-pre-line">
-                              {job.requirements}
-                            </p>
-                          </div>
-                        )}
+                        <DetailSectionsView job={job} variant="posted" />
                       </div>
                     </>
                   );
@@ -1242,26 +1224,7 @@ export default function PostedJobs() {
                     </div>
                   </div>
                 )}
-                {sheetJob.description && (
-                  <div className="mb-5">
-                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
-                      Description
-                    </h4>
-                    <p className="text-sm text-slate-700 leading-relaxed font-medium whitespace-pre-line">
-                      {sheetJob.description}
-                    </p>
-                  </div>
-                )}
-                {sheetJob.requirements && (
-                  <div className="mb-5">
-                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
-                      Requirements
-                    </h4>
-                    <p className="text-sm text-slate-700 leading-relaxed font-medium whitespace-pre-line">
-                      {sheetJob.requirements}
-                    </p>
-                  </div>
-                )}
+                <DetailSectionsView job={sheetJob} variant="posted" />
                 <div className="flex gap-2 pt-2">
                   {sheetJob.status === "Draft" ? (
                     <Link

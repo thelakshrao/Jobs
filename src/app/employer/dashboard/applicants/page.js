@@ -16,6 +16,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { canManageApplicants } from "@/lib/employerRoles";
 import EmployerSidebar from "@/employerComponets/EmployerSidebar";
 import DashboardNavbar from "@/employerComponets/DashboardNavbar";
+import DetailSectionsView from "@/components/jobs/DetailSectionsView";
 import {
   User,
   MapPin,
@@ -849,7 +850,7 @@ export default function EmployerApplicantsPage() {
                     },
                     {
                       icon: <Globe size={13} />,
-                      label: "Target Market",
+                      label: "Country",
                       value: jobDetail.targetCountry,
                     },
                     {
@@ -938,26 +939,7 @@ export default function EmployerApplicantsPage() {
                     </div>
                   </div>
                 )}
-                {jobDetail.description && (
-                  <div className="px-6 pb-5">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                      Description
-                    </p>
-                    <p className="text-sm font-medium text-slate-700 whitespace-pre-wrap leading-relaxed">
-                      {jobDetail.description}
-                    </p>
-                  </div>
-                )}
-                {jobDetail.requirements && (
-                  <div className="px-6 pb-6">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                      Requirements
-                    </p>
-                    <p className="text-sm font-medium text-slate-700 whitespace-pre-wrap leading-relaxed">
-                      {jobDetail.requirements}
-                    </p>
-                  </div>
-                )}
+                <DetailSectionsView job={jobDetail} variant="drawer" />
               </>
             ) : null}
           </div>

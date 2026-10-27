@@ -16,6 +16,7 @@ import { auth, db } from "@/lib/firebase";
 import { doc, setDoc, deleteDoc } from "firebase/firestore";
 import JobApplyModal from "@/dashboardComponents/jobs/Jobapplymodal";
 import { CURRENCIES } from "@/app/employer/dashboard/create-job/constants";
+import DetailSectionsView from "@/components/jobs/DetailSectionsView";
 
 const BLUE = "#004aac";
 const BLUE_HOVER = "#003a8c";
@@ -232,38 +233,7 @@ export default function JobDetail({ job, isSaved, onSaveToggle }) {
           </div>
         )}
 
-        {job.description && (
-          <div className="mb-6">
-            <h2 className="text-base font-bold text-slate-900 mb-3">
-              Full job description
-            </h2>
-            <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
-              {job.description}
-            </p>
-          </div>
-        )}
-
-        {job.requirements && (
-          <div className="mb-6">
-            <h2 className="text-base font-bold text-slate-900 mb-3">
-              Requirements
-            </h2>
-            <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
-              {job.requirements}
-            </p>
-          </div>
-        )}
-
-        {job.benefits && (
-          <div className="mb-6">
-            <h2 className="text-base font-bold text-slate-900 mb-3">
-              Benefits
-            </h2>
-            <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
-              {job.benefits}
-            </p>
-          </div>
-        )}
+        <DetailSectionsView job={job} variant="detail" />
 
         <div className="pt-4 border-t border-slate-100">
           <ApplyButton fullWidth />

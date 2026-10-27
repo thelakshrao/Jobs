@@ -34,6 +34,12 @@ import {
   CURRENCIES,
   ALL_PERKS,
 } from "@/app/employer/dashboard/create-job/constants";
+import DetailSectionsEditor from "@/components/jobs/DetailSectionsEditor";
+import {
+  legacyToSections,
+  buildPlainDescription,
+  validateSections,
+} from "@/lib/jobSections";
 import AdminSidebar, {
   getStoredSidebarCollapsed,
   TOGGLE_EVENT,
@@ -77,6 +83,7 @@ const INITIAL_FORM = {
   fixedSalary: "",
   hourlyRate: "",
   perks: [],
+  detailSections: legacyToSections({}),
   description: "",
   requirements: "",
   benefits: "",
@@ -87,6 +94,12 @@ const INITIAL_FORM = {
   referralContactName: "",
   referralContactPhone: "",
 };
+
+const createInitialForm = (overrides = {}) => ({
+  ...INITIAL_FORM,
+  detailSections: legacyToSections({}),
+  ...overrides,
+});
 
 function cls(...args) {
   return args.filter(Boolean).join(" ");
@@ -662,13 +675,16 @@ function Step1({ form, setForm, adminData }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
-          <Label required>Target Country</Label>
+          <Label required>Country</Label>
           <SearchableSelect
             options={COUNTRIES}
             value={form.targetCountry}
             onChange={update("targetCountry")}
             placeholder="Select country..."
           />
+          <p className="text-xs text-slate-500 mt-1.5">
+            The country of the office you are hiring for. Example: if your company has offices in Canada and India and this role is for the India office, choose India.
+          </p>
         </div>
         <div>
           <Label required>Job Posting Language</Label>
@@ -800,8 +816,7 @@ function Step2({ form, setForm }) {
         <div className="space-y-4">
           {!form.targetCountry && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs font-semibold text-amber-700">
-              Please select a Target Country in Step 1 to load states and
-              cities.
+              Please select a Country in Step 1 to load states and cities.
             </div>
           )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -1154,9 +1169,25 @@ function Step4({ form, setForm }) {
   );
 }
 
-function Step5({ form, setForm, adminData }) {
-  const update = (key) => (e) =>
-    setForm((f) => ({ ...f, [key]: e.target.value }));
+function Step5({
+  form,
+  setForm,
+  adminData,
+  sectionErrors,
+  setSectionErrors,
+}) {
+  const sections =
+    Array.isArray(form.detailSections) && form.detailSections.length > 0
+      ? form.detailSections
+      : legacyToSections(form);
+
+  const handleSectionsChange = (newSections) => {
+    setForm((f) => ({ ...f, detailSections: newSections }));
+    if (sectionErrors?.length > 0 && setSectionErrors) {
+      setSectionErrors([]);
+    }
+  };
+
   const location =
     form.workType === "Remote"
       ? "Remote"
@@ -1181,51 +1212,6 @@ function Step5({ form, setForm, adminData }) {
     return "—";
   })();
 
-  const insertFormatting = (fieldKey, currentValue, type) => {
-    const lines = currentValue ? currentValue.split("\n") : [];
-    let newText = currentValue || "";
-    if (type === "numbered") {
-      const nextNum = lines.filter((l) => /^\d+\./.test(l)).length + 1;
-      newText = currentValue ? currentValue + `\n${nextNum}. ` : `${nextNum}. `;
-    } else if (type === "bullet") {
-      newText = currentValue ? currentValue + "\n• " : "• ";
-    } else if (type === "newline") {
-      newText = currentValue ? currentValue + "\n" : "\n";
-    }
-    setForm((f) => ({ ...f, [fieldKey]: newText }));
-  };
-
-  function FormattingToolbar({ fieldKey, value }) {
-    return (
-      <div className="flex items-center gap-1.5 mb-1.5">
-        <button
-          type="button"
-          onClick={() => insertFormatting(fieldKey, value, "numbered")}
-          className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-200 transition-colors"
-        >
-          1. Numbered
-        </button>
-        <button
-          type="button"
-          onClick={() => insertFormatting(fieldKey, value, "bullet")}
-          className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-200 transition-colors"
-        >
-          • Bullet
-        </button>
-        <button
-          type="button"
-          onClick={() => insertFormatting(fieldKey, value, "newline")}
-          className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-200 transition-colors"
-        >
-          ↵ New Line
-        </button>
-        <span className="text-xs text-slate-400 ml-auto">
-          {value ? value.split("\n").length : 0} lines
-        </span>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <div>
@@ -1233,48 +1219,27 @@ function Step5({ form, setForm, adminData }) {
           Role Definition & Review
         </h2>
         <p className="text-sm text-slate-500 mt-1">
-          Write the job description and review everything before publishing.
+          Write the job details and review everything before publishing.
         </p>
       </div>
 
-      <div>
-        <Label required>Job Description</Label>
-        <FormattingToolbar fieldKey="description" value={form.description} />
-        <textarea
-          rows={8}
-          placeholder={`Describe the role, responsibilities, and what a typical day looks like…\n\nExample:\n1. Lead the frontend development team\n2. Collaborate with designers\n• Work in an agile environment`}
-          value={form.description}
-          onChange={update("description")}
-          className="w-full px-4 py-3 text-sm text-slate-900 bg-white border border-slate-200 rounded-xl placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#003882]/40 focus:border-transparent transition-all font-mono leading-relaxed"
-          style={{ resize: "vertical", minHeight: "180px" }}
-        />
-      </div>
+      <DetailSectionsEditor
+        sections={sections}
+        onChange={handleSectionsChange}
+      />
 
-      <div>
-        <Label required>Requirements</Label>
-        <FormattingToolbar fieldKey="requirements" value={form.requirements} />
-        <textarea
-          rows={7}
-          placeholder={`List required skills, qualifications, and experience…\n\nExample:\n1. 3+ years of React experience\n2. Strong communication skills\n• Bachelor's degree in CS or related field`}
-          value={form.requirements}
-          onChange={update("requirements")}
-          className="w-full px-4 py-3 text-sm text-slate-900 bg-white border border-slate-200 rounded-xl placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#003882]/40 focus:border-transparent transition-all font-mono leading-relaxed"
-          style={{ resize: "vertical", minHeight: "160px" }}
-        />
-      </div>
-
-      <div>
-        <Label>Benefits</Label>
-        <FormattingToolbar fieldKey="benefits" value={form.benefits} />
-        <textarea
-          rows={5}
-          placeholder={`List the benefits you offer…\n\nExample:\n• Health insurance\n• Flexible working hours\n1. Annual performance bonus`}
-          value={form.benefits || ""}
-          onChange={(e) => setForm((f) => ({ ...f, benefits: e.target.value }))}
-          className="w-full px-4 py-3 text-sm text-slate-900 bg-white border border-slate-200 rounded-xl placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#003882]/40 focus:border-transparent transition-all font-mono leading-relaxed"
-          style={{ resize: "vertical", minHeight: "120px" }}
-        />
-      </div>
+      {sectionErrors && sectionErrors.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-1.5">
+          <p className="text-xs font-bold text-red-700">
+            Please correct the following section issues:
+          </p>
+          <ul className="list-disc list-inside text-xs text-red-600 space-y-1">
+            {sectionErrors.map((err, i) => (
+              <li key={i}>{err}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
         <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
@@ -1313,7 +1278,7 @@ function Step5({ form, setForm, adminData }) {
             ["Job Start Date", form.jobStartDate || "—"],
             ["Application Deadline", form.applicationDeadline || "—"],
             ["Compensation", salary],
-            ["Target Market", form.targetCountry || "—"],
+            ["Country", form.targetCountry || "—"],
           ].map(([label, val]) => (
             <div key={label}>
               <span className="text-slate-400 text-xs font-semibold">
@@ -1340,38 +1305,28 @@ function Step5({ form, setForm, adminData }) {
           </div>
         )}
 
-        {form.description && (
-          <div>
-            <span className="text-slate-400 text-xs font-semibold">
-              Description Preview
-            </span>
-            <p className="text-slate-700 text-xs mt-1 whitespace-pre-line leading-relaxed line-clamp-4">
-              {form.description}
-            </p>
-          </div>
-        )}
-
-        {form.requirements && (
-          <div>
-            <span className="text-slate-400 text-xs font-semibold">
-              Requirements Preview
-            </span>
-            <p className="text-slate-700 text-xs mt-1 whitespace-pre-line leading-relaxed line-clamp-4">
-              {form.requirements}
-            </p>
-          </div>
-        )}
-
-        {form.benefits && (
-          <div>
-            <span className="text-slate-400 text-xs font-semibold">
-              Benefits Preview
-            </span>
-            <p className="text-slate-700 text-xs mt-1 whitespace-pre-line leading-relaxed line-clamp-4">
-              {form.benefits}
-            </p>
-          </div>
-        )}
+        {Array.isArray(sections) &&
+          sections.some((s) => s.title?.trim() || s.body?.trim()) && (
+            <div className="space-y-3 pt-3 border-t border-slate-200">
+              <span className="text-slate-400 text-xs font-semibold">
+                Detail Sections Preview
+              </span>
+              {sections
+                .filter((s) => s.title?.trim() || s.body?.trim())
+                .map((s, idx) => (
+                  <div key={s.id || idx}>
+                    <p className="text-xs font-bold text-slate-800">
+                      {s.title || `Section ${idx + 1}`}
+                    </p>
+                    {s.body && (
+                      <p className="text-slate-700 text-xs mt-0.5 whitespace-pre-line leading-relaxed line-clamp-4">
+                        {s.body}
+                      </p>
+                    )}
+                  </div>
+                ))}
+            </div>
+          )}
       </div>
     </div>
   );
@@ -1382,12 +1337,16 @@ function CreateJobPageInner() {
   const searchParams = useSearchParams();
   const draftId = searchParams.get("draftId");
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState(INITIAL_FORM);
+  const [form, setForm] = useState(() => ({
+    ...INITIAL_FORM,
+    detailSections: legacyToSections({}),
+  }));
   const [currentDraftId, setCurrentDraftId] = useState(draftId || null);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
   const [error, setError] = useState("");
+  const [sectionErrors, setSectionErrors] = useState([]);
   const [showLeaveWarning, setShowLeaveWarning] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [adminData, setAdminData] = useState(null);
@@ -1419,7 +1378,18 @@ function CreateJobPageInner() {
     if (!draftId) return;
     const load = async () => {
       const snap = await getDoc(doc(db, "jobs", draftId));
-      if (snap.exists()) setForm((prev) => ({ ...prev, ...snap.data() }));
+      if (snap.exists()) {
+        const d = snap.data();
+        const sections =
+          Array.isArray(d.detailSections) && d.detailSections.length > 0
+            ? d.detailSections
+            : legacyToSections(d);
+        setForm((prev) => ({
+          ...prev,
+          ...d,
+          detailSections: sections,
+        }));
+      }
     };
     load();
   }, [draftId]);
@@ -1434,8 +1404,17 @@ function CreateJobPageInner() {
     if (!user) return;
     if (!silent) setSaving(true);
     try {
+      const sections =
+        Array.isArray(formData.detailSections) &&
+        formData.detailSections.length > 0
+          ? formData.detailSections
+          : legacyToSections(formData);
       const payload = {
         ...formData,
+        detailSections: sections,
+        description: buildPlainDescription(sections),
+        requirements: "",
+        benefits: "",
         status: "Draft",
         employerUid:
           formData.postingMode === "own" ? PLATFORM_EMPLOYER_UID : null,
@@ -1474,6 +1453,7 @@ function CreateJobPageInner() {
 
   const handleNext = async () => {
     setError("");
+    setSectionErrors([]);
     if (step === 1 && (!form.targetCountry.trim() || !form.industry)) {
       setError("Please fill in all required fields.");
       return;
@@ -1500,9 +1480,17 @@ function CreateJobPageInner() {
       setError("Job title is required.");
       return;
     }
-    if (step === 5 && (!form.description.trim() || !form.requirements.trim())) {
-      setError("Job description and requirements are required.");
-      return;
+    if (step === 5) {
+      const sections =
+        Array.isArray(form.detailSections) && form.detailSections.length > 0
+          ? form.detailSections
+          : legacyToSections(form);
+      const errors = validateSections(sections);
+      if (errors.length > 0) {
+        setSectionErrors(errors);
+        setError("Please complete and fix all required detail sections.");
+        return;
+      }
     }
     await saveDraft(form, true);
     setStep((s) => Math.min(s + 1, 5));
@@ -1510,14 +1498,23 @@ function CreateJobPageInner() {
   };
 
   const handleBack = () => {
+    setError("");
+    setSectionErrors([]);
     setStep((s) => Math.max(s - 1, 1));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handlePublish = async () => {
     setError("");
-    if (!form.description.trim() || !form.requirements.trim()) {
-      setError("Please complete the job description and requirements.");
+    setSectionErrors([]);
+    const sections =
+      Array.isArray(form.detailSections) && form.detailSections.length > 0
+        ? form.detailSections
+        : legacyToSections(form);
+    const errors = validateSections(sections);
+    if (errors.length > 0) {
+      setSectionErrors(errors);
+      setError("Please complete and fix all required detail sections.");
       return;
     }
     const user = auth.currentUser;
@@ -1526,6 +1523,10 @@ function CreateJobPageInner() {
     try {
       const payload = {
         ...form,
+        detailSections: sections,
+        description: buildPlainDescription(sections),
+        requirements: "",
+        benefits: "",
         status: "Open",
         employerUid: form.postingMode === "own" ? PLATFORM_EMPLOYER_UID : null,
         postedByAdmin: true,
@@ -1557,7 +1558,13 @@ function CreateJobPageInner() {
     }
   };
 
-  const stepProps = { form, setForm: updateForm, adminData };
+  const stepProps = {
+    form,
+    setForm: updateForm,
+    adminData,
+    sectionErrors,
+    setSectionErrors,
+  };
 
   return (
     <>
