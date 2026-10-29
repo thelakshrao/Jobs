@@ -1,5 +1,5 @@
 "use client";
-import { Bookmark, BookmarkCheck, ThumbsDown, MapPin } from "lucide-react";
+import { Bookmark, BookmarkCheck, MapPin } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { doc, setDoc, deleteDoc } from "firebase/firestore";
 import { CURRENCIES } from "@/app/employer/dashboard/create-job/constants";
@@ -143,12 +143,6 @@ export default function JobCard({
             ) : (
               <Bookmark size={16} className="text-slate-400" />
             )}
-          </button>
-          <button
-            onClick={(e) => e.stopPropagation()}
-            className="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
-          >
-            <ThumbsDown size={16} className="text-slate-400" />
           </button>
         </div>
       </div>

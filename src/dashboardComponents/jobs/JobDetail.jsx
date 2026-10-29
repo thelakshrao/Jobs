@@ -9,7 +9,8 @@ import {
   Bookmark,
   BookmarkCheck,
   Share2,
-  ThumbsDown,
+  Link2,
+  Check,
   ExternalLink,
 } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
@@ -41,6 +42,7 @@ function formatSalary(job) {
 export default function JobDetail({ job, isSaved, onSaveToggle }) {
   const [applied, setApplied] = useState(false);
   const [showApplyModal, setShowApplyModal] = useState(false);
+  const [copied, setCopied] = useState(false);
   const salary = formatSalary(job);
   const location = [job.location, job.targetCountry].filter(Boolean).join(", ");
 
@@ -61,6 +63,45 @@ export default function JobDetail({ job, isSaved, onSaveToggle }) {
       });
     }
     onSaveToggle(job.id);
+  };
+
+  // The link people receive. NEXT_PUBLIC_SITE_URL is your real website address
+  // (for example https://yourdomain.com). If it is not set, the address of the
+  // page you are on is used, which on your own computer is http://localhost:3000
+  // and only works on that computer.
+  const jobLink = () => {
+    const base = (
+      process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
+    ).replace(/\/$/, "");
+    return `${base}/dashboard/jobs?jobId=${job.id}`;
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(jobLink());
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (e) {
+      window.prompt("Copy this link:", jobLink());
+    }
+  };
+
+  const handleShare = async () => {
+    const data = {
+      title: `${job.title}${job.companyName ? ` at ${job.companyName}` : ""}`,
+      text: "Check out this job on Jobs Abroad",
+      url: jobLink(),
+    };
+    if (navigator.share) {
+      try {
+        await navigator.share(data);
+      } catch (e) {
+        // Closing the share sheet is not an error
+        if (e?.name !== "AbortError") handleCopyLink();
+      }
+    } else {
+      handleCopyLink();
+    }
   };
 
   const detailFields = [
@@ -161,13 +202,20 @@ export default function JobDetail({ job, isSaved, onSaveToggle }) {
               <Bookmark size={17} className="text-slate-400" />
             )}
           </button>
-          <button className="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer">
-            <ThumbsDown size={17} className="text-slate-400" />
+          <button
+            onClick={handleCopyLink}
+            title="Copy link"
+            className="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
+          >
+            {copied ? (
+              <Check size={17} className="text-green-600" />
+            ) : (
+              <Link2 size={17} className="text-slate-400" />
+            )}
           </button>
           <button
-            onClick={() =>
-              navigator.share?.({ title: job.title, url: window.location.href })
-            }
+            onClick={handleShare}
+            title="Share"
             className="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
           >
             <Share2 size={17} className="text-slate-400" />
