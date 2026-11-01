@@ -73,7 +73,7 @@ const PolicyPanel = ({ content, onClose }) => {
                 {section.heading}
               </h3>
               <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
-                {section.body}
+                <Linkify text={section.body} />
               </p>
             </div>
           ))}
@@ -96,3 +96,20 @@ const PolicyPanel = ({ content, onClose }) => {
 };
 
 export default PolicyPanel;
+function Linkify({ text }) {
+  const emailRe = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/;
+  const parts = String(text).split(new RegExp(`(${emailRe.source})`, "g"));
+  return parts.map((part, i) =>
+    emailRe.test(part) ? (
+      <a
+        key={i}
+        href={`mailto:${part}`}
+        className="underline font-medium hover:opacity-80"
+      >
+        {part}
+      </a>
+    ) : (
+      part
+    ),
+  );
+}

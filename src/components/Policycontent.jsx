@@ -37,7 +37,7 @@ const policyContent = {
       },
       {
         heading: "8. Contact Us",
-        body: "If you have any questions, concerns, or requests regarding this Privacy Policy or your personal data, please contact us at:\n\nEmail: support@thejobsabroad.com",
+        body: "If you have any questions, concerns, or requests regarding this Privacy Policy or your personal data, please contact us at:\n\nEmail: info@thejobsabroad.com",
       },
     ],
   },
@@ -100,7 +100,7 @@ const policyContent = {
       },
       {
         heading: "13. Contact Us",
-        body: "If you have any questions or concerns about these Terms of Service, please contact us at:\n\nEmail: support@thejobsabroad.com",
+        body: "If you have any questions or concerns about these Terms of Service, please contact us at:\n\nEmail: info@thejobsabroad.com",
       },
     ],
   },
@@ -151,7 +151,7 @@ const policyContent = {
       },
       {
         heading: "5. Contact Us",
-        body: "For any questions regarding payments, subscriptions, or refunds, please contact us at:\n\nEmail: support@thejobsabroad.com",
+        body: "For any questions regarding payments, subscriptions, or refunds, please contact us at:\n\nEmail: info@thejobsabroad.com",
       },
     ],
   },
@@ -182,7 +182,7 @@ const policyContent = {
       },
       {
         heading: "Contact",
-        body: "Questions about cookies? Email us at support@thejobsabroad.com.",
+        body: "Questions about cookies? Email us at info@thejobsabroad.com.",
       },
     ],
   },

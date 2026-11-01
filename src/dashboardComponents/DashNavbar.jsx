@@ -31,6 +31,7 @@ import {
   IoHelpCircleOutline,
 } from "react-icons/io5";
 import HelpPanel from "@/employerComponets/HelpPanel";
+import useNewRecommendedJobs from "@/dashboardComponents/useNewRecommendedJobs";
 const navItems = [
   { href: "/dashboard", icon: IoHomeOutline, label: "Home" },
   { href: "/dashboard/profile", icon: IoPersonCircleOutline, label: "Profile" },
@@ -47,6 +48,11 @@ const navItems = [
     label: "Alerts",
   },
   { href: "/dashboard/messages", icon: IoChatbubbleOutline, label: "Messages" },
+];
+// Options shown when you hover the Jobs icon (desktop sidebar)
+const jobsMenu = [
+  { href: "/dashboard/jobs", label: "Jobs" },
+  { href: "/dashboard/jobs/recommended", label: "Recommended jobs" },
 ];
 function timeAgo(ts) {
   if (!ts) return "";
@@ -148,6 +154,10 @@ export default function DashNavbar() {
   const [msgNotifs, setMsgNotifs] = useState([]);
   const [totalUnread, setTotalUnread] = useState(0);
   const [helpOpen, setHelpOpen] = useState(false);
+  // Hides the Jobs hover menu right after a click, until the mouse leaves
+  const [jobsMenuHidden, setJobsMenuHidden] = useState(false);
+  // Number of recommended jobs the person has not seen yet
+  const newRecCount = useNewRecommendedJobs(pathname);
   const senderCache = useRef({});
   useEffect(() => {
     let unsubConvs = null;
@@ -188,7 +198,7 @@ export default function DashNavbar() {
                     try {
                       const compSnap = await getDoc(doc(db, "companies", c.companyId));
                       if (compSnap.exists()) compName = compSnap.data()?.company || "";
-                    } catch {}
+                    } catch { }
                   }
                   senderCache.current[otherUid] = {
                     name: compName || "Employer",
@@ -289,9 +299,16 @@ export default function DashNavbar() {
         <nav className="flex flex-col items-center gap-3 flex-1">
           {navItems.map(({ href, icon: Icon, label }) => {
             const isAlerts = label === "Alerts";
-            const active = isActive(href);
+            const isJobs = label === "Jobs";
+            const active = isJobs
+              ? pathname.startsWith("/dashboard/jobs")
+              : isActive(href);
             return (
-              <div key={href} className="relative">
+              <div
+                key={href}
+                className={isJobs ? "relative group/jobs" : "relative"}
+                onMouseLeave={isJobs ? () => setJobsMenuHidden(false) : undefined}
+              >
                 {isAlerts ? (
                   <button
                     ref={(el) => {
@@ -330,6 +347,7 @@ export default function DashNavbar() {
                 ) : (
                   <Link
                     href={href}
+                    onClick={isJobs ? () => setJobsMenuHidden(true) : undefined}
                     className="group relative flex items-center justify-center w-11 h-11 rounded-2xl transition-all duration-200"
                     style={{
                       backgroundColor: active ? "#EAF1FC" : "transparent",
@@ -349,10 +367,53 @@ export default function DashNavbar() {
                     }}
                   >
                     <Icon size={23} />
-                    <span className="pointer-events-none absolute left-13 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs font-medium px-2.5 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-md">
-                      {label}
-                    </span>
+                    {isJobs && newRecCount > 0 && (
+                      <span
+                        className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full border-2 border-white"
+                        style={{ backgroundColor: "#004AAC" }}
+                      />
+                    )}
+                    {!isJobs && (
+                      <span className="pointer-events-none absolute left-13 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs font-medium px-2.5 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-md">
+                        {label}
+                      </span>
+                    )}
                   </Link>
+                )}
+                {isJobs && !jobsMenuHidden && (
+                  <div className="hidden group-hover/jobs:block group-focus-within/jobs:block absolute left-full top-0 pl-2 z-50">
+                    <div
+                      className="bg-white rounded-xl p-1.5 min-w-48 border border-gray-100"
+                      style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.13)" }}
+                    >
+                      {jobsMenu.map((item) => {
+                        const itemActive = pathname === item.href;
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={() => setJobsMenuHidden(true)}
+                            className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-[13px] font-semibold whitespace-nowrap transition-colors hover:bg-[#EAF1FC] hover:text-[#004AAC]"
+                            style={{
+                              backgroundColor: itemActive ? "#EAF1FC" : "transparent",
+                              color: itemActive ? "#004AAC" : "#0A0E17",
+                            }}
+                          >
+                            {item.label}
+                            {item.href === "/dashboard/jobs/recommended" &&
+                              newRecCount > 0 && (
+                                <span
+                                  className="min-w-5 h-5 px-1.5 rounded-full text-white text-[11px] font-bold flex items-center justify-center"
+                                  style={{ backgroundColor: "#004AAC" }}
+                                >
+                                  {newRecCount > 9 ? "9+" : newRecCount}
+                                </span>
+                              )}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
                 {isAlerts && alertsOpen && (
                   <AlertsPanel
@@ -526,7 +587,15 @@ export default function DashNavbar() {
               className="flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl transition-all"
               style={{ color: isActive(href) ? "#004AAC" : "#0A0E17" }}
             >
-              <Icon size={22} />
+              <span className="relative">
+                <Icon size={22} />
+                {label === "Jobs" && newRecCount > 0 && (
+                  <span
+                    className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white"
+                    style={{ backgroundColor: "#004AAC" }}
+                  />
+                )}
+              </span>
               <span className="text-xs font-semibold">{label}</span>
             </Link>
           ))}

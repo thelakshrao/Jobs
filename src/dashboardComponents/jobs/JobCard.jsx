@@ -1,5 +1,5 @@
 "use client";
-import { Bookmark, BookmarkCheck, MapPin } from "lucide-react";
+import { Bookmark, BookmarkCheck, MapPin, Sparkles } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { doc, setDoc, deleteDoc } from "firebase/firestore";
 import { CURRENCIES } from "@/app/employer/dashboard/create-job/constants";
@@ -50,6 +50,7 @@ export default function JobCard({
   isSaved,
   onClick,
   onSaveToggle,
+  reason,
 }) {
   const salary = formatSalary(job);
   const posted = timeAgo(job.publishedAt || job.createdAt);
@@ -99,6 +100,15 @@ export default function JobCard({
           <p className="text-sm text-slate-500 mt-0.5">
             {job.companyName || "Company"}
           </p>
+          {reason && (
+            <p
+              className="text-xs font-semibold mt-1 flex items-center gap-1"
+              style={{ color: BLUE }}
+            >
+              <Sparkles size={11} className="shrink-0" />
+              {reason}
+            </p>
+          )}
           {salary && (
             <p className="text-sm font-bold mt-0.5" style={{ color: BLUE }}>
               {salary}

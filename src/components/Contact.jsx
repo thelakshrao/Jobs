@@ -10,6 +10,15 @@ const EMAILJS_SERVICE_ID = "service_3giimhf";
 const EMAILJS_TEMPLATE_ID = "template_epgoa86";
 const EMAILJS_PUBLIC_KEY = "UHzBWCtmnhUoZASXL";
 
+const ADDRESS = "30 Eglinton Ave W, Mississauga, ON L5R 3E7, Canada";
+const MAPS_URL =
+  "https://www.google.com/maps/search/?api=1&query=" +
+  encodeURIComponent(ADDRESS);
+const PHONE_DISPLAY = "+1 437-967-3178";
+const PHONE_HREF = "tel:+14379673178";
+const SUPPORT_EMAIL = "support@thejobsabroad.com";
+const INFO_EMAIL = "info@thejobsabroad.com";
+
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
   visible: (i = 0) => ({
@@ -134,7 +143,7 @@ const Contact = () => {
               <span className="text-[8px] sm:text-[10px]">★</span>
             </div>
             <p className="text-[#004AAC] font-bold text-[9px] sm:text-xs uppercase tracking-widest">
-              Premium Support
+              Support
             </p>
           </motion.div>
 
@@ -164,20 +173,23 @@ const Contact = () => {
             {[
               {
                 icon: <IoCallOutline size={20} />,
-                label: "Call Center",
-                value: "+1 437-967-3178",
+                label: "Query",
+                lines: [{ text: PHONE_DISPLAY, href: PHONE_HREF }],
                 delay: 3,
               },
               {
                 icon: <IoMailOutline size={20} />,
                 label: "Email",
-                value: "support@jobsabroad.com",
+                lines: [
+                  { text: SUPPORT_EMAIL, href: `mailto:${SUPPORT_EMAIL}` },
+                  { text: INFO_EMAIL, href: `mailto:${INFO_EMAIL}` },
+                ],
                 delay: 4,
               },
               {
                 icon: <IoLocationOutline size={20} />,
                 label: "Address",
-                value: "30 Eglinton Ave W, Mississauga, ON L5R 3E7, Canada",
+                lines: [{ text: ADDRESS, href: MAPS_URL, external: true }],
                 delay: 5,
               },
             ].map((item, i) => (
@@ -196,9 +208,18 @@ const Contact = () => {
                   <p className="font-bold text-[#0A0E17] text-sm">
                     {item.label}
                   </p>
-                  <p className="text-gray-500 font-medium text-xs sm:text-sm">
-                    {item.value}
-                  </p>
+                  {item.lines.map((line) => (
+                    <a
+                      key={line.text}
+                      href={line.href}
+                      {...(line.external
+                        ? { target: "_blank", rel: "noopener noreferrer" }
+                        : {})}
+                      className="block max-w-[260px] text-gray-500 font-medium text-xs sm:text-sm hover:text-[#004AAC] hover:underline transition-colors"
+                    >
+                      {line.text}
+                    </a>
+                  ))}
                 </div>
               </motion.div>
             ))}
@@ -282,7 +303,7 @@ const Contact = () => {
                 <input
                   type="tel"
                   name="phone"
-                  placeholder="+1 000 000 0000"
+                  placeholder="+91 00000 00000"
                   value={formData.phone}
                   onChange={handleChange}
                   className={inputClass}
