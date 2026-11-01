@@ -10,7 +10,6 @@ import { FiArrowUpRight } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import emailjs from "@emailjs/browser";
 
-// Same EmailJS service + template as the applicant contact form.
 const EMAILJS_SERVICE_ID = "service_3giimhf";
 const EMAILJS_TEMPLATE_ID = "template_epgoa86";
 const EMAILJS_PUBLIC_KEY = "UHzBWCtmnhUoZASXL";
@@ -21,8 +20,8 @@ const MAPS_URL =
     encodeURIComponent(ADDRESS);
 const PHONE_DISPLAY = "+1 437-967-3178";
 const PHONE_HREF = "tel:+14379673178";
-const SUPPORT_EMAIL = "support@thejobsabroad.com";
 const INFO_EMAIL = "info@thejobsabroad.com";
+const SUPPORT_EMAIL = "support@thejobsabroad.com";
 
 const CONTACT_ITEMS = [
     {
@@ -34,8 +33,8 @@ const CONTACT_ITEMS = [
         icon: <IoMailOutline size={18} />,
         label: "Email",
         lines: [
-            { text: SUPPORT_EMAIL, href: `mailto:${SUPPORT_EMAIL}` },
             { text: INFO_EMAIL, href: `mailto:${INFO_EMAIL}` },
+            { text: SUPPORT_EMAIL, href: `mailto:${SUPPORT_EMAIL}` },
         ],
     },
     {
@@ -109,7 +108,7 @@ export default function EmployerContact() {
             <hr className="border-gray-200" />
 
             <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14 grid grid-cols-1 lg:grid-cols-[1fr_1.1fr] gap-8 lg:gap-12 items-center">
-                {/* Left: heading + contact details */}
+
                 <motion.div
                     initial={{ opacity: 0, y: 24 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -163,7 +162,6 @@ export default function EmployerContact() {
                     </div>
                 </motion.div>
 
-                {/* Right: form */}
                 <motion.div
                     initial={{ opacity: 0, y: 24, scale: 0.98 }}
                     whileInView={{ opacity: 1, y: 0, scale: 1 }}
