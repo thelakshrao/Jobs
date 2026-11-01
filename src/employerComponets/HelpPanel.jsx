@@ -22,7 +22,7 @@ import { auth } from "@/lib/firebase";
 
 const CONTACT = {
   email: "support@jobsabroad.com",
-  phone: "+91 98765 43210",
+  phone: "+1 437-967-3178",
   hours: "Mon–Sat, 10am–7pm IST",
 };
 
@@ -288,7 +288,7 @@ export default function HelpPanel({
             <Mail size={13} className="text-[#004AAC]" /> {CONTACT.email}
           </a>
           <a
-            href={`tel:${CONTACT.phone.replace(/\s/g, "")}`}
+            href={`tel:${CONTACT.phone.replace(/[^\d+]/g, "")}`}
             className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-full px-3 py-1.5 transition-colors"
           >
             <Phone size={13} className="text-[#004AAC]" /> {CONTACT.phone}

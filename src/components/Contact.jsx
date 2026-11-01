@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from "react";
-import { IoCallOutline, IoMailOutline } from "react-icons/io5";
+import { IoCallOutline, IoMailOutline, IoLocationOutline } from "react-icons/io5";
 import { FiArrowUpRight } from "react-icons/fi";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import emailjs from "@emailjs/browser";
@@ -165,7 +165,7 @@ const Contact = () => {
               {
                 icon: <IoCallOutline size={20} />,
                 label: "Call Center",
-                value: "+91 800-123-4567",
+                value: "+1 437-967-3178",
                 delay: 3,
               },
               {
@@ -173,6 +173,12 @@ const Contact = () => {
                 label: "Email",
                 value: "support@jobsabroad.com",
                 delay: 4,
+              },
+              {
+                icon: <IoLocationOutline size={20} />,
+                label: "Address",
+                value: "30 Eglinton Ave W, Mississauga, ON L5R 3E7",
+                delay: 5,
               },
             ].map((item, i) => (
               <motion.div
@@ -276,7 +282,7 @@ const Contact = () => {
                 <input
                   type="tel"
                   name="phone"
-                  placeholder="+91 00000 00000"
+                  placeholder="+1 000 000 0000"
                   value={formData.phone}
                   onChange={handleChange}
                   className={inputClass}
