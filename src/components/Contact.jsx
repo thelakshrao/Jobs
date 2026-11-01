@@ -16,8 +16,8 @@ const MAPS_URL =
   encodeURIComponent(ADDRESS);
 const PHONE_DISPLAY = "+1 437-967-3178";
 const PHONE_HREF = "tel:+14379673178";
-const SUPPORT_EMAIL = "support@thejobsabroad.com";
 const INFO_EMAIL = "info@thejobsabroad.com";
+const SUPPORT_EMAIL = "support@thejobsabroad.com";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
@@ -181,8 +181,8 @@ const Contact = () => {
                 icon: <IoMailOutline size={20} />,
                 label: "Email",
                 lines: [
-                  { text: SUPPORT_EMAIL, href: `mailto:${SUPPORT_EMAIL}` },
                   { text: INFO_EMAIL, href: `mailto:${INFO_EMAIL}` },
+                  { text: SUPPORT_EMAIL, href: `mailto:${SUPPORT_EMAIL}` },
                 ],
                 delay: 4,
               },
