@@ -177,7 +177,7 @@ const Contact = () => {
               {
                 icon: <IoLocationOutline size={20} />,
                 label: "Address",
-                value: "30 Eglinton Ave W, Mississauga, ON L5R 3E7",
+                value: "30 Eglinton Ave W, Mississauga, ON L5R 3E7, Canada",
                 delay: 5,
               },
             ].map((item, i) => (

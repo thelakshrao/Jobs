@@ -13,7 +13,7 @@ import policyContent from "@/components/Policycontent";
 const BRAND_BLUE = "#004AAC";
 const EMPLOYER_URL = "https://www.thejobsabroad.com/employer";
 
-const ADDRESS = "30 Eglinton Ave W, Mississauga, ON L5R 3E7";
+const ADDRESS = "30 Eglinton Ave W, Mississauga, ON L5R 3E7, Canada";
 const PHONE_DISPLAY = "+1 437-967-3178";
 const PHONE_HREF = "tel:+14379673178";
 
